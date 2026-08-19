@@ -177,8 +177,9 @@ export default function HomePage() {
               </div>
 
               <h1 id="hero-heading" className="hero-title">
-                Create. Share. Decide<span style={{ color: "var(--accent)" }}>.</span>
+                Create<span style={{ color: "var(--accent)" }}>.</span> Share<span style={{ color: "var(--accent)" }}>.</span> Decide<span style={{ color: "var(--accent)" }}>.</span>
               </h1>
+
               <p className="hero-desc">
                 Create real-time polls with ranked voting, share one instant link with your audience, and decide together with live analytics.
               </p>
