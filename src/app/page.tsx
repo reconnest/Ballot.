@@ -819,67 +819,82 @@ export default function HomePage() {
         </section>
 
         {/* 4. DIFFERENTIATORS ("Built for trustworthy decisions") */}
-        <section aria-labelledby="pillars-heading">
-
-
+        <section aria-labelledby="pillars-heading" style={{ margin: "48px 0" }}>
           <div className="section-label">WHY BALLOT</div>
-          <h2 id="pillars-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+          <h2 id="pillars-heading" style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
             Built for trustworthy decisions
           </h2>
           <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
             Multiple layers of vote protection and modern tooling help keep your results accurate and meaningful:
           </p>
 
-          <div className="pillars-grid">
-            <div className="pillar-card">
-              <div className="pillar-icon">🚫</div>
-              <div className="pillar-title">100% Ad-Free Experience</div>
-              <div className="pillar-desc">
-                No banner ads, video popups, or tracking cookies. Clean, distraction-free voting that respects your audience.
+          <div className="why-ballot-grid">
+            {/* Top Row: 2 Features (Equal 50% / 50% screen share) */}
+            <div className="why-ballot-row-top">
+              <div className="pillar-card">
+                <div>
+                  <div className="pillar-icon">🛡️</div>
+                  <div className="pillar-title">Smart Fraud Defense</div>
+                  <div className="pillar-desc">
+                    Multiple layers of duplicate protection—choose from relaxed cookies, salted IP digests, or Turnstile bot defense.
+                  </div>
+                </div>
+                <div className="pillar-tag">→ Multi-Tier Security</div>
+              </div>
+
+              <div className="pillar-card">
+                <div>
+                  <div className="pillar-icon">⚡</div>
+                  <div className="pillar-title">Adaptive Realtime Stream</div>
+                  <div className="pillar-desc">
+                    Live spectator counter and zero-polling SSE tallies with automatic traffic-spike protection and sub-100ms sync.
+                  </div>
+                </div>
+                <div className="pillar-tag">→ Instant Sync Engine</div>
               </div>
             </div>
 
-            <div className="pillar-card">
-              <div className="pillar-icon">🛡️</div>
-              <div className="pillar-title">Smart Fraud Defense</div>
-              <div className="pillar-desc">
-                Multiple layers of duplicate protection—choose from relaxed cookies, salted IP digests, or Turnstile bot defense.
+            {/* Bottom Row: 3 Features (25% | 50% | 25% screen share) */}
+            <div className="why-ballot-row-bottom">
+              {/* 25% Feature */}
+              <div className="pillar-card">
+                <div>
+                  <div className="pillar-icon">🏆</div>
+                  <div className="pillar-title">Ranked Choice (IRV)</div>
+                  <div className="pillar-desc">
+                    Built-in Instant Runoff Voting ballots that eliminate spoiler effects without requiring enterprise add-ons.
+                  </div>
+                </div>
+                <div className="pillar-tag">→ True Majority Winner</div>
               </div>
-            </div>
 
-            <div className="pillar-card">
-              <div className="pillar-icon">🏆</div>
-              <div className="pillar-title">Ranked Choice (IRV)</div>
-              <div className="pillar-desc">
-                Built-in Instant Runoff Voting ballots that eliminate spoiler effects without requiring enterprise add-ons.
+              {/* 50% Center Hero Feature */}
+              <div className="pillar-card" style={{ borderLeft: "2px solid var(--accent)" }}>
+                <div>
+                  <div className="pillar-icon">📊</div>
+                  <div className="pillar-title">Interactive SVG Charts & Data Exports</div>
+                  <div className="pillar-desc">
+                    Inspect vote share with real-time Donut, Pie, and IRV Ledger charts. Download raw CSV and JSON records instantly for transparent auditing or your own custom reporting pipeline.
+                  </div>
+                </div>
+                <div className="pillar-tag">→ Complete Data Transparency & Analytics</div>
               </div>
-            </div>
 
-            <div className="pillar-card">
-              <div className="pillar-icon">⚡</div>
-              <div className="pillar-title">Adaptive Realtime Stream</div>
-              <div className="pillar-desc">
-                Live spectator counter and zero-polling SSE tallies with automatic traffic-spike protection.
-              </div>
-            </div>
-
-            <div className="pillar-card">
-              <div className="pillar-icon">📊</div>
-              <div className="pillar-title">Interactive SVG Charts</div>
-              <div className="pillar-desc">
-                Toggle seamlessly between Donut, Pie, and Ledger charts with one-click CSV and JSON data exports.
-              </div>
-            </div>
-
-            <div className="pillar-card">
-              <div className="pillar-icon">🌐</div>
-              <div className="pillar-title">No Account Required</div>
-              <div className="pillar-desc">
-                Zero-friction participation for your audience means significantly higher response rates and faster decisions.
+              {/* 25% Feature */}
+              <div className="pillar-card">
+                <div>
+                  <div className="pillar-icon">🌐</div>
+                  <div className="pillar-title">Zero-Friction Voting</div>
+                  <div className="pillar-desc">
+                    No account or app download required for voters. Share one clean URL or printable QR code for maximum turnout.
+                  </div>
+                </div>
+                <div className="pillar-tag">→ Maximum Participation</div>
               </div>
             </div>
           </div>
         </section>
+
 
         {/* 6. NO ACCOUNT / NO FRICTION */}
         <section>

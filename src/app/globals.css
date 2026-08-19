@@ -56,9 +56,20 @@ body {
 }
 
 header.top {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 24px 0 20px; border-bottom: 1px solid var(--line); margin-bottom: 32px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0 14px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 32px;
+  background: var(--paper);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
+
 
 .brand { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: -0.01em; text-decoration: none; color: var(--ink); }
 .brand span { color: var(--accent); }
@@ -400,23 +411,81 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
 
 
 
-/* Pillars Comparison Grid */
-.pillars-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin: 24px 0 48px;
+/* WHY BALLOT - 2-Tier Asymmetric Bento Layout */
+.why-ballot-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 24px 0 52px;
 }
+
+.why-ballot-row-top {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .why-ballot-row-top {
+    grid-template-columns: 1fr 1fr; /* 50% - 50% */
+  }
+}
+
+.why-ballot-row-bottom {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 960px) {
+  .why-ballot-row-bottom {
+    grid-template-columns: 1fr 2fr 1fr; /* 25% - 50% - 25% */
+  }
+}
+@media (min-width: 640px) and (max-width: 959px) {
+  .why-ballot-row-bottom {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .pillar-card {
-  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
-  padding: 22px; box-shadow: var(--shadow-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.pillar-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 .pillar-icon {
-  font-size: 26px; margin-bottom: 12px;
+  font-size: 26px;
+  margin-bottom: 2px;
 }
 .pillar-title {
-  font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 6px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
 }
 .pillar-desc {
-  font-size: 13px; color: var(--muted); line-height: 1.5;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
 }
+.pillar-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
 
 /* Feature Showcase Tabs */
 .showcase-section {
