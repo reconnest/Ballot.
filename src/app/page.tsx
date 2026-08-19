@@ -6,7 +6,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { BallotLogo } from "@/components/BallotLogo";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
 
-
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
 
@@ -23,7 +22,6 @@ export default function HomePage() {
   const [polls, setPolls] = useState<Summary[] | null>(null);
   const [showMyPolls, setShowMyPolls] = useState(false);
   const [trendingPolls, setTrendingPolls] = useState<PublicPoll[]>([]);
-  const [activeTab, setActiveTab] = useState<"irv" | "image" | "realtime" | "security">("irv");
 
   // Ephemeral Sandbox State (100% client-side, zero network API calls)
   const [sandboxVote, setSandboxVote] = useState<number | null>(null);
@@ -44,10 +42,10 @@ export default function HomePage() {
 
   const sandboxTotal = sandboxTallies.reduce((a, b) => a + b, 0);
   const sandboxOptions = [
-    { label: "⚡ Instant live updates (Adaptive SSE)", icon: "⚡" },
-    { label: "🏆 Built-in Ranked Choice (IRV)", icon: "🏆" },
-    { label: "🛡️ 3-Tier fraud & bot defense", icon: "🛡️" },
-    { label: "📊 Ad-free design & visual charts", icon: "📊" },
+    { label: "🚀 Next Product Feature", icon: "🚀" },
+    { label: "🍕 Team Lunch Friday", icon: "🍕" },
+    { label: "⚡ Instant Live SSE Stream", icon: "⚡" },
+    { label: "🛡️ Anti-Fraud Protection", icon: "🛡️" },
   ];
 
   // Load user's local polls
@@ -116,9 +114,8 @@ export default function HomePage() {
         </div>
       </header>
 
-
       <main>
-        {/* Responsive Desktop 2-Column Hero Section */}
+        {/* 1. HERO SECTION */}
         <section className="hero-section" aria-labelledby="hero-heading">
           <div className="hero-grid">
             {/* Left Column: Value Proposition & CTAs */}
@@ -126,38 +123,46 @@ export default function HomePage() {
               <div className="hero-badge-row">
                 <span className="hero-pill">⚡ 100% Ad-Free</span>
                 <span className="hero-pill">🏆 Ranked Choice IRV</span>
-                <span className="hero-pill">🛡️ 3-Tier Anti-Fraud</span>
-                <span className="hero-pill">📊 Live Charts</span>
+                <span className="hero-pill">🛡️ Anti-Fraud Defense</span>
+                <span className="hero-pill">📊 Live Analytics</span>
               </div>
 
               <h1 id="hero-heading" className="hero-title">
-                Modern, Ad-Free Polling for Fast Decisions
+                Poll. Rank. Decide.
               </h1>
               <p className="hero-desc">
-                Create real-time polls with ranked-choice voting, 3-tier duplicate protection, and interactive SVG analytics in seconds. No account required.
+                Create modern, ad-free polls with ranked voting, live results, and powerful analytics. Share one link and get a decision.
               </p>
 
               <div className="hero-cta-group">
                 <Link href="/new" className="btn-primary" style={{ padding: "12px 24px", fontSize: 15 }}>
-                  + Create a Poll (Free) →
+                  Create a Poll →
                 </Link>
                 <Link href="/explore" className="btn-ghost" style={{ padding: "12px 18px", fontSize: 14 }}>
-                  🌐 Explore Public Feed
+                  Explore Polls
                 </Link>
+              </div>
+
+              <div className="trust-line">
+                <span>No signup for voters</span>
+                <span>•</span>
+                <span>Ad-free</span>
+                <span>•</span>
+                <span>Real-time results</span>
               </div>
             </div>
 
-            {/* Right Column: Ephemeral Interactive Sandbox Demo */}
+            {/* Right Column: 2. INTERACTIVE SANDBOX DEMO */}
             <div>
               <div className="sandbox-card" role="region" aria-label="Interactive demo poll">
                 <div className="sandbox-header">
-                  <span className="sandbox-tag">Interactive Sandbox</span>
+                  <span className="sandbox-tag">Live Interactive Demo</span>
                   <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
                     {sandboxVote !== null ? `${sandboxTotal} test votes` : "Try voting below:"}
                   </span>
                 </div>
 
-                <div className="sandbox-title">Which feature matters most to your team?</div>
+                <div className="sandbox-title">What should we choose?</div>
 
                 {sandboxVote === null ? (
                   <div role="radiogroup" aria-label="Demo poll options">
@@ -212,10 +217,9 @@ export default function HomePage() {
           </div>
         </section>
 
-
-        {/* User's Created Polls Drawer (if any exist) */}
+        {/* User's Created Polls Drawer (if returning creator) */}
         {polls && polls.length > 0 && (
-          <section style={{ marginBottom: 40, border: "1px solid var(--line)", borderRadius: 8, padding: 20, background: "var(--surface)" }}>
+          <section style={{ marginBottom: 44, border: "1px solid var(--line)", borderRadius: 8, padding: 20, background: "var(--surface)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 16 }}>📋</span>
@@ -249,160 +253,202 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Core Pillars Grid */}
-        <section aria-labelledby="pillars-heading">
-          <div className="section-label">Why Choose Ballot</div>
-          <h2 id="pillars-heading" style={{ fontSize: 22, fontWeight: 700, marginBottom: 16 }}>
-            Engineered for Integrity & Speed
+        {/* 3. HOW IT WORKS */}
+        <section aria-labelledby="how-it-works-heading">
+          <div className="section-label">HOW IT WORKS</div>
+          <h2 id="how-it-works-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+            Three simple steps to a clear consensus
           </h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
+            No complicated setup. From idea to decision in seconds:
+          </p>
+
+          <div className="steps-grid">
+            <div className="step-card">
+              <span className="step-num">01 — CREATE</span>
+              <div className="step-title">Create in Seconds</div>
+              <div className="step-desc">
+                Set up your question with single choice, multi-selection, ranked voting (IRV), or visual image choices.
+              </div>
+            </div>
+
+            <div className="step-card">
+              <span className="step-num">02 — SHARE</span>
+              <div className="step-title">Share Everywhere</div>
+              <div className="step-desc">
+                Send one clean link, generate a downloadable QR code, or embed the live poll directly into your website.
+              </div>
+            </div>
+
+            <div className="step-card">
+              <span className="step-num">03 — DECIDE</span>
+              <div className="step-title">Watch Live Results</div>
+              <div className="step-desc">
+                Votes update in real time with interactive SVG charts (Donut, Pie, Ledger) and instant CSV/JSON exports.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. POLL TYPES */}
+        <section aria-labelledby="poll-types-heading">
+          <div className="section-label">POLL FORMATS</div>
+          <h2 id="poll-types-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+            Choose the format that fits your decision
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
+            Every poll format is built-in and free with zero paywalls:
+          </p>
+
+          <div className="poll-types-grid">
+            <div className="poll-type-card">
+              <div>
+                <span className="poll-type-badge">Standard Poll</span>
+                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Single & Multi-Choice</div>
+                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 16 }}>
+                  Simple voting when you need a quick answer. Support for pick-one or bounded multi-selection rules.
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
+                ⚡ Quick decisions & team check-ins
+              </div>
+            </div>
+
+            <div className="poll-type-card">
+              <div>
+                <span className="poll-type-badge">Ranked Choice (IRV)</span>
+                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Instant Runoff Voting</div>
+                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 16 }}>
+                  Let voters rank their preferences and find the strongest overall choice without vote splitting or spoilers.
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
+                🏆 Elections & complex group consensus
+              </div>
+            </div>
+
+            <div className="poll-type-card">
+              <div>
+                <span className="poll-type-badge">Image Poll</span>
+                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Visual Choices</div>
+                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 16 }}>
+                  Let people vote visually with image-based choices. Add high-res thumbnails for designs, products, and contests.
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
+                🖼️ Design critiques & thumbnail picks
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. DIFFERENTIATORS ("Built for trustworthy decisions") */}
+        <section aria-labelledby="pillars-heading">
+          <div className="section-label">WHY BALLOT</div>
+          <h2 id="pillars-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+            Built for trustworthy decisions
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
+            Multiple layers of vote protection and modern tooling help keep your results accurate and meaningful:
+          </p>
 
           <div className="pillars-grid">
             <div className="pillar-card">
-              <div className="pillar-icon">⚡</div>
+              <div className="pillar-icon">🚫</div>
               <div className="pillar-title">100% Ad-Free Experience</div>
               <div className="pillar-desc">
-                No banner ads, popups, or surveillance scripts. Clean, distraction-free voting that respects your audience.
+                No banner ads, video popups, or tracking cookies. Clean, distraction-free voting that respects your audience.
               </div>
             </div>
 
             <div className="pillar-card">
               <div className="pillar-icon">🛡️</div>
-              <div className="pillar-title">3-Tier Fraud Prevention</div>
+              <div className="pillar-title">Smart Fraud Defense</div>
               <div className="pillar-desc">
-                Choose from relaxed cookies, salted IP hashing, or strict bot challenges with dynamic anomaly velocity defense.
+                Multiple layers of duplicate protection—choose from relaxed cookies, salted IP digests, or Turnstile bot defense.
               </div>
             </div>
 
             <div className="pillar-card">
               <div className="pillar-icon">🏆</div>
-              <div className="pillar-title">Ranked Choice Voting (IRV)</div>
+              <div className="pillar-title">Ranked Choice (IRV)</div>
               <div className="pillar-desc">
-                Run Instant Runoff Voting ballots with drag-and-drop preference ordering without paying for enterprise add-ons.
+                Built-in Instant Runoff Voting ballots that eliminate spoiler effects without requiring enterprise add-ons.
+              </div>
+            </div>
+
+            <div className="pillar-card">
+              <div className="pillar-icon">⚡</div>
+              <div className="pillar-title">Adaptive Realtime Stream</div>
+              <div className="pillar-desc">
+                Live spectator counter and zero-polling SSE tallies with automatic traffic-spike protection.
               </div>
             </div>
 
             <div className="pillar-card">
               <div className="pillar-icon">📊</div>
-              <div className="pillar-title">Interactive SVG Analytics</div>
+              <div className="pillar-title">Interactive SVG Charts</div>
               <div className="pillar-desc">
-                Switch seamlessly between horizontal ledgers, SVG Donut, and Pie charts with one-click CSV and JSON data exports.
+                Toggle seamlessly between Donut, Pie, and Ledger charts with one-click CSV and JSON data exports.
+              </div>
+            </div>
+
+            <div className="pillar-card">
+              <div className="pillar-icon">🌐</div>
+              <div className="pillar-title">No Account Required</div>
+              <div className="pillar-desc">
+                Zero-friction participation for your audience means significantly higher response rates and faster decisions.
               </div>
             </div>
           </div>
         </section>
 
-        {/* Feature Showcase Tabs */}
-        <section className="showcase-section" aria-labelledby="showcase-heading">
-          <div className="section-label">Feature Deep-Dive</div>
-          <h2 id="showcase-heading" style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>
-            Built for Modern Communities & Creators
+        {/* 6. NO ACCOUNT / NO FRICTION */}
+        <section>
+          <div className="frictionless-box">
+            <div>
+              <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
+                No signup. No ads. No friction.
+              </h2>
+              <p style={{ fontSize: 14, color: "var(--muted)", maxWidth: 520, lineHeight: 1.5 }}>
+                Create a poll, share the link, and let people vote without forcing them through an account-creation process.
+              </p>
+            </div>
+            <Link href="/new" className="btn-primary" style={{ padding: "12px 22px", fontSize: 14, whiteSpace: "nowrap" }}>
+              Create a Poll Now →
+            </Link>
+          </div>
+        </section>
+
+        {/* 7. QR CODE & REAL-WORLD USE CASES */}
+        <section className="sharing-section" aria-labelledby="sharing-heading">
+          <div className="section-label">VERSATILE SHARING</div>
+          <h2 id="sharing-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+            From screens to group chats
           </h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
-            Explore how Ballot handles complex voting scenarios with zero friction:
+          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5, maxWidth: 640 }}>
+            Share your poll with a direct link, downloadable QR code, or embed it directly into your website or presentation:
           </p>
 
-          <div className="showcase-desktop-layout">
-            <div className="showcase-tabs" role="tablist" aria-label="Feature showcase tabs">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "irv"}
-                className={`showcase-tab ${activeTab === "irv" ? "active" : ""}`}
-                onClick={() => setActiveTab("irv")}
-              >
-                🏆 Ranked Choice
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "image"}
-                className={`showcase-tab ${activeTab === "image" ? "active" : ""}`}
-                onClick={() => setActiveTab("image")}
-              >
-                🖼️ Image Polls
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "realtime"}
-                className={`showcase-tab ${activeTab === "realtime" ? "active" : ""}`}
-                onClick={() => setActiveTab("realtime")}
-              >
-                ⚡ Adaptive Realtime
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "security"}
-                className={`showcase-tab ${activeTab === "security" ? "active" : ""}`}
-                onClick={() => setActiveTab("security")}
-              >
-                🔒 Privacy & Salted IP
-              </button>
-            </div>
-
-            <div className="showcase-preview-card" role="tabpanel">
-              {activeTab === "irv" && (
-                <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Instant Runoff Voting (IRV)</h3>
-                  <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
-                    Voters rank choices in order of preference (1st, 2nd, 3rd Choice). If no choice hits 50%, lowest-ranked options are eliminated and ballots reallocated until a consensus winner emerges.
-                  </p>
-                  <div style={{ background: "var(--paper)", padding: 14, borderRadius: 6, fontSize: 13, fontFamily: "monospace" }}>
-                    ✓ Drag & drop priority ordering · ✓ Eliminates spoiler effect · ✓ Built into all free polls
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "image" && (
-                <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Visual Image Choices</h3>
-                  <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
-                    Perfect for design critiques, thumbnail selection, product feedback, and photo contests. Add high-res image URLs to any choice.
-                  </p>
-                  <div style={{ background: "var(--paper)", padding: 14, borderRadius: 6, fontSize: 13, fontFamily: "monospace" }}>
-                    ✓ Responsive card grid · ✓ Mobile optimized · ✓ Automatic fallback icons
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "realtime" && (
-                <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Server-Sent Events (SSE) Engine</h3>
-                  <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
-                    Zero-polling live updates stream tallies to spectators instantly. When vote velocity spikes during viral events, a smart 1.5s circuit-breaker aggregates changes to protect client CPUs.
-                  </p>
-                  <div style={{ background: "var(--paper)", padding: 14, borderRadius: 6, fontSize: 13, fontFamily: "monospace" }}>
-                    ✓ 🟢 Live spectator counter · ✓ 15s keepalive heartbeats · ✓ 90%+ bandwidth savings
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "security" && (
-                <div>
-                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Pseudo-Anonymized Salted IP Digests</h3>
-                  <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
-                    Ballot never stores raw IP addresses in plain text. Every poll generates a unique 16-byte cryptographic salt to hash voter IP digests solely for duplicate ballot deterrence.
-                  </p>
-                  <div style={{ background: "var(--paper)", padding: 14, borderRadius: 6, fontSize: 13, fontFamily: "monospace" }}>
-                    ✓ Per-poll salt isolation · ✓ Relaxed mode for school/office Wi-Fi · ✓ Turnstile bot defense
-                  </div>
-                </div>
-              )}
-            </div>
+          <div className="usecase-pills">
+            <span className="usecase-pill">💼 Product & Engineering Teams</span>
+            <span className="usecase-pill">🎓 Classrooms & Lectures</span>
+            <span className="usecase-pill">🎤 Live Conferences & Events</span>
+            <span className="usecase-pill">🌐 Online Communities & Discord</span>
+            <span className="usecase-pill">💬 Friends & Social Groups</span>
           </div>
         </section>
 
-        {/* Trending Community Polls Snippet */}
+        {/* 8. EXPLORE PUBLIC POLLS */}
         {trendingPolls.length > 0 && (
-          <section style={{ margin: "48px 0" }}>
+          <section style={{ margin: "48px 0" }} aria-labelledby="trending-heading">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div>
-                <div className="section-label">Community</div>
-                <h2 style={{ fontSize: 22, fontWeight: 700 }}>Trending Public Polls</h2>
+                <div className="section-label">COMMUNITY</div>
+                <h2 id="trending-heading" style={{ fontSize: 22, fontWeight: 700 }}>Trending Public Polls</h2>
               </div>
               <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>
-                View all in Explore →
+                Explore Public Feed →
               </Link>
             </div>
 
@@ -417,7 +463,7 @@ export default function HomePage() {
                     <div className="poll-q" style={{ fontSize: 15 }}>{tp.question}</div>
                   </div>
                   <div className="poll-meta" style={{ marginTop: 12, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{tp.voteCount} votes</span>
+                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{tp.voteCount} {tp.voteCount === 1 ? "vote" : "votes"}</span>
                     <span>Vote now →</span>
                   </div>
                 </Link>
@@ -426,12 +472,30 @@ export default function HomePage() {
           </section>
         )}
 
+        {/* 9. FINAL CTA */}
+        <section className="final-cta-section" aria-labelledby="final-cta-heading">
+          <h2 id="final-cta-heading" style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
+            Ready to make a decision?
+          </h2>
+          <p style={{ fontSize: 15, color: "var(--muted)", marginBottom: 24, maxWidth: 460, margin: "0 auto 24px" }}>
+            Create your first poll and share it in seconds. No account required.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", alignItems: "center", flexWrap: "wrap" }}>
+            <Link href="/new" className="btn-primary" style={{ padding: "12px 24px", fontSize: 15 }}>
+              Create a Poll →
+            </Link>
+            <Link href="/explore" className="btn-ghost" style={{ padding: "12px 18px", fontSize: 14 }}>
+              Explore Polls
+            </Link>
+          </div>
+        </section>
 
-        {/* Footer */}
+        {/* 10. FOOTER */}
         <footer className="landing-footer">
           <div className="footer-top">
-            <div>
-              <strong>Ballot</strong> — Fast, ad-free polling engine.
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <BallotLogo size={22} />
+              <span style={{ fontSize: 13, color: "var(--muted)" }}>— Fast, ad-free polling engine.</span>
             </div>
             <div className="footer-links">
               <Link href="/new" className="footer-link">New Poll</Link>
@@ -447,3 +511,4 @@ export default function HomePage() {
     </div>
   );
 }
+
