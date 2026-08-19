@@ -4,6 +4,9 @@ import { polls, votes, options } from "@/db/schema";
 import { eq, desc, sql, and } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 
 export async function GET(req: NextRequest) {
   try {
@@ -81,11 +84,19 @@ export async function GET(req: NextRequest) {
       items.sort((a, b) => b.createdAt - a.createdAt);
     }
 
-    return NextResponse.json({
-      polls: items.slice(0, 30),
-      total: items.length,
-    });
+    return NextResponse.json(
+      {
+        polls: items.slice(0, 30),
+        total: items.length,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        },
+      }
+    );
   } catch (e) {
+
     console.error("explore fetch failed", e);
     return NextResponse.json({ error: "Could not load explore feed." }, { status: 500 });
   }
