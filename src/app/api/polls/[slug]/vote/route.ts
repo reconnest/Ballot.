@@ -5,6 +5,7 @@ import { eq, and, inArray, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { resolveVoterToken, attachVoterCookie } from "@/lib/voter-token";
 import { getClientIp, hashIp, verifyTurnstileToken, checkPollAnomalyVelocity } from "@/lib/security";
+import { broadcastVoteUpdate } from "@/lib/realtime";
 
 export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
@@ -137,6 +138,14 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
     await db.insert(votes).values(voteRows);
 
+    // Trigger debounced realtime broadcast to all active spectators
+    try {
+      broadcastVoteUpdate(params.slug, {
+        pollId: poll.id,
+        timestamp: now,
+      });
+    } catch {}
+
     const res = NextResponse.json({ ok: true, ballotId });
     if (isNew) attachVoterCookie(res, voterToken);
     return res;
@@ -145,5 +154,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     return NextResponse.json({ error: "Could not record vote. Please try again." }, { status: 500 });
   }
 }
+
 
 

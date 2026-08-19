@@ -49,6 +49,9 @@ function PollContent() {
   const [botVerified, setBotVerified] = useState(false);
   const [chartType, setChartType] = useState<"ledger" | "donut" | "pie">("ledger");
 
+  const [activeViewers, setActiveViewers] = useState<number>(1);
+  const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
+
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Read admin key from query or localStorage
@@ -87,14 +90,43 @@ function PollContent() {
     }
   }
 
+  // Real-time EventSource (SSE) stream listener + fallback poll timer
   useEffect(() => {
     fetchPoll();
-    pollTimer.current = setInterval(() => fetchPoll(), 3000);
+
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource(`/api/polls/${slug}/stream`);
+      eventSource.onopen = () => {
+        setIsLiveConnected(true);
+      };
+      eventSource.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.type === "presence") {
+            setActiveViewers(payload.viewers || 1);
+          } else if (payload.type === "results_update") {
+            fetchPoll();
+          }
+        } catch {}
+      };
+      eventSource.onerror = () => {
+        setIsLiveConnected(false);
+      };
+    } catch {
+      setIsLiveConnected(false);
+    }
+
+    // Gentle fallback poll (every 5s if disconnected, every 12s if connected as sanity heartbeat)
+    pollTimer.current = setInterval(() => fetchPoll(), 5000);
+
     return () => {
+      if (eventSource) eventSource.close();
       if (pollTimer.current) clearInterval(pollTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, adminKey]);
+
 
   function showToast(msg: string) {
     setToast(msg);
@@ -285,10 +317,18 @@ function PollContent() {
           )}
         </div>
 
-        <div className="poll-sub" aria-live="polite">
-          {poll.totalVotes !== null ? `${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}` : "Voting open"}
-          {poll.isExpired ? " · closed" : poll.hasVoted ? " · you voted" : isMulti ? ` · pick ${poll.minChoices}${poll.maxChoices ? `–${poll.maxChoices}` : "+"}` : " · pick one"}
+        <div className="poll-sub" aria-live="polite" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            {poll.totalVotes !== null ? `${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}` : "Voting open"}
+            {poll.isExpired ? " · closed" : poll.hasVoted ? " · you voted" : isMulti ? ` · pick ${poll.minChoices}${poll.maxChoices ? `–${poll.maxChoices}` : "+"}` : " · pick one"}
+          </div>
+          {isLiveConnected && (
+            <div className="live-badge" title="Real-time live updates connected">
+              <span className="live-dot" /> Live {activeViewers > 1 ? `(${activeViewers} viewing)` : ""}
+            </div>
+          )}
         </div>
+
 
         {/* Voting Form if voter hasn't voted and poll is active */}
         {!poll.hasVoted && !poll.isExpired && (
