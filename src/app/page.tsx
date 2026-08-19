@@ -139,10 +139,10 @@ export default function HomePage() {
     }
     load();
 
-    // Fetch top 3 trending public polls
+    // Fetch top 3 trending public polls (always fresh, zero browser caching)
     async function loadTrending() {
       try {
-        const res = await fetch("/api/explore?filter=trending");
+        const res = await fetch("/api/explore?filter=trending", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           setTrendingPolls((data.polls || []).slice(0, 3));
@@ -150,6 +150,7 @@ export default function HomePage() {
       } catch {}
     }
     loadTrending();
+
   }, []);
 
   return (
