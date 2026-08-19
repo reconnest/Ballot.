@@ -3,8 +3,11 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type PollSummary = {
+
+
   id: string;
   slug: string;
   question: string;
@@ -72,9 +75,11 @@ function ExploreContent() {
           <div className="brand-sub">quick polls</div>
         </Link>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <ThemeToggle />
           <Link href="/new" className="btn-primary">+ Create poll</Link>
         </div>
       </header>
+
 
       <main>
         <div className="section-label">Public Polls</div>

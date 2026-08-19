@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
+
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
+
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
 
 function timeAgo(ts: number) {
@@ -61,8 +64,10 @@ export default function HomePage() {
         </Link>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
+          <ThemeToggle />
           <Link href="/new" className="btn-primary">New poll</Link>
         </div>
+
       </header>
 
       <main>

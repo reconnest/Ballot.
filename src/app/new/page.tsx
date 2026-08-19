@@ -3,8 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const EXPIRY_CHOICES = [
+
   { label: "No limit", ms: null },
   { label: "1 hour", ms: 60 * 60 * 1000 },
   { label: "24 hours", ms: 24 * 60 * 60 * 1000 },
@@ -57,10 +59,31 @@ export default function NewPollPage() {
   const [maxChoices, setMaxChoices] = useState<number | "">("");
   const [resultsVisibility, setResultsVisibility] = useState("always_public");
   const [securityMode, setSecurityMode] = useState("standard");
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [expiryMs, setExpiryMs] = useState<number | null>(null);
   const [requireName, setRequireName] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+
+  function handleApplyBulkPaste() {
+    const lines = bulkText
+      .split("\n")
+      .map((l) => l.trim().replace(/^[-*•\d+.]+\s*/, "")) // remove bullets or numbers if pasted
+      .filter((l) => l.length > 0)
+      .slice(0, 30);
+
+    if (lines.length >= 2) {
+      setOpts(lines.map((l) => ({ label: l, imageUrl: "" })));
+    } else if (lines.length === 1) {
+      setOpts([{ label: lines[0], imageUrl: "" }, { label: "", imageUrl: "" }]);
+    }
+    setShowBulkModal(false);
+    setBulkText("");
+  }
+
 
   function updateOptLabel(i: number, val: string) {
     setOpts((prev) => prev.map((o, idx) => (idx === i ? { ...o, label: val } : o)));
@@ -183,6 +206,10 @@ export default function NewPollPage() {
           Ballot<span>.</span>
           <div className="brand-sub">quick polls</div>
         </Link>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
+          <ThemeToggle />
+        </div>
       </header>
       <main>
         <div className="section-label">New poll</div>
@@ -280,9 +307,20 @@ export default function NewPollPage() {
 
         {/* Options */}
         <div className="block">
-          <label className="field-label">
-            Options <span style={{ color: "var(--accent)" }}>*</span>
-          </label>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <label className="field-label" style={{ marginBottom: 0 }}>
+              Options <span style={{ color: "var(--accent)" }}>*</span>
+            </label>
+            <button
+              type="button"
+              className="btn-link"
+              onClick={() => setShowBulkModal(true)}
+              style={{ fontSize: 12 }}
+            >
+              📋 Paste multiple lines
+            </button>
+          </div>
+
           <div role="list" aria-label="Poll options">
             {opts.map((o, i) => (
               <div className="option-row-wrap" key={i} role="listitem" style={{ marginBottom: 12, borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
@@ -343,11 +381,14 @@ export default function NewPollPage() {
               </div>
             ))}
           </div>
-          {opts.length < 30 && (
-            <button type="button" className="add-opt" onClick={addOpt}>
-              + Add option ({opts.length}/30)
-            </button>
-          )}
+
+          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8 }}>
+            {opts.length < 30 && (
+              <button type="button" className="add-opt" onClick={addOpt}>
+                + Add option ({opts.length}/30)
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Voting Mode: Single vs Multi (Only for Standard Polls) */}
@@ -402,104 +443,116 @@ export default function NewPollPage() {
           </div>
         )}
 
-        {/* Results Visibility */}
-        <div className="block">
-          <label className="field-label">Results Visibility</label>
-          <div className="visibility-grid">
-            {VISIBILITY_CHOICES.map((vc) => (
-              <button
-                type="button"
-                key={vc.value}
-                className={`visibility-card ${resultsVisibility === vc.value ? "active" : ""}`}
-                onClick={() => setResultsVisibility(vc.value)}
-              >
-                <div className="vis-title">{vc.label}</div>
-                <div className="vis-hint">{vc.hint}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Collapsible Advanced Settings Accordion */}
+        <div style={{ marginTop: 24, marginBottom: 20 }}>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            style={{ width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px" }}
+          >
+            <span style={{ fontWeight: 600, fontSize: 13 }}>⚙️ Advanced Settings (Privacy, Fraud, Expiry)</span>
+            <span style={{ fontSize: 11, fontFamily: "monospace" }}>{showAdvanced ? "▲ Hide" : "▼ Expand"}</span>
+          </button>
 
-        {/* Public Explore Discovery */}
-        <div className="block">
-          <label className="field-label">Discovery & Directory</label>
-          <div className="expiry-row">
-            <button
-              type="button"
-              className={`expiry-chip ${isPublic ? "active" : ""}`}
-              onClick={() => setIsPublic(true)}
-            >
-              Public (Listed in Explore)
-            </button>
-            <button
-              type="button"
-              className={`expiry-chip ${!isPublic ? "active" : ""}`}
-              onClick={() => setIsPublic(false)}
-            >
-              Unlisted (Link only)
-            </button>
-          </div>
-        </div>
+          {showAdvanced && (
+            <div style={{ marginTop: 16, borderLeft: "2px solid var(--line)", paddingLeft: 14 }}>
+              {/* Results Visibility */}
+              <div className="block">
+                <label className="field-label">Results Visibility</label>
+                <div className="visibility-grid">
+                  {VISIBILITY_CHOICES.map((vc) => (
+                    <button
+                      type="button"
+                      key={vc.value}
+                      className={`visibility-card ${resultsVisibility === vc.value ? "active" : ""}`}
+                      onClick={() => setResultsVisibility(vc.value)}
+                    >
+                      <div className="vis-title">{vc.label}</div>
+                      <div className="vis-hint">{vc.hint}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-        {/* Duplicate & Fraud Protection */}
-        <div className="block">
-          <label className="field-label">Duplicate Vote Protection</label>
-          <div className="visibility-grid">
-            {SECURITY_CHOICES.map((sc) => (
-              <button
-                type="button"
-                key={sc.value}
-                className={`visibility-card ${securityMode === sc.value ? "active" : ""}`}
-                onClick={() => setSecurityMode(sc.value)}
-              >
-                <div className="vis-title">{sc.label}</div>
-                <div className="vis-hint">{sc.hint}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+              {/* Public Explore Discovery */}
+              <div className="block">
+                <label className="field-label">Discovery & Directory</label>
+                <div className="expiry-row">
+                  <button
+                    type="button"
+                    className={`expiry-chip ${isPublic ? "active" : ""}`}
+                    onClick={() => setIsPublic(true)}
+                  >
+                    Public (Listed in Explore)
+                  </button>
+                  <button
+                    type="button"
+                    className={`expiry-chip ${!isPublic ? "active" : ""}`}
+                    onClick={() => setIsPublic(false)}
+                  >
+                    Unlisted (Link only)
+                  </button>
+                </div>
+              </div>
 
-        {/* Voter Identity */}
-        <div className="block">
-          <label className="field-label">Voter Identity</label>
-          <div className="expiry-row">
-            <button
-              type="button"
-              className={`expiry-chip ${!requireName ? "active" : ""}`}
-              onClick={() => setRequireName(false)}
-            >
-              Anonymous
-            </button>
-            <button
-              type="button"
-              className={`expiry-chip ${requireName ? "active" : ""}`}
-              onClick={() => setRequireName(true)}
-            >
-              Ask for name
-            </button>
-          </div>
-          {requireName && (
-            <div className="poll-meta" style={{ marginTop: 8 }}>
-              Voters will be prompted for their name, visible in the results ledger.
+              {/* Duplicate & Fraud Protection */}
+              <div className="block">
+                <label className="field-label">Duplicate Vote Protection</label>
+                <div className="visibility-grid">
+                  {SECURITY_CHOICES.map((sc) => (
+                    <button
+                      type="button"
+                      key={sc.value}
+                      className={`visibility-card ${securityMode === sc.value ? "active" : ""}`}
+                      onClick={() => setSecurityMode(sc.value)}
+                    >
+                      <div className="vis-title">{sc.label}</div>
+                      <div className="vis-hint">{sc.hint}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Voter Identity */}
+              <div className="block">
+                <label className="field-label">Voter Identity</label>
+                <div className="expiry-row">
+                  <button
+                    type="button"
+                    className={`expiry-chip ${!requireName ? "active" : ""}`}
+                    onClick={() => setRequireName(false)}
+                  >
+                    Anonymous
+                  </button>
+                  <button
+                    type="button"
+                    className={`expiry-chip ${requireName ? "active" : ""}`}
+                    onClick={() => setRequireName(true)}
+                  >
+                    Ask for name
+                  </button>
+                </div>
+              </div>
+
+              {/* Poll Expiry */}
+              <div className="block">
+                <label className="field-label">Poll Deadline</label>
+                <div className="expiry-row">
+                  {EXPIRY_CHOICES.map((c) => (
+                    <button
+                      type="button"
+                      key={c.label}
+                      className={`expiry-chip ${expiryMs === c.ms ? "active" : ""}`}
+                      onClick={() => setExpiryMs(c.ms)}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
-        </div>
-
-        {/* Poll Expiry */}
-        <div className="block">
-          <label className="field-label">Poll Deadline</label>
-          <div className="expiry-row">
-            {EXPIRY_CHOICES.map((c) => (
-              <button
-                type="button"
-                key={c.label}
-                className={`expiry-chip ${expiryMs === c.ms ? "active" : ""}`}
-                onClick={() => setExpiryMs(c.ms)}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {error && <div className="err" role="alert">{error}</div>}
@@ -520,9 +573,38 @@ export default function NewPollPage() {
           🔒 <strong>Privacy & Fraud Notice:</strong> Ballot uses private session cookies and one-way salted IP digests solely to deter duplicate votes. No personal browsing activity is tracked or sold.
         </div>
       </main>
+
+      {/* Bulk Paste Modal */}
+      {showBulkModal && (
+        <div className="modal-backdrop" onClick={() => setShowBulkModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>Paste Multiple Options</h3>
+              <button type="button" className="close-btn" onClick={() => setShowBulkModal(false)}>&times;</button>
+            </div>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
+              Paste a list of options from Slack, ChatGPT, or your notes. Each line will become a separate option:
+            </p>
+            <textarea
+              className="input-textarea"
+              rows={6}
+              placeholder="Option 1&#10;Option 2&#10;Option 3&#10;Option 4"
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+              autoFocus
+              style={{ width: "100%", marginBottom: 16 }}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button type="button" className="btn-ghost" onClick={() => setShowBulkModal(false)}>Cancel</button>
+              <button type="button" className="btn-primary" onClick={handleApplyBulkPaste}>Apply Options</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 
 
 

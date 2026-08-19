@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
 import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/chart-utils";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { fireMotionSafeConfetti } from "@/lib/confetti";
+
 
 type OptionData = { id: string; label: string; imageUrl?: string | null; votes: number | null };
 type VoterEntry = { name: string; choices: string[] };
@@ -223,6 +226,9 @@ function PollContent() {
       setSelectedIds([]);
       await fetchPoll();
       showToast("Vote submitted!");
+      try {
+        fireMotionSafeConfetti();
+      } catch {}
     } catch (e) {
       console.error("vote request failed", e);
       showToast("Could not submit vote — check your connection.");
@@ -230,6 +236,7 @@ function PollContent() {
       setVoting(false);
     }
   }
+
 
 
   async function handleClosePoll() {
@@ -319,6 +326,13 @@ function PollContent() {
     chartType === "donut" ? 55 : 0
   );
 
+  // Server-guarded winner computation (only active when results are unmasked)
+  const maxVotes = showResults ? Math.max(...poll.options.map((o) => o.votes ?? 0), 0) : 0;
+  const topOptions = showResults && maxVotes > 0 ? poll.options.filter((o) => (o.votes ?? 0) === maxVotes) : [];
+  const isTie = topOptions.length > 1;
+  const isLeader = (optId: string) => showResults && maxVotes > 0 && !isTie && topOptions[0]?.id === optId;
+  const isTiedLeader = (optId: string) => showResults && maxVotes > 0 && isTie && topOptions.some((o) => o.id === optId);
+
   return (
     <div className="wrap">
       <header className="top">
@@ -338,9 +352,11 @@ function PollContent() {
             </button>
           )}
           <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
+          <ThemeToggle />
           <Link href="/new" className="btn-primary">New poll</Link>
         </div>
       </header>
+
 
 
       <main>
@@ -612,13 +628,16 @@ function PollContent() {
                   return (
                     <div className="ledger-row" key={o.id}>
                       <div className="ledger-top">
-                        <div className={`ledger-label ${isMine ? "mine" : ""}`}>
+                        <div className={`ledger-label ${isMine ? "mine" : ""}`} style={{ gap: 6 }}>
                           <span className="color-dot" style={{ background: color }} />
-                          {o.label}
+                          <span>{o.label}</span>
                           {isMine && <span className="mine-badge"> · your pick</span>}
+                          {isLeader(o.id) && <span className="badge-winner">👑 Leader</span>}
+                          {isTiedLeader(o.id) && <span className="badge-tie">Tied #1</span>}
                         </div>
                         <div className="ledger-nums">{pct}% · {count}</div>
                       </div>
+
                       <div className="ledger-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${o.label}: ${pct}%`}>
                         <div className="ledger-fill" style={{ width: `${pct}%`, background: color }} />
                       </div>
