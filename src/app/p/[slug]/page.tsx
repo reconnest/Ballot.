@@ -2,93 +2,195 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
+import { getQRCodeUrl } from "@/lib/qr-generator";
 
-type OptionData = { id: string; label: string; votes: number };
-type VoterEntry = { name: string; choice: string };
+type OptionData = { id: string; label: string; votes: number | null };
+type VoterEntry = { name: string; choices: string[] };
+
 type PollData = {
   question: string;
+  description: string | null;
+  createdAt: number;
+  expiresAt: number | null;
   isExpired: boolean;
   requireName: boolean;
+  allowMultiple: boolean;
+  minChoices: number;
+  maxChoices: number | null;
+  resultsVisibility: "always_public" | "after_vote" | "after_deadline" | "creator_only";
   options: OptionData[];
-  totalVotes: number;
+  totalVotes: number | null;
+  totalSelections: number | null;
   myVote: string | null;
+  myVotes: string[];
+  hasVoted: boolean;
+  canViewResults: boolean;
+  isAdmin: boolean;
   voters: VoterEntry[];
 };
 
 export default function PollPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
+
   const [poll, setPoll] = useState<PollData | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [voting, setVoting] = useState(false);
   const [voterName, setVoterName] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [toast, setToast] = useState("");
+  const [showQR, setShowQR] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminKey, setAdminKey] = useState<string | null>(null);
+
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  async function fetchPoll() {
+  // Read admin key from query or localStorage
+  useEffect(() => {
+    const keyFromUrl = searchParams.get("key");
+    if (keyFromUrl) {
+      setAdminKey(keyFromUrl);
+      try {
+        const adminKeys = JSON.parse(localStorage.getItem("ballot:adminKeys") ?? "{}");
+        adminKeys[slug] = keyFromUrl;
+        localStorage.setItem("ballot:adminKeys", JSON.stringify(adminKeys));
+      } catch {}
+    } else {
+      try {
+        const adminKeys = JSON.parse(localStorage.getItem("ballot:adminKeys") ?? "{}");
+        if (adminKeys[slug]) {
+          setAdminKey(adminKeys[slug]);
+        }
+      } catch {}
+    }
+  }, [slug, searchParams]);
+
+  async function fetchPoll(customKey?: string | null) {
+    const activeKey = customKey !== undefined ? customKey : adminKey;
+    const url = activeKey ? `/api/polls/${slug}?key=${encodeURIComponent(activeKey)}` : `/api/polls/${slug}`;
     try {
-      const res = await fetch(`/api/polls/${slug}`, { cache: "no-store" });
+      const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) {
         setNotFound(true);
         return;
       }
-      const data = await res.json();
+      const data: PollData = await res.json();
       setPoll(data);
     } catch {
-      // leave previous state on transient network errors
+      // transient network error
     }
   }
 
   useEffect(() => {
     fetchPoll();
-    pollTimer.current = setInterval(fetchPoll, 3000);
+    pollTimer.current = setInterval(() => fetchPoll(), 3000);
     return () => {
       if (pollTimer.current) clearInterval(pollTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slug]);
+  }, [slug, adminKey]);
 
   function showToast(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2400);
+    setTimeout(() => setToast(""), 2500);
   }
 
-  async function castVote(optionId: string) {
-    if (poll?.requireName && !voterName.trim()) {
-      showToast("Enter your name first");
+  function toggleOption(id: string) {
+    if (!poll) return;
+    if (poll.allowMultiple) {
+      setSelectedIds((prev) => {
+        if (prev.includes(id)) {
+          return prev.filter((item) => item !== id);
+        } else {
+          if (poll.maxChoices && prev.length >= poll.maxChoices) {
+            showToast(`Maximum ${poll.maxChoices} choices allowed`);
+            return prev;
+          }
+          return [...prev, id];
+        }
+      });
+    } else {
+      setSelectedIds([id]);
+    }
+  }
+
+  async function castVote(directId?: string) {
+    const finalSelection = directId ? [directId] : selectedIds;
+    if (finalSelection.length === 0) {
+      showToast("Please choose an option first.");
       return;
     }
+    if (poll?.allowMultiple && finalSelection.length < poll.minChoices) {
+      showToast(`Please choose at least ${poll.minChoices} option${poll.minChoices === 1 ? "" : "s"}.`);
+      return;
+    }
+    if (poll?.requireName && !voterName.trim()) {
+      showToast("Please enter your name.");
+      return;
+    }
+
     setVoting(true);
     try {
       const res = await fetch(`/api/polls/${slug}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ optionId, voterName: voterName.trim() || undefined }),
+        body: JSON.stringify({
+          optionIds: finalSelection,
+          voterName: voterName.trim() || undefined,
+        }),
       });
-      let data: any = {};
-      try {
-        data = await res.json();
-      } catch {
-        data = { error: "Unexpected server response." };
-      }
+
+      const data = await res.json();
       if (!res.ok) {
-        showToast(data.error ?? "Could not vote.");
+        showToast(data.error ?? "Could not record vote.");
         return;
       }
+      setSelectedIds([]);
       await fetchPoll();
+      showToast("Vote submitted!");
     } catch (e) {
       console.error("vote request failed", e);
-      showToast("Could not vote — check your connection and try again.");
+      showToast("Could not submit vote — check your connection.");
     } finally {
       setVoting(false);
     }
   }
 
+  async function handleClosePoll() {
+    if (!adminKey) return;
+    try {
+      const res = await fetch(`/api/polls/${slug}/admin`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminKey, action: "close_now" }),
+      });
+      if (res.ok) {
+        showToast("Poll closed.");
+        fetchPoll();
+        setShowAdminModal(false);
+      } else {
+        showToast("Could not close poll.");
+      }
+    } catch {
+      showToast("Error updating poll.");
+    }
+  }
+
   function copyLink() {
-    const url = window.location.href;
+    const url = typeof window !== "undefined" ? window.location.origin + `/p/${slug}` : "";
     navigator.clipboard?.writeText(url).then(
-      () => showToast("Link copied"),
+      () => showToast("Share link copied!"),
+      () => showToast(url)
+    );
+  }
+
+  function copyAdminLink() {
+    if (!adminKey) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/p/${slug}?key=${adminKey}` : "";
+    navigator.clipboard?.writeText(url).then(
+      () => showToast("Admin link copied to clipboard!"),
       () => showToast(url)
     );
   }
@@ -101,8 +203,7 @@ export default function PollPage() {
         </header>
         <div className="empty">
           Poll not found.
-          <br />
-          <br />
+          <br /><br />
           <Link href="/" className="btn-ghost">← Back to polls</Link>
         </div>
       </div>
@@ -115,12 +216,14 @@ export default function PollPage() {
         <header className="top">
           <Link href="/" className="brand">Ballot<span>.</span></Link>
         </header>
-        <div className="loading">Loading…</div>
+        <div className="loading" role="status" aria-live="polite">Loading poll…</div>
       </div>
     );
   }
 
-  const showResults = !!poll.myVote || poll.isExpired;
+  const showResults = poll.canViewResults;
+  const isMulti = poll.allowMultiple;
+  const pageUrl = typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : "";
 
   return (
     <div className="wrap">
@@ -129,84 +232,239 @@ export default function PollPage() {
           Ballot<span>.</span>
           <div className="brand-sub">quick polls</div>
         </Link>
-        <Link href="/new" className="btn-primary">New poll</Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {poll.isAdmin && (
+            <button
+              type="button"
+              className="badge-creator"
+              onClick={() => setShowAdminModal(true)}
+              aria-label="Creator admin settings"
+            >
+              ⚙ Creator Admin
+            </button>
+          )}
+          <Link href="/new" className="btn-primary">New poll</Link>
+        </div>
       </header>
+
       <main>
         <div className="poll-header">
-          <div className="poll-title">{poll.question}</div>
-        </div>
-        <div className="poll-sub">
-          {poll.totalVotes} vote{poll.totalVotes === 1 ? "" : "s"}
-          {poll.isExpired ? " · closed" : showResults ? " · you voted" : " · pick one"}
+          <h1 className="poll-title">{poll.question}</h1>
+          {poll.description && (
+            <div className="poll-desc">{poll.description}</div>
+          )}
         </div>
 
-        {!showResults && poll.requireName && (
-          <div className="name-input-wrap">
-            <label className="field-label" htmlFor="voterName">Your name</label>
-            <input
-              id="voterName"
-              type="text"
-              maxLength={60}
-              placeholder="e.g. Priya"
-              value={voterName}
-              onChange={(e) => setVoterName(e.target.value)}
-            />
+        <div className="poll-sub" aria-live="polite">
+          {poll.totalVotes !== null ? `${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}` : "Voting open"}
+          {poll.isExpired ? " · closed" : poll.hasVoted ? " · you voted" : isMulti ? ` · pick ${poll.minChoices}${poll.maxChoices ? `–${poll.maxChoices}` : "+"}` : " · pick one"}
+        </div>
+
+        {/* Voting Form if voter hasn't voted and poll is active */}
+        {!poll.hasVoted && !poll.isExpired && (
+          <div className="vote-section" role="form" aria-label="Voting choices">
+            {poll.requireName && (
+              <div className="name-input-wrap">
+                <label className="field-label" htmlFor="voterName">
+                  Your name <span style={{ color: "var(--accent)" }}>*</span>
+                </label>
+                <input
+                  id="voterName"
+                  type="text"
+                  maxLength={60}
+                  placeholder="e.g. Alex"
+                  value={voterName}
+                  onChange={(e) => setVoterName(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Single Click Choice for Single Choice polls */}
+            {!isMulti ? (
+              <div role="radiogroup" aria-label="Single choice voting options">
+                {poll.options.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selectedIds.includes(o.id)}
+                    className={`choice ${selectedIds.includes(o.id) ? "selected" : ""}`}
+                    disabled={voting}
+                    onClick={() => castVote(o.id)}
+                  >
+                    <div className="choice-inner">
+                      <span>{o.label}</span>
+                      <span className="choice-arrow">{voting ? "Voting…" : "vote →"}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              /* Multi-choice Checkboxes */
+              <div role="group" aria-label="Multiple choice voting options">
+                {poll.options.map((o) => {
+                  const isChecked = selectedIds.includes(o.id);
+                  return (
+                    <div
+                      key={o.id}
+                      role="checkbox"
+                      aria-checked={isChecked}
+                      tabIndex={0}
+                      className={`choice-multi ${isChecked ? "checked" : ""}`}
+                      onClick={() => toggleOption(o.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === " " || e.key === "Enter") {
+                          e.preventDefault();
+                          toggleOption(o.id);
+                        }
+                      }}
+                    >
+                      <div className="checkbox-indicator" aria-hidden="true">
+                        {isChecked ? "✓" : ""}
+                      </div>
+                      <span className="choice-label">{o.label}</span>
+                    </div>
+                  );
+                })}
+
+                <div className="multi-submit-bar">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={voting || selectedIds.length < poll.minChoices}
+                    onClick={() => castVote()}
+                  >
+                    {voting ? "Submitting…" : `Submit Vote (${selectedIds.length} selected)`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {!showResults &&
-          poll.options.map((o) => (
-            <button
-              key={o.id}
-              className="choice"
-              disabled={voting}
-              onClick={() => castVote(o.id)}
-            >
-              <div className="choice-inner">
-                <span>{o.label}</span>
-                <span className="choice-arrow">vote →</span>
-              </div>
-            </button>
-          ))}
+        {/* Results Masking Notice */}
+        {!showResults && (poll.hasVoted || poll.isExpired) && (
+          <div className="results-notice" role="status">
+            {poll.resultsVisibility === "after_deadline" && !poll.isExpired && (
+              <div>⏳ Results will be revealed when this poll closes.</div>
+            )}
+            {poll.resultsVisibility === "creator_only" && (
+              <div>🔒 Results for this poll are private to the creator.</div>
+            )}
+          </div>
+        )}
 
-        {showResults &&
-          poll.options.map((o) => {
-            const pct = poll.totalVotes > 0 ? Math.round((o.votes / poll.totalVotes) * 100) : 0;
-            const mine = o.id === poll.myVote;
-            return (
-              <div className="ledger-row" key={o.id}>
-                <div className="ledger-top">
-                  <div className={`ledger-label ${mine ? "mine" : ""}`}>
-                    {o.label}
-                    {mine ? " · your pick" : ""}
+        {/* Live Results Ledger */}
+        {showResults && (
+          <div className="ledger-section" aria-label="Poll results breakdown">
+            {poll.options.map((o) => {
+              const count = o.votes ?? 0;
+              const total = poll.totalVotes && poll.totalVotes > 0 ? poll.totalVotes : (poll.totalSelections || 0);
+              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+              const isMine = poll.myVotes.includes(o.id);
+
+              return (
+                <div className="ledger-row" key={o.id}>
+                  <div className="ledger-top">
+                    <div className={`ledger-label ${isMine ? "mine" : ""}`}>
+                      {o.label}
+                      {isMine && <span className="mine-badge"> · your pick</span>}
+                    </div>
+                    <div className="ledger-nums">{pct}% · {count}</div>
                   </div>
-                  <div className="ledger-nums">{pct}% · {o.votes}</div>
+                  <div className="ledger-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${o.label}: ${pct}%`}>
+                    <div className="ledger-fill" style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
-                <div className="ledger-track">
-                  <div className="ledger-fill" style={{ width: `${pct}%` }} />
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        )}
 
+        {/* Voter Ledger if Name Required */}
         {showResults && poll.requireName && poll.voters.length > 0 && (
           <div className="voter-section">
-            <div className="section-label">Who voted</div>
+            <div className="section-label">Who voted ({poll.voters.length})</div>
             {poll.voters.map((v, i) => (
               <div className="voter-row" key={i}>
                 <div className="voter-name">{v.name}</div>
-                <div className="voter-choice">{v.choice}</div>
+                <div className="voter-choice">{v.choices.join(", ")}</div>
               </div>
             ))}
           </div>
         )}
 
+        {/* Actions Bar */}
         <div className="poll-actions">
-          <button className="copy-link" onClick={copyLink}>Copy share link</button>
+          <button type="button" className="copy-link" onClick={copyLink}>
+            Copy share link
+          </button>
+          <button type="button" className="btn-ghost" onClick={() => setShowQR(true)}>
+            📱 QR Code
+          </button>
           <Link href="/" className="btn-ghost">← All polls</Link>
         </div>
       </main>
-      <div className={`toast ${toast ? "show" : ""}`}>{toast}</div>
+
+      {/* QR Code Modal */}
+      {showQR && (
+        <div className="modal-backdrop" onClick={() => setShowQR(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Poll QR Code">
+            <div className="modal-head">
+              <h3>Scan to Vote</h3>
+              <button className="close-btn" onClick={() => setShowQR(false)} aria-label="Close modal">&times;</button>
+            </div>
+            <div className="qr-box">
+              <img
+                src={getQRCodeUrl(pageUrl, 240)}
+                alt="Poll QR Code"
+                width={240}
+                height={240}
+                style={{ borderRadius: 8, background: "#fff", padding: 8 }}
+              />
+            </div>
+            <div className="modal-sub">Scan with phone camera to open this poll instantly.</div>
+            <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
+              <button className="btn-primary" onClick={copyLink}>Copy Link</button>
+              <button className="btn-ghost" onClick={() => setShowQR(false)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Creator Admin Modal */}
+      {showAdminModal && poll.isAdmin && (
+        <div className="modal-backdrop" onClick={() => setShowAdminModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Creator Admin Panel">
+            <div className="modal-head">
+              <h3>Creator Admin Panel</h3>
+              <button className="close-btn" onClick={() => setShowAdminModal(false)} aria-label="Close modal">&times;</button>
+            </div>
+            <div className="admin-info-box">
+              <div style={{ fontSize: 13, marginBottom: 8 }}>
+                <strong>Creator Key:</strong> Keep this link private to manage your poll.
+              </div>
+              <button type="button" className="btn-ghost" onClick={copyAdminLink} style={{ width: "100%", fontSize: 12 }}>
+                📋 Copy Private Admin Link
+              </button>
+            </div>
+
+            {!poll.isExpired && (
+              <div style={{ marginTop: 16 }}>
+                <button type="button" className="btn-danger" onClick={handleClosePoll} style={{ width: "100%" }}>
+                  🔒 Close Poll Immediately
+                </button>
+              </div>
+            )}
+            <div style={{ marginTop: 16, textAlign: "right" }}>
+              <button className="btn-ghost" onClick={() => setShowAdminModal(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`toast ${toast ? "show" : ""}`} role="status" aria-live="assertive">{toast}</div>
     </div>
   );
 }
+

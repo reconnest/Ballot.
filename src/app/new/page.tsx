@@ -9,12 +9,26 @@ const EXPIRY_CHOICES = [
   { label: "1 hour", ms: 60 * 60 * 1000 },
   { label: "24 hours", ms: 24 * 60 * 60 * 1000 },
   { label: "7 days", ms: 7 * 24 * 60 * 60 * 1000 },
+  { label: "30 days", ms: 30 * 24 * 60 * 60 * 1000 },
+];
+
+const VISIBILITY_CHOICES = [
+  { value: "always_public", label: "Always public", hint: "Anyone can view live results anytime" },
+  { value: "after_vote", label: "After voting", hint: "Voters see results only after casting their vote" },
+  { value: "after_deadline", label: "After deadline", hint: "Results stay hidden until the poll closes" },
+  { value: "creator_only", label: "Creator only", hint: "Only you (with your secret key) can see results" },
 ];
 
 export default function NewPollPage() {
   const router = useRouter();
   const [question, setQuestion] = useState("");
+  const [description, setDescription] = useState("");
+  const [showDesc, setShowDesc] = useState(false);
   const [opts, setOpts] = useState(["", ""]);
+  const [allowMultiple, setAllowMultiple] = useState(false);
+  const [minChoices, setMinChoices] = useState(1);
+  const [maxChoices, setMaxChoices] = useState<number | "">("");
+  const [resultsVisibility, setResultsVisibility] = useState("always_public");
   const [expiryMs, setExpiryMs] = useState<number | null>(null);
   const [requireName, setRequireName] = useState(false);
   const [error, setError] = useState("");
@@ -24,41 +38,99 @@ export default function NewPollPage() {
     setOpts((prev) => prev.map((o, idx) => (idx === i ? value : o)));
   }
   function addOpt() {
-    setOpts((prev) => [...prev, ""]);
+    if (opts.length < 30) {
+      setOpts((prev) => [...prev, ""]);
+    }
   }
   function removeOpt(i: number) {
     setOpts((prev) => prev.filter((_, idx) => idx !== i));
+  }
+  function moveOpt(i: number, dir: "up" | "down") {
+    const target = dir === "up" ? i - 1 : i + 1;
+    if (target < 0 || target >= opts.length) return;
+    setOpts((prev) => {
+      const copy = [...prev];
+      const temp = copy[i];
+      copy[i] = copy[target];
+      copy[target] = temp;
+      return copy;
+    });
   }
 
   async function handleCreate() {
     const q = question.trim();
     const cleanOpts = opts.map((o) => o.trim()).filter((o) => o.length > 0);
     if (!q) {
-      setError("Add a question.");
+      setError("Please add a question.");
       return;
     }
     if (cleanOpts.length < 2) {
-      setError("Add at least two options.");
+      setError("Please add at least two options.");
       return;
     }
+    if (allowMultiple) {
+      const parsedMin = Math.max(1, minChoices);
+      const parsedMax = typeof maxChoices === "number" ? maxChoices : null;
+      if (parsedMax && parsedMax < parsedMin) {
+        setError("Maximum choices cannot be less than minimum choices.");
+        return;
+      }
+      if (parsedMax && parsedMax > cleanOpts.length) {
+        setError(`Maximum choices cannot exceed total options (${cleanOpts.length}).`);
+        return;
+      }
+    }
+
     setError("");
     setSubmitting(true);
+
     try {
       const res = await fetch("/api/polls", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, options: cleanOpts, expiresInMs: expiryMs, requireName }),
+        body: JSON.stringify({
+          question: q,
+          description: description.trim() || undefined,
+          options: cleanOpts,
+          allowMultiple,
+          minChoices: allowMultiple ? Math.max(1, minChoices) : 1,
+          maxChoices: allowMultiple && typeof maxChoices === "number" ? maxChoices : null,
+          resultsVisibility,
+          expiresInMs: expiryMs,
+          requireName,
+        }),
       });
+
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Could not create poll.");
         setSubmitting(false);
         return;
       }
-      const stored = JSON.parse(localStorage.getItem("ballot:myPolls") ?? "[]");
-      stored.push({ slug: data.slug, question: q, createdAt: Date.now() });
-      localStorage.setItem("ballot:myPolls", JSON.stringify(stored));
-      router.push(`/p/${data.slug}`);
+
+      // Store in localStorage
+      try {
+        const stored = JSON.parse(localStorage.getItem("ballot:myPolls") ?? "[]");
+        stored.push({
+          slug: data.slug,
+          question: q,
+          createdAt: Date.now(),
+          adminKey: data.adminKey,
+        });
+        localStorage.setItem("ballot:myPolls", JSON.stringify(stored));
+
+        // Store admin keys dictionary
+        const adminKeys = JSON.parse(localStorage.getItem("ballot:adminKeys") ?? "{}");
+        if (data.adminKey) {
+          adminKeys[data.slug] = data.adminKey;
+          localStorage.setItem("ballot:adminKeys", JSON.stringify(adminKeys));
+        }
+      } catch (e) {
+        console.error("Failed to save to localStorage", e);
+      }
+
+      // Navigate to poll with admin key parameter
+      router.push(`/p/${data.slug}?created=1`);
     } catch {
       setError("Could not create poll — check your connection.");
       setSubmitting(false);
@@ -75,8 +147,11 @@ export default function NewPollPage() {
       </header>
       <main>
         <div className="section-label">New poll</div>
+
         <div className="block">
-          <label className="field-label" htmlFor="q">Question</label>
+          <label className="field-label" htmlFor="q">
+            Question <span style={{ color: "var(--accent)" }}>*</span>
+          </label>
           <input
             id="q"
             type="text"
@@ -84,38 +159,203 @@ export default function NewPollPage() {
             placeholder="What should we get for lunch?"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
+            autoFocus
           />
         </div>
+
         <div className="block">
-          <label className="field-label">Options</label>
-          <div>
+          {!showDesc ? (
+            <button
+              type="button"
+              className="btn-link"
+              onClick={() => setShowDesc(true)}
+              style={{ fontSize: 13 }}
+            >
+              + Add description / context (optional)
+            </button>
+          ) : (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label className="field-label" htmlFor="desc">Description (optional)</label>
+                <button
+                  type="button"
+                  className="btn-link"
+                  onClick={() => { setShowDesc(false); setDescription(""); }}
+                  style={{ fontSize: 12, color: "var(--muted)" }}
+                >
+                  Remove
+                </button>
+              </div>
+              <textarea
+                id="desc"
+                className="input-textarea"
+                rows={3}
+                maxLength={1000}
+                placeholder="Add extra context, rules, or links for your voters..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="block">
+          <label className="field-label">
+            Options <span style={{ color: "var(--accent)" }}>*</span>
+          </label>
+          <div role="list" aria-label="Poll options">
             {opts.map((o, i) => (
-              <div className="option-row" key={i}>
-                <span className="option-num">{i + 1}</span>
+              <div className="option-row" key={i} role="listitem">
+                <span className="option-num" aria-hidden="true">{i + 1}</span>
                 <input
                   type="text"
-                  maxLength={80}
+                  maxLength={100}
                   placeholder={`Option ${i + 1}`}
                   value={o}
+                  aria-label={`Option ${i + 1}`}
                   onChange={(e) => updateOpt(i, e.target.value)}
                 />
-                {opts.length > 2 && (
-                  <button className="remove-opt" aria-label="Remove option" onClick={() => removeOpt(i)}>
-                    &times;
+                <div className="option-row-actions">
+                  <button
+                    type="button"
+                    className="reorder-btn"
+                    disabled={i === 0}
+                    aria-label={`Move option ${i + 1} up`}
+                    onClick={() => moveOpt(i, "up")}
+                  >
+                    ▲
                   </button>
-                )}
+                  <button
+                    type="button"
+                    className="reorder-btn"
+                    disabled={i === opts.length - 1}
+                    aria-label={`Move option ${i + 1} down`}
+                    onClick={() => moveOpt(i, "down")}
+                  >
+                    ▼
+                  </button>
+                  {opts.length > 2 && (
+                    <button
+                      type="button"
+                      className="remove-opt"
+                      aria-label={`Remove option ${i + 1}`}
+                      onClick={() => removeOpt(i)}
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-          {opts.length < 10 && (
-            <button className="add-opt" onClick={addOpt}>+ Add option</button>
+          {opts.length < 30 && (
+            <button type="button" className="add-opt" onClick={addOpt}>
+              + Add option ({opts.length}/30)
+            </button>
           )}
         </div>
+
+        {/* Voting Mode: Single vs Multi */}
         <div className="block">
-          <label className="field-label">Closes</label>
+          <label className="field-label">Voting Mode</label>
+          <div className="expiry-row">
+            <button
+              type="button"
+              className={`expiry-chip ${!allowMultiple ? "active" : ""}`}
+              onClick={() => setAllowMultiple(false)}
+            >
+              Single choice
+            </button>
+            <button
+              type="button"
+              className={`expiry-chip ${allowMultiple ? "active" : ""}`}
+              onClick={() => setAllowMultiple(true)}
+            >
+              Multiple choices
+            </button>
+          </div>
+          {allowMultiple && (
+            <div className="multi-choice-config">
+              <div className="config-item">
+                <label htmlFor="minChoices" className="sub-field-label">Min choices</label>
+                <input
+                  id="minChoices"
+                  type="number"
+                  min={1}
+                  max={opts.length}
+                  value={minChoices}
+                  onChange={(e) => setMinChoices(parseInt(e.target.value) || 1)}
+                  style={{ width: 80 }}
+                />
+              </div>
+              <div className="config-item">
+                <label htmlFor="maxChoices" className="sub-field-label">Max choices (optional)</label>
+                <input
+                  id="maxChoices"
+                  type="number"
+                  min={minChoices}
+                  max={opts.length}
+                  placeholder="No max"
+                  value={maxChoices}
+                  onChange={(e) => setMaxChoices(e.target.value === "" ? "" : parseInt(e.target.value) || "")}
+                  style={{ width: 100 }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Results Visibility */}
+        <div className="block">
+          <label className="field-label">Results Visibility</label>
+          <div className="visibility-grid">
+            {VISIBILITY_CHOICES.map((vc) => (
+              <button
+                type="button"
+                key={vc.value}
+                className={`visibility-card ${resultsVisibility === vc.value ? "active" : ""}`}
+                onClick={() => setResultsVisibility(vc.value)}
+              >
+                <div className="vis-title">{vc.label}</div>
+                <div className="vis-hint">{vc.hint}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Voter Identity */}
+        <div className="block">
+          <label className="field-label">Voter Identity</label>
+          <div className="expiry-row">
+            <button
+              type="button"
+              className={`expiry-chip ${!requireName ? "active" : ""}`}
+              onClick={() => setRequireName(false)}
+            >
+              Anonymous
+            </button>
+            <button
+              type="button"
+              className={`expiry-chip ${requireName ? "active" : ""}`}
+              onClick={() => setRequireName(true)}
+            >
+              Ask for name
+            </button>
+          </div>
+          {requireName && (
+            <div className="poll-meta" style={{ marginTop: 8 }}>
+              Voters will be prompted for their name, visible in the results ledger.
+            </div>
+          )}
+        </div>
+
+        {/* Poll Expiry */}
+        <div className="block">
+          <label className="field-label">Poll Deadline</label>
           <div className="expiry-row">
             {EXPIRY_CHOICES.map((c) => (
               <button
+                type="button"
                 key={c.label}
                 className={`expiry-chip ${expiryMs === c.ms ? "active" : ""}`}
                 onClick={() => setExpiryMs(c.ms)}
@@ -125,32 +365,17 @@ export default function NewPollPage() {
             ))}
           </div>
         </div>
-        <div className="block">
-          <label className="field-label">Voter identity</label>
-          <div className="expiry-row">
-            <button
-              className={`expiry-chip ${!requireName ? "active" : ""}`}
-              onClick={() => setRequireName(false)}
-            >
-              Anonymous
-            </button>
-            <button
-              className={`expiry-chip ${requireName ? "active" : ""}`}
-              onClick={() => setRequireName(true)}
-            >
-              Ask for name
-            </button>
-          </div>
-          {requireName && (
-            <div className="poll-meta" style={{ marginTop: 8 }}>
-              You'll see who picked what in the results.
-            </div>
-          )}
-        </div>
-        {error && <div className="err">{error}</div>}
-        <div className="poll-actions" style={{ justifyContent: "flex-start", gap: 16 }}>
-          <button className="btn-primary" disabled={submitting} onClick={handleCreate}>
-            {submitting ? "Creating…" : "Create poll"}
+
+        {error && <div className="err" role="alert">{error}</div>}
+
+        <div className="poll-actions" style={{ justifyContent: "flex-start", gap: 16, marginTop: 24 }}>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={submitting}
+            onClick={handleCreate}
+          >
+            {submitting ? "Creating poll…" : "Create poll →"}
           </button>
           <Link href="/" className="btn-ghost">Cancel</Link>
         </div>
@@ -158,3 +383,4 @@ export default function NewPollPage() {
     </div>
   );
 }
+

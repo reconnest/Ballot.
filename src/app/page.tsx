@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-type StoredPoll = { slug: string; question: string; createdAt: number };
-type Summary = StoredPoll & { totalVotes: number };
+type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
+type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
 
 function timeAgo(ts: number) {
   const s = Math.floor((Date.now() - ts) / 1000);
@@ -20,8 +20,10 @@ export default function HomePage() {
   useEffect(() => {
     async function load() {
       let stored: StoredPoll[] = [];
+      let adminKeys: Record<string, string> = {};
       try {
         stored = JSON.parse(localStorage.getItem("ballot:myPolls") ?? "[]");
+        adminKeys = JSON.parse(localStorage.getItem("ballot:adminKeys") ?? "{}");
       } catch {
         stored = [];
       }
@@ -29,13 +31,19 @@ export default function HomePage() {
 
       const results = await Promise.all(
         stored.map(async (p) => {
+          const key = p.adminKey || adminKeys[p.slug];
+          const query = key ? `?key=${encodeURIComponent(key)}` : "";
           try {
-            const res = await fetch(`/api/polls/${p.slug}`);
-            if (!res.ok) return { ...p, totalVotes: 0 };
+            const res = await fetch(`/api/polls/${p.slug}${query}`);
+            if (!res.ok) return { ...p, totalVotes: 0, isExpired: false };
             const data = await res.json();
-            return { ...p, totalVotes: data.totalVotes ?? 0 };
+            return {
+              ...p,
+              totalVotes: data.totalVotes ?? data.totalSelections ?? 0,
+              isExpired: data.isExpired,
+            };
           } catch {
-            return { ...p, totalVotes: 0 };
+            return { ...p, totalVotes: 0, isExpired: false };
           }
         })
       );
@@ -55,15 +63,28 @@ export default function HomePage() {
       </header>
       <main>
         <div className="section-label">Your polls</div>
-        {polls === null && <div className="loading">Loading…</div>}
+        {polls === null && <div className="loading" role="status">Loading…</div>}
         {polls !== null && polls.length === 0 && (
-          <div className="empty">No polls yet. Create one and share the link to start collecting votes.</div>
+          <div className="empty">
+            <p>No polls yet.</p>
+            <p style={{ marginTop: 6, color: "var(--faint)", fontSize: 13 }}>
+              Create a poll in seconds and share the link to collect instant responses.
+            </p>
+            <div style={{ marginTop: 20 }}>
+              <Link href="/new" className="btn-primary">Create your first poll →</Link>
+            </div>
+          </div>
         )}
         {polls?.map((p) => (
           <Link href={`/p/${p.slug}`} key={p.slug} className="poll-row">
             <div className="poll-row-top">
               <div className="poll-q">{p.question}</div>
-              <div className="poll-meta">{p.totalVotes} vote{p.totalVotes === 1 ? "" : "s"}</div>
+              <div className="poll-meta">
+                {p.isExpired ? (
+                  <span style={{ color: "var(--muted)" }}>Closed · </span>
+                ) : null}
+                {p.totalVotes} vote{p.totalVotes === 1 ? "" : "s"}
+              </div>
             </div>
             <div className="poll-meta">{timeAgo(p.createdAt)}</div>
           </Link>
@@ -72,3 +93,4 @@ export default function HomePage() {
     </div>
   );
 }
+
