@@ -492,10 +492,12 @@ export default function HomePage() {
               >
                 <div className="stepper-circle">01</div>
                 <div>
-                  <div style={{ fontSize: 11, fontFamily: "monospace", color: workflowStep === "create" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase" }}>
-                    CREATE
+                  <div style={{ fontSize: 10, fontFamily: "monospace", color: workflowStep === "create" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    STEP 01 · CREATE
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>Create in Seconds</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: workflowStep === "create" ? "var(--ink)" : "var(--muted)", marginTop: 2 }}>
+                    Create in Seconds
+                  </div>
                 </div>
               </button>
 
@@ -508,10 +510,12 @@ export default function HomePage() {
               >
                 <div className="stepper-circle">02</div>
                 <div>
-                  <div style={{ fontSize: 11, fontFamily: "monospace", color: workflowStep === "share" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase" }}>
-                    SHARE
+                  <div style={{ fontSize: 10, fontFamily: "monospace", color: workflowStep === "share" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    STEP 02 · SHARE
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>Share Everywhere</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: workflowStep === "share" ? "var(--ink)" : "var(--muted)", marginTop: 2 }}>
+                    Share Everywhere
+                  </div>
                 </div>
               </button>
 
@@ -524,26 +528,29 @@ export default function HomePage() {
               >
                 <div className="stepper-circle">03</div>
                 <div>
-                  <div style={{ fontSize: 11, fontFamily: "monospace", color: workflowStep === "decide" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase" }}>
-                    DECIDE
+                  <div style={{ fontSize: 10, fontFamily: "monospace", color: workflowStep === "decide" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    STEP 03 · DECIDE
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>Decide with Confidence</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: workflowStep === "decide" ? "var(--ink)" : "var(--muted)", marginTop: 2 }}>
+                    Decide with Confidence
+                  </div>
                 </div>
               </button>
             </div>
 
             {/* Right Column: Detailed Benefit Rows */}
-            <div className="stepper-panel" role="tabpanel">
+            <div className="stepper-panel" role="tabpanel" key={workflowStep}>
               {/* STEP 1: CREATE */}
               {workflowStep === "create" && (
                 <div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span className="stepper-row-badge">01 — CREATE</span>
+                    <span className="stepper-row-badge">STEP 01 — CREATE</span>
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Create in Seconds</h3>
                   <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
                     Set up your question with single choice, multi-selection, ranked voting (IRV), or visual image choices:
                   </p>
+
 
                   <div className="stepper-rows">
                     <div className="stepper-row-card">
@@ -609,12 +616,13 @@ export default function HomePage() {
               {workflowStep === "share" && (
                 <div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span className="stepper-row-badge">02 — SHARE</span>
+                    <span className="stepper-row-badge">STEP 02 — SHARE</span>
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Reach Your Audience Everywhere</h3>
                   <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
                     Distribute your poll in seconds through direct links, downloadable QR codes, or embedded widgets:
                   </p>
+
 
                   <div className="stepper-rows">
                     <div className="stepper-row-card">
@@ -680,9 +688,10 @@ export default function HomePage() {
               {workflowStep === "decide" && (
                 <div>
                   <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span className="stepper-row-badge">03 — DECIDE</span>
+                    <span className="stepper-row-badge">STEP 03 — DECIDE</span>
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Decide with Confidence</h3>
+
                   <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
                     How voters cast their true choices and how creators reach undeniable consensus:
                   </p>
