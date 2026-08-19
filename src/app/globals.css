@@ -678,20 +678,20 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
   height: auto;
   max-width: 250px;
   object-fit: contain;
-  display: block;
 }
 
-/* Light / Dark Mode Illustration Adaptive Visibility */
-.illustration-light {
-  display: block;
+/* Light / Dark Mode Illustration Adaptive Visibility (Scoped with high specificity) */
+.stepper-illustration-box .illustration-light {
+  display: block !important;
 }
-.illustration-dark {
-  display: none;
-}
-[data-theme="dark"] .illustration-light {
+.stepper-illustration-box .illustration-dark {
   display: none !important;
 }
-[data-theme="dark"] .illustration-dark {
+
+[data-theme="dark"] .stepper-illustration-box .illustration-light {
+  display: none !important;
+}
+[data-theme="dark"] .stepper-illustration-box .illustration-dark {
   display: block !important;
 }
 
