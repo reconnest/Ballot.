@@ -536,9 +536,38 @@ export default function HomePage() {
                   </div>
                 </div>
               </button>
+
+              {/* Dynamic Step Spot Illustration */}
+              <div className="stepper-illustration-box" aria-hidden="true">
+                {workflowStep === "create" && (
+                  <img
+                    src="/illustrations/step_1_create.png"
+                    alt="Create poll on laptop"
+                    width={512}
+                    height={512}
+                  />
+                )}
+                {workflowStep === "share" && (
+                  <img
+                    src="/illustrations/step_2_share.png"
+                    alt="Share poll link and QR code"
+                    width={512}
+                    height={512}
+                  />
+                )}
+                {workflowStep === "decide" && (
+                  <img
+                    src="/illustrations/step_3_decide.png"
+                    alt="Live poll results and charts"
+                    width={512}
+                    height={512}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Right Column: Detailed Benefit Rows */}
+
             <div className="stepper-panel" role="tabpanel" key={workflowStep}>
               {/* STEP 1: CREATE */}
               {workflowStep === "create" && (
