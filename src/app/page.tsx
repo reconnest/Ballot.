@@ -24,29 +24,79 @@ export default function HomePage() {
   const [trendingPolls, setTrendingPolls] = useState<PublicPoll[]>([]);
 
   // Ephemeral Sandbox State (100% client-side, zero network API calls)
-  const [sandboxVote, setSandboxVote] = useState<number | null>(null);
-  const [sandboxTallies, setSandboxTallies] = useState<number[]>([42, 38, 29, 54]);
+  const [sandboxFormat, setSandboxFormat] = useState<"standard" | "ranked" | "image">("standard");
+  
+  // Standard format state
+  const [standardVote, setStandardVote] = useState<number | null>(null);
+  const [standardTallies, setStandardTallies] = useState<number[]>([48, 56, 32, 25]);
+  const standardOptions = [
+    { label: "🏖️ Beachside Resort" },
+    { label: "🌲 Mountain Cabin Retreat" },
+    { label: "🏙️ Downtown Loft & City Tour" },
+    { label: "🏕️ National Park Glamping" },
+  ];
 
-  function handleSandboxVote(index: number) {
-    if (sandboxVote !== null) return; // already voted in this session
-    setSandboxVote(index);
-    setSandboxTallies((prev) => {
+  // Ranked format state
+  const [rankedOrder, setRankedOrder] = useState<string[]>([
+    "⚡ Instant Realtime SSE Sync",
+    "🛡️ Multi-Tier Fraud Defense",
+    "📊 Interactive SVG Charts",
+    "📱 Mobile Web Experience",
+  ]);
+  const [rankedSubmitted, setRankedSubmitted] = useState<boolean>(false);
+
+  // Image format state
+  const [imageVote, setImageVote] = useState<number | null>(null);
+  const [imageTallies, setImageTallies] = useState<number[]>([54, 42, 38]);
+  const imageOptions = [
+    { icon: "📋", label: "Tally Clipboard", desc: "Classic & Clean" },
+    { icon: "🗳️", label: "Ballot Mark", desc: "Minimalist Box" },
+    { icon: "⚡", label: "Dynamic Slit", desc: "High Energy" },
+  ];
+
+  function handleStandardVote(index: number) {
+    if (standardVote !== null) return;
+    setStandardVote(index);
+    setStandardTallies((prev) => {
       const copy = [...prev];
       copy[index] += 1;
       return copy;
     });
-    try {
-      fireMotionSafeConfetti();
-    } catch {}
+    try { fireMotionSafeConfetti(); } catch {}
   }
 
-  const sandboxTotal = sandboxTallies.reduce((a, b) => a + b, 0);
-  const sandboxOptions = [
-    { label: "🚀 Next Product Feature", icon: "🚀" },
-    { label: "🍕 Team Lunch Friday", icon: "🍕" },
-    { label: "⚡ Instant Live SSE Stream", icon: "⚡" },
-    { label: "🛡️ Anti-Fraud Protection", icon: "🛡️" },
-  ];
+  function handleRankMove(index: number, direction: "up" | "down") {
+    if (rankedSubmitted) return;
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= rankedOrder.length) return;
+    setRankedOrder((prev) => {
+      const copy = [...prev];
+      const temp = copy[index];
+      copy[index] = copy[target];
+      copy[target] = temp;
+      return copy;
+    });
+  }
+
+  function handleRankedSubmit() {
+    setRankedSubmitted(true);
+    try { fireMotionSafeConfetti(); } catch {}
+  }
+
+  function handleImageVote(index: number) {
+    if (imageVote !== null) return;
+    setImageVote(index);
+    setImageTallies((prev) => {
+      const copy = [...prev];
+      copy[index] += 1;
+      return copy;
+    });
+    try { fireMotionSafeConfetti(); } catch {}
+  }
+
+  const standardTotal = standardTallies.reduce((a, b) => a + b, 0);
+  const imageTotal = imageTallies.reduce((a, b) => a + b, 0);
+
 
   // Load user's local polls
   useEffect(() => {
@@ -121,17 +171,16 @@ export default function HomePage() {
             {/* Left Column: Value Proposition & CTAs */}
             <div>
               <div className="hero-badge-row">
-                <span className="hero-pill">⚡ 100% Ad-Free</span>
                 <span className="hero-pill">🏆 Ranked Choice IRV</span>
                 <span className="hero-pill">🛡️ Anti-Fraud Defense</span>
                 <span className="hero-pill">📊 Live Analytics</span>
               </div>
 
               <h1 id="hero-heading" className="hero-title">
-                Poll. Rank. Decide.
+                Create. Share. Decide<span style={{ color: "var(--accent)" }}>.</span>
               </h1>
               <p className="hero-desc">
-                Create modern, ad-free polls with ranked voting, live results, and powerful analytics. Share one link and get a decision.
+                Create real-time polls with ranked voting, share one instant link with your audience, and decide together with live analytics.
               </p>
 
               <div className="hero-cta-group">
@@ -146,75 +195,240 @@ export default function HomePage() {
               <div className="trust-line">
                 <span>No signup for voters</span>
                 <span>•</span>
-                <span>Ad-free</span>
-                <span>•</span>
                 <span>Real-time results</span>
               </div>
             </div>
 
-            {/* Right Column: 2. INTERACTIVE SANDBOX DEMO */}
+            {/* Right Column: 2. INTERACTIVE 3-FORMAT SANDBOX DEMO */}
             <div>
               <div className="sandbox-card" role="region" aria-label="Interactive demo poll">
+                {/* Format Switcher */}
+                <div className="sandbox-format-tabs" role="tablist" aria-label="Demo poll formats">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={sandboxFormat === "standard"}
+                    className={`sandbox-format-tab ${sandboxFormat === "standard" ? "active" : ""}`}
+                    onClick={() => setSandboxFormat("standard")}
+                  >
+                    Standard Poll
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={sandboxFormat === "ranked"}
+                    className={`sandbox-format-tab ${sandboxFormat === "ranked" ? "active" : ""}`}
+                    onClick={() => setSandboxFormat("ranked")}
+                  >
+                    Ranked Choice
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={sandboxFormat === "image"}
+                    className={`sandbox-format-tab ${sandboxFormat === "image" ? "active" : ""}`}
+                    onClick={() => setSandboxFormat("image")}
+                  >
+                    Image Poll
+                  </button>
+                </div>
+
                 <div className="sandbox-header">
-                  <span className="sandbox-tag">Live Interactive Demo</span>
+                  <span className="sandbox-tag">
+                    {sandboxFormat === "standard" && "Standard Demo"}
+                    {sandboxFormat === "ranked" && "Ranked Choice (IRV)"}
+                    {sandboxFormat === "image" && "Image Grid Demo"}
+                  </span>
                   <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
-                    {sandboxVote !== null ? `${sandboxTotal} test votes` : "Try voting below:"}
+                    {sandboxFormat === "standard" && (standardVote !== null ? `${standardTotal} test votes` : "Try voting:")}
+                    {sandboxFormat === "ranked" && (rankedSubmitted ? "Consensus calculated ✓" : "Rank your top picks:")}
+                    {sandboxFormat === "image" && (imageVote !== null ? `${imageTotal} test votes` : "Pick your favorite:")}
                   </span>
                 </div>
 
-                <div className="sandbox-title">What should we choose?</div>
+                {/* 1. Standard Format Interactive Body */}
+                {sandboxFormat === "standard" && (
+                  <div>
+                    <div className="sandbox-title">Where should we host the team offsite?</div>
 
-                {sandboxVote === null ? (
-                  <div role="radiogroup" aria-label="Demo poll options">
-                    {sandboxOptions.map((opt, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        role="radio"
-                        aria-checked={false}
-                        className="sandbox-option-btn"
-                        onClick={() => handleSandboxVote(i)}
-                      >
-                        <span>{opt.label}</span>
-                        <span style={{ color: "var(--accent)", fontSize: 12 }}>Vote →</span>
-                      </button>
-                    ))}
+                    {standardVote === null ? (
+                      <div role="radiogroup" aria-label="Standard demo options">
+                        {standardOptions.map((opt, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            role="radio"
+                            aria-checked={false}
+                            className="sandbox-option-btn"
+                            onClick={() => handleStandardVote(i)}
+                          >
+                            <span>{opt.label}</span>
+                            <span style={{ color: "var(--accent)", fontSize: 12 }}>Vote →</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div aria-live="polite">
+                        {standardOptions.map((opt, i) => {
+                          const count = standardTallies[i];
+                          const pct = Math.round((count / standardTotal) * 100);
+                          const isMine = standardVote === i;
+                          return (
+                            <div key={i} style={{ marginBottom: 9 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                                <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
+                                  {opt.label} {isMine && "(your pick ✓)"}
+                                </span>
+                                <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% · {count}</span>
+                              </div>
+                              <div className="ledger-track" style={{ height: 6 }}>
+                                <div className="ledger-fill" style={{ width: `${pct}%`, background: isMine ? "var(--accent)" : "var(--faint)" }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 10 }}>
+                          ✨ Standard pick-one poll preview
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div aria-live="polite" aria-label="Simulated demo results">
-                    {sandboxOptions.map((opt, i) => {
-                      const count = sandboxTallies[i];
-                      const pct = Math.round((count / sandboxTotal) * 100);
-                      const isMine = sandboxVote === i;
+                )}
 
-                      return (
-                        <div key={i} style={{ marginBottom: 10 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                            <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
-                              {opt.label} {isMine && "(your pick ✓)"}
-                            </span>
-                            <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% · {count}</span>
+                {/* 2. Ranked Choice (IRV) Format Interactive Body */}
+                {sandboxFormat === "ranked" && (
+                  <div>
+                    <div className="sandbox-title">Rank your team's top priorities for Q3:</div>
+
+                    {!rankedSubmitted ? (
+                      <div>
+                        <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
+                          Use arrows to rank preferences from 1st to 4th Choice:
+                        </div>
+                        {rankedOrder.map((item, idx) => (
+                          <div
+                            key={item}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "8px 12px",
+                              marginBottom: 6,
+                              borderRadius: "var(--radius)",
+                              border: "1px solid var(--line)",
+                              background: "var(--paper)",
+                              fontSize: 13,
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--accent)", fontSize: 11 }}>
+                                #{idx + 1}
+                              </span>
+                              <span>{item}</span>
+                            </div>
+                            <div style={{ display: "flex", gap: 4 }}>
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleRankMove(idx, "up")}
+                                style={{ padding: "2px 6px", fontSize: 11, border: "1px solid var(--line)", borderRadius: 3, background: "var(--surface)", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.3 : 1 }}
+                                aria-label="Move priority up"
+                              >
+                                ▲
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === rankedOrder.length - 1}
+                                onClick={() => handleRankMove(idx, "down")}
+                                style={{ padding: "2px 6px", fontSize: 11, border: "1px solid var(--line)", borderRadius: 3, background: "var(--surface)", cursor: idx === rankedOrder.length - 1 ? "not-allowed" : "pointer", opacity: idx === rankedOrder.length - 1 ? 0.3 : 1 }}
+                                aria-label="Move priority down"
+                              >
+                                ▼
+                              </button>
+                            </div>
                           </div>
-                          <div className="ledger-track" style={{ height: 6 }}>
-                            <div
-                              className="ledger-fill"
-                              style={{
-                                width: `${pct}%`,
-                                background: isMine ? "var(--accent)" : "var(--faint)",
-                              }}
-                            />
+                        ))}
+                        <button
+                          type="button"
+                          className="btn-primary"
+                          onClick={handleRankedSubmit}
+                          style={{ width: "100%", marginTop: 8, padding: "9px 12px", fontSize: 13, justifyContent: "center" }}
+                        >
+                          Submit Ranked Ballot →
+                        </button>
+                      </div>
+                    ) : (
+                      <div aria-live="polite">
+                        <div style={{ background: "var(--accent-soft)", padding: 12, borderRadius: 6, marginBottom: 10, border: "1px solid var(--accent)" }}>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--accent-ink)", marginBottom: 4 }}>
+                            🏆 IRV Consensus Winner: {rankedOrder[0]}
+                          </div>
+                          <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                            Instant Runoff eliminated lowest options across 3 rounds until reaching 64% majority.
                           </div>
                         </div>
-                      );
-                    })}
-                    <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 12 }}>
-                      ✨ Instant client-side preview — create your real poll above in 5 seconds!
-                    </div>
+                        <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center" }}>
+                          ✨ Zero spoiler effect · Real preferences calculated
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 3. Image Poll Format Interactive Body */}
+                {sandboxFormat === "image" && (
+                  <div>
+                    <div className="sandbox-title">Which logo mark concept works best for Ballot?</div>
+
+                    {imageVote === null ? (
+                      <div className="sandbox-image-grid" role="radiogroup" aria-label="Image poll demo options">
+                        {imageOptions.map((opt, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            role="radio"
+                            aria-checked={false}
+                            className="sandbox-image-card"
+                            onClick={() => handleImageVote(i)}
+                          >
+                            <span style={{ fontSize: 28 }}>{opt.icon}</span>
+                            <div style={{ fontWeight: 700, fontSize: 12, color: "var(--ink)" }}>{opt.label}</div>
+                            <div style={{ fontSize: 10, color: "var(--muted)" }}>{opt.desc}</div>
+                            <span style={{ fontSize: 11, color: "var(--accent)", marginTop: 2 }}>Vote →</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div aria-live="polite">
+                        {imageOptions.map((opt, i) => {
+                          const count = imageTallies[i];
+                          const pct = Math.round((count / imageTotal) * 100);
+                          const isMine = imageVote === i;
+                          return (
+                            <div key={i} style={{ marginBottom: 9 }}>
+                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                                <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
+                                  {opt.icon} {opt.label} {isMine && "(your pick ✓)"}
+                                </span>
+                                <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% · {count}</span>
+                              </div>
+                              <div className="ledger-track" style={{ height: 6 }}>
+                                <div className="ledger-fill" style={{ width: `${pct}%`, background: isMine ? "var(--accent)" : "var(--faint)" }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 10 }}>
+                          ✨ Visual image card poll preview
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             </div>
           </div>
+
         </section>
 
         {/* User's Created Polls Drawer (if returning creator) */}

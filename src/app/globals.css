@@ -338,11 +338,12 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
   font-size: 16px; color: var(--muted); line-height: 1.5; margin-bottom: 28px;
 }
 .hero-cta-group {
-  display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 24px;
+  display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 16px;
 }
 @media (min-width: 960px) {
-  .hero-cta-group { justify-content: flex-start; margin-bottom: 0; }
+  .hero-cta-group { justify-content: flex-start; margin-bottom: 16px; }
 }
+
 
 /* Ephemeral Sandbox Demo Card */
 .sandbox-card {
@@ -360,6 +361,30 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
 .sandbox-title {
   font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 14px;
 }
+.sandbox-format-tabs {
+  display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--line); padding-bottom: 10px; flex-wrap: wrap;
+}
+.sandbox-format-tab {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 10px;
+  border-radius: var(--radius); border: 1px solid var(--line); background: var(--paper);
+  color: var(--muted); cursor: pointer; transition: all 0.15s ease;
+}
+.sandbox-format-tab.active {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 600;
+}
+.sandbox-image-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;
+}
+@media (max-width: 480px) {
+  .sandbox-image-grid { grid-template-columns: 1fr; }
+}
+.sandbox-image-card {
+  border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: var(--paper);
+  cursor: pointer; text-align: center; transition: all 0.15s ease; display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.sandbox-image-card:hover {
+  border-color: var(--accent); background: var(--accent-soft);
+}
 .sandbox-option-btn {
   width: 100%; padding: 11px 14px; margin-bottom: 8px; border-radius: var(--radius);
   border: 1px solid var(--line); background: var(--paper); color: var(--ink);
@@ -372,6 +397,8 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
 .sandbox-option-btn.selected {
   border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 600;
 }
+
+
 
 /* Pillars Comparison Grid */
 .pillars-grid {
