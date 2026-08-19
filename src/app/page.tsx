@@ -918,24 +918,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 7. QR CODE & REAL-WORLD USE CASES */}
-        <section className="sharing-section" aria-labelledby="sharing-heading">
-          <div className="section-label">VERSATILE SHARING</div>
-          <h2 id="sharing-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
-            From screens to group chats
-          </h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5, maxWidth: 640 }}>
-            Share your poll with a direct link, downloadable QR code, or embed it directly into your website or presentation:
-          </p>
-
-          <div className="usecase-pills">
-            <span className="usecase-pill">💼 Product & Engineering Teams</span>
-            <span className="usecase-pill">🎓 Classrooms & Lectures</span>
-            <span className="usecase-pill">🎤 Live Conferences & Events</span>
-            <span className="usecase-pill">🌐 Online Communities & Discord</span>
-            <span className="usecase-pill">💬 Friends & Social Groups</span>
-          </div>
-        </section>
 
         {/* 8. EXPLORE PUBLIC POLLS */}
         {trendingPolls.length > 0 && (

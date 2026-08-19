@@ -58,10 +58,11 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       }
     }
 
-    // Validate single vs multi selection constraints
-    if (!poll.allowMultiple && selectedOptionIds.length > 1) {
+    // Validate single vs multi selection constraints (ranked choice allows ordering all options)
+    if (poll.pollType !== "ranked_choice" && !poll.allowMultiple && selectedOptionIds.length > 1) {
       return NextResponse.json({ error: "This poll only allows selecting one option." }, { status: 400 });
     }
+
     if (poll.allowMultiple) {
       if (selectedOptionIds.length < poll.minChoices) {
         return NextResponse.json(
