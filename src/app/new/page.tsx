@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const EXPIRY_CHOICES = [
-
   { label: "No limit", ms: null },
   { label: "1 hour", ms: 60 * 60 * 1000 },
   { label: "24 hours", ms: 24 * 60 * 60 * 1000 },
@@ -33,7 +32,7 @@ const POLL_TYPES = [
   { value: "image", label: "Image Poll", hint: "Include image previews with each choice" },
 ];
 
-const CATEGORY_CHOICES = [
+const PRESET_CATEGORIES = [
   { value: "general", label: "General" },
   { value: "tech", label: "Tech" },
   { value: "gaming", label: "Gaming" },
@@ -49,6 +48,8 @@ export default function NewPollPage() {
   const [showDesc, setShowDesc] = useState(false);
   const [pollType, setPollType] = useState("standard");
   const [category, setCategory] = useState("general");
+  const [customCategory, setCustomCategory] = useState("");
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
   const [opts, setOpts] = useState<{ label: string; imageUrl: string }[]>([
     { label: "", imageUrl: "" },
@@ -67,11 +68,10 @@ export default function NewPollPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-
   function handleApplyBulkPaste() {
     const lines = bulkText
       .split("\n")
-      .map((l) => l.trim().replace(/^[-*•\d+.]+\s*/, "")) // remove bullets or numbers if pasted
+      .map((l) => l.trim().replace(/^[-*•\d+.]+\s*/, ""))
       .filter((l) => l.length > 0)
       .slice(0, 30);
 
@@ -83,7 +83,6 @@ export default function NewPollPage() {
     setShowBulkModal(false);
     setBulkText("");
   }
-
 
   function updateOptLabel(i: number, val: string) {
     setOpts((prev) => prev.map((o, idx) => (idx === i ? { ...o, label: val } : o)));
@@ -138,6 +137,11 @@ export default function NewPollPage() {
       }
     }
 
+    // Determine final category tag
+    const finalCategory = isPublic
+      ? (isAddingCustom && customCategory.trim() ? customCategory.trim().toLowerCase().slice(0, 30) : category)
+      : "general";
+
     setError("");
     setSubmitting(true);
 
@@ -149,7 +153,7 @@ export default function NewPollPage() {
           question: q,
           description: description.trim() || undefined,
           pollType,
-          category,
+          category: finalCategory,
           isPublic,
           options: cleanOpts,
           allowMultiple: pollType === "standard" ? allowMultiple : false,
@@ -198,9 +202,9 @@ export default function NewPollPage() {
     }
   }
 
-
   return (
     <div className="wrap">
+      {/* Top Header */}
       <header className="top">
         <Link href="/" className="brand">
           Ballot<span>.</span>
@@ -211,13 +215,14 @@ export default function NewPollPage() {
           <ThemeToggle />
         </div>
       </header>
-      <main>
-        <div className="section-label">New poll</div>
 
-        {/* Poll Format */}
-        <div className="block">
+      <main>
+        <div className="section-label">Create new poll</div>
+
+        {/* Poll Format (Single Horizontal 3-Column Row) */}
+        <div className="block" style={{ marginBottom: 32 }}>
           <label className="field-label">Poll Format</label>
-          <div className="visibility-grid">
+          <div className="format-grid-3">
             {POLL_TYPES.map((pt) => (
               <button
                 type="button"
@@ -232,345 +237,378 @@ export default function NewPollPage() {
           </div>
         </div>
 
-        {/* Category */}
-        <div className="block">
-          <label className="field-label">Category</label>
-          <div className="expiry-row">
-            {CATEGORY_CHOICES.map((c) => (
-              <button
-                type="button"
-                key={c.value}
-                className={`expiry-chip ${category === c.value ? "active" : ""}`}
-                onClick={() => setCategory(c.value)}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* 2-Column Split-Screen Desktop Creator Grid */}
+        <div className="creator-grid">
+          {/* Left Column: Question, Description & Options */}
+          <div>
+            {/* Question */}
+            <div className="block">
+              <label className="field-label" htmlFor="q">
+                Question <span style={{ color: "var(--accent)" }}>*</span>
+              </label>
+              <input
+                id="q"
+                type="text"
+                maxLength={140}
+                placeholder={
+                  pollType === "ranked_choice"
+                    ? "Rank your favorite choices in order…"
+                    : "What should we get for lunch?"
+                }
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                autoFocus
+              />
+            </div>
 
-        {/* Question */}
-        <div className="block">
-          <label className="field-label" htmlFor="q">
-            Question <span style={{ color: "var(--accent)" }}>*</span>
-          </label>
-          <input
-            id="q"
-            type="text"
-            maxLength={140}
-            placeholder={
-              pollType === "ranked_choice"
-                ? "Rank your favorite candidates / options…"
-                : "What should we get for lunch?"
-            }
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            autoFocus
-          />
-        </div>
-
-        <div className="block">
-          {!showDesc ? (
-            <button
-              type="button"
-              className="btn-link"
-              onClick={() => setShowDesc(true)}
-              style={{ fontSize: 13 }}
-            >
-              + Add description / context (optional)
-            </button>
-          ) : (
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label className="field-label" htmlFor="desc">Description (optional)</label>
+            <div className="block">
+              {!showDesc ? (
                 <button
                   type="button"
                   className="btn-link"
-                  onClick={() => { setShowDesc(false); setDescription(""); }}
-                  style={{ fontSize: 12, color: "var(--muted)" }}
+                  onClick={() => setShowDesc(true)}
+                  style={{ fontSize: 13 }}
                 >
-                  Remove
+                  + Add description / context (optional)
+                </button>
+              ) : (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <label className="field-label" htmlFor="desc">Description (optional)</label>
+                    <button
+                      type="button"
+                      className="btn-link"
+                      onClick={() => { setShowDesc(false); setDescription(""); }}
+                      style={{ fontSize: 12, color: "var(--muted)" }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <textarea
+                    id="desc"
+                    className="input-textarea"
+                    rows={3}
+                    maxLength={1000}
+                    placeholder="Add rules, links, or context for voters..."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Options List */}
+            <div className="block">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <label className="field-label" style={{ marginBottom: 0 }}>
+                  Options <span style={{ color: "var(--accent)" }}>*</span>
+                </label>
+                <button
+                  type="button"
+                  className="btn-link"
+                  onClick={() => setShowBulkModal(true)}
+                  style={{ fontSize: 12 }}
+                >
+                  📋 Paste multiple lines
                 </button>
               </div>
-              <textarea
-                id="desc"
-                className="input-textarea"
-                rows={3}
-                maxLength={1000}
-                placeholder="Add extra context, rules, or links for your voters..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          )}
-        </div>
 
-        {/* Options */}
-        <div className="block">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <label className="field-label" style={{ marginBottom: 0 }}>
-              Options <span style={{ color: "var(--accent)" }}>*</span>
-            </label>
-            <button
-              type="button"
-              className="btn-link"
-              onClick={() => setShowBulkModal(true)}
-              style={{ fontSize: 12 }}
-            >
-              📋 Paste multiple lines
-            </button>
-          </div>
+              <div role="list" aria-label="Poll options">
+                {opts.map((o, i) => (
+                  <div className="option-row-wrap" key={i} role="listitem" style={{ marginBottom: 12, borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
+                    <div className="option-row" style={{ borderBottom: "none" }}>
+                      <span className="option-num" aria-hidden="true">{i + 1}</span>
+                      <input
+                        type="text"
+                        maxLength={100}
+                        placeholder={`Option ${i + 1}`}
+                        value={o.label}
+                        aria-label={`Option ${i + 1}`}
+                        onChange={(e) => updateOptLabel(i, e.target.value)}
+                      />
+                      <div className="option-row-actions">
+                        <button
+                          type="button"
+                          className="reorder-btn"
+                          disabled={i === 0}
+                          aria-label={`Move option ${i + 1} up`}
+                          onClick={() => moveOpt(i, "up")}
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          className="reorder-btn"
+                          disabled={i === opts.length - 1}
+                          aria-label={`Move option ${i + 1} down`}
+                          onClick={() => moveOpt(i, "down")}
+                        >
+                          ▼
+                        </button>
+                        {opts.length > 2 && (
+                          <button
+                            type="button"
+                            className="remove-opt"
+                            aria-label={`Remove option ${i + 1}`}
+                            onClick={() => removeOpt(i)}
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </div>
+                    </div>
 
-          <div role="list" aria-label="Poll options">
-            {opts.map((o, i) => (
-              <div className="option-row-wrap" key={i} role="listitem" style={{ marginBottom: 12, borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
-                <div className="option-row" style={{ borderBottom: "none" }}>
-                  <span className="option-num" aria-hidden="true">{i + 1}</span>
-                  <input
-                    type="text"
-                    maxLength={100}
-                    placeholder={`Option ${i + 1}`}
-                    value={o.label}
-                    aria-label={`Option ${i + 1}`}
-                    onChange={(e) => updateOptLabel(i, e.target.value)}
-                  />
-                  <div className="option-row-actions">
-                    <button
-                      type="button"
-                      className="reorder-btn"
-                      disabled={i === 0}
-                      aria-label={`Move option ${i + 1} up`}
-                      onClick={() => moveOpt(i, "up")}
-                    >
-                      ▲
-                    </button>
-                    <button
-                      type="button"
-                      className="reorder-btn"
-                      disabled={i === opts.length - 1}
-                      aria-label={`Move option ${i + 1} down`}
-                      onClick={() => moveOpt(i, "down")}
-                    >
-                      ▼
-                    </button>
-                    {opts.length > 2 && (
-                      <button
-                        type="button"
-                        className="remove-opt"
-                        aria-label={`Remove option ${i + 1}`}
-                        onClick={() => removeOpt(i)}
-                      >
-                        &times;
-                      </button>
+                    {/* Optional Image URL for Image Polls */}
+                    {pollType === "image" && (
+                      <div style={{ paddingLeft: 30, marginTop: 4 }}>
+                        <input
+                          type="url"
+                          placeholder="Image URL (https://…)"
+                          value={o.imageUrl}
+                          onChange={(e) => updateOptImage(i, e.target.value)}
+                          style={{ fontSize: 12, color: "var(--muted)", width: "100%" }}
+                        />
+                      </div>
                     )}
                   </div>
-                </div>
+                ))}
+              </div>
 
-                {/* Optional Image URL for Image Polls */}
-                {pollType === "image" && (
-                  <div style={{ paddingLeft: 30, marginTop: 4 }}>
-                    <input
-                      type="url"
-                      placeholder="Image URL (https://…)"
-                      value={o.imageUrl}
-                      onChange={(e) => updateOptImage(i, e.target.value)}
-                      style={{ fontSize: 12, color: "var(--muted)", width: "100%" }}
-                    />
-                  </div>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8 }}>
+                {opts.length < 30 && (
+                  <button type="button" className="add-opt" onClick={addOpt}>
+                    + Add option ({opts.length}/30)
+                  </button>
                 )}
               </div>
-            ))}
-          </div>
-
-          <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8 }}>
-            {opts.length < 30 && (
-              <button type="button" className="add-opt" onClick={addOpt}>
-                + Add option ({opts.length}/30)
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Voting Mode: Single vs Multi (Only for Standard Polls) */}
-        {pollType === "standard" && (
-          <div className="block">
-            <label className="field-label">Voting Mode</label>
-            <div className="expiry-row">
-              <button
-                type="button"
-                className={`expiry-chip ${!allowMultiple ? "active" : ""}`}
-                onClick={() => setAllowMultiple(false)}
-              >
-                Single choice
-              </button>
-              <button
-                type="button"
-                className={`expiry-chip ${allowMultiple ? "active" : ""}`}
-                onClick={() => setAllowMultiple(true)}
-              >
-                Multiple choices
-              </button>
             </div>
-            {allowMultiple && (
-              <div className="multi-choice-config">
-                <div className="config-item">
-                  <label htmlFor="minChoices" className="sub-field-label">Min choices</label>
-                  <input
-                    id="minChoices"
-                    type="number"
-                    min={1}
-                    max={opts.length}
-                    value={minChoices}
-                    onChange={(e) => setMinChoices(parseInt(e.target.value) || 1)}
-                    style={{ width: 80 }}
-                  />
-                </div>
-                <div className="config-item">
-                  <label htmlFor="maxChoices" className="sub-field-label">Max choices (optional)</label>
-                  <input
-                    id="maxChoices"
-                    type="number"
-                    min={minChoices}
-                    max={opts.length}
-                    placeholder="No max"
-                    value={maxChoices}
-                    onChange={(e) => setMaxChoices(e.target.value === "" ? "" : parseInt(e.target.value) || "")}
-                    style={{ width: 100 }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
-        )}
 
-        {/* Collapsible Advanced Settings Accordion */}
-        <div style={{ marginTop: 24, marginBottom: 20 }}>
-          <button
-            type="button"
-            className="btn-ghost"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            style={{ width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px" }}
-          >
-            <span style={{ fontWeight: 600, fontSize: 13 }}>⚙️ Advanced Settings (Privacy, Fraud, Expiry)</span>
-            <span style={{ fontSize: 11, fontFamily: "monospace" }}>{showAdvanced ? "▲ Hide" : "▼ Expand"}</span>
-          </button>
+          {/* Right Column: Visibility, Category, Mode & Advanced Settings */}
+          <div>
+            {/* Top Requirement: Discovery & Directory (Public vs Unlisted) */}
+            <div className="block">
+              <label className="field-label">Discovery & Directory</label>
+              <div className="expiry-row">
+                <button
+                  type="button"
+                  className={`expiry-chip ${isPublic ? "active" : ""}`}
+                  onClick={() => setIsPublic(true)}
+                >
+                  Public (Listed in Explore)
+                </button>
+                <button
+                  type="button"
+                  className={`expiry-chip ${!isPublic ? "active" : ""}`}
+                  onClick={() => setIsPublic(false)}
+                >
+                  Unlisted (Link only)
+                </button>
+              </div>
+            </div>
 
-          {showAdvanced && (
-            <div style={{ marginTop: 16, borderLeft: "2px solid var(--line)", paddingLeft: 14 }}>
-              {/* Results Visibility */}
+            {/* Requirement: Category only visible when Public, plus Custom Category */}
+            {isPublic && (
               <div className="block">
-                <label className="field-label">Results Visibility</label>
-                <div className="visibility-grid">
-                  {VISIBILITY_CHOICES.map((vc) => (
+                <label className="field-label">Category</label>
+                <div className="expiry-row" style={{ marginBottom: 10 }}>
+                  {PRESET_CATEGORIES.map((c) => (
                     <button
                       type="button"
-                      key={vc.value}
-                      className={`visibility-card ${resultsVisibility === vc.value ? "active" : ""}`}
-                      onClick={() => setResultsVisibility(vc.value)}
-                    >
-                      <div className="vis-title">{vc.label}</div>
-                      <div className="vis-hint">{vc.hint}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Public Explore Discovery */}
-              <div className="block">
-                <label className="field-label">Discovery & Directory</label>
-                <div className="expiry-row">
-                  <button
-                    type="button"
-                    className={`expiry-chip ${isPublic ? "active" : ""}`}
-                    onClick={() => setIsPublic(true)}
-                  >
-                    Public (Listed in Explore)
-                  </button>
-                  <button
-                    type="button"
-                    className={`expiry-chip ${!isPublic ? "active" : ""}`}
-                    onClick={() => setIsPublic(false)}
-                  >
-                    Unlisted (Link only)
-                  </button>
-                </div>
-              </div>
-
-              {/* Duplicate & Fraud Protection */}
-              <div className="block">
-                <label className="field-label">Duplicate Vote Protection</label>
-                <div className="visibility-grid">
-                  {SECURITY_CHOICES.map((sc) => (
-                    <button
-                      type="button"
-                      key={sc.value}
-                      className={`visibility-card ${securityMode === sc.value ? "active" : ""}`}
-                      onClick={() => setSecurityMode(sc.value)}
-                    >
-                      <div className="vis-title">{sc.label}</div>
-                      <div className="vis-hint">{sc.hint}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Voter Identity */}
-              <div className="block">
-                <label className="field-label">Voter Identity</label>
-                <div className="expiry-row">
-                  <button
-                    type="button"
-                    className={`expiry-chip ${!requireName ? "active" : ""}`}
-                    onClick={() => setRequireName(false)}
-                  >
-                    Anonymous
-                  </button>
-                  <button
-                    type="button"
-                    className={`expiry-chip ${requireName ? "active" : ""}`}
-                    onClick={() => setRequireName(true)}
-                  >
-                    Ask for name
-                  </button>
-                </div>
-              </div>
-
-              {/* Poll Expiry */}
-              <div className="block">
-                <label className="field-label">Poll Deadline</label>
-                <div className="expiry-row">
-                  {EXPIRY_CHOICES.map((c) => (
-                    <button
-                      type="button"
-                      key={c.label}
-                      className={`expiry-chip ${expiryMs === c.ms ? "active" : ""}`}
-                      onClick={() => setExpiryMs(c.ms)}
+                      key={c.value}
+                      className={`expiry-chip ${!isAddingCustom && category === c.value ? "active" : ""}`}
+                      onClick={() => { setCategory(c.value); setIsAddingCustom(false); }}
                     >
                       {c.label}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    className={`expiry-chip ${isAddingCustom ? "active" : ""}`}
+                    onClick={() => setIsAddingCustom(true)}
+                  >
+                    + Custom
+                  </button>
                 </div>
+
+                {isAddingCustom && (
+                  <div>
+                    <input
+                      type="text"
+                      maxLength={30}
+                      placeholder="Enter custom category (e.g. Design, BookClub)"
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      autoFocus
+                      style={{ fontSize: 13 }}
+                    />
+                  </div>
+                )}
               </div>
+            )}
+
+            {/* Voting Mode: Single vs Multi (Only for Standard Polls) */}
+            {pollType === "standard" && (
+              <div className="block">
+                <label className="field-label">Voting Mode</label>
+                <div className="expiry-row">
+                  <button
+                    type="button"
+                    className={`expiry-chip ${!allowMultiple ? "active" : ""}`}
+                    onClick={() => setAllowMultiple(false)}
+                  >
+                    Single choice
+                  </button>
+                  <button
+                    type="button"
+                    className={`expiry-chip ${allowMultiple ? "active" : ""}`}
+                    onClick={() => setAllowMultiple(true)}
+                  >
+                    Multiple choices
+                  </button>
+                </div>
+                {allowMultiple && (
+                  <div className="multi-choice-config">
+                    <div className="config-item">
+                      <label htmlFor="minChoices" className="sub-field-label">Min choices</label>
+                      <input
+                        id="minChoices"
+                        type="number"
+                        min={1}
+                        max={opts.length}
+                        value={minChoices}
+                        onChange={(e) => setMinChoices(parseInt(e.target.value) || 1)}
+                        style={{ width: 80 }}
+                      />
+                    </div>
+                    <div className="config-item">
+                      <label htmlFor="maxChoices" className="sub-field-label">Max choices (optional)</label>
+                      <input
+                        id="maxChoices"
+                        type="number"
+                        min={minChoices}
+                        max={opts.length}
+                        placeholder="No max"
+                        value={maxChoices}
+                        onChange={(e) => setMaxChoices(e.target.value === "" ? "" : parseInt(e.target.value) || "")}
+                        style={{ width: 100 }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Collapsible Advanced Settings Accordion */}
+            <div style={{ marginTop: 12, marginBottom: 20 }}>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                style={{ width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px" }}
+              >
+                <span style={{ fontWeight: 600, fontSize: 13 }}>⚙️ Advanced Settings (Privacy & Fraud)</span>
+                <span style={{ fontSize: 11, fontFamily: "monospace" }}>{showAdvanced ? "▲ Hide" : "▼ Expand"}</span>
+              </button>
+
+              {showAdvanced && (
+                <div style={{ marginTop: 14, borderLeft: "2px solid var(--line)", paddingLeft: 12 }}>
+                  {/* Results Visibility */}
+                  <div className="block">
+                    <label className="field-label">Results Visibility</label>
+                    <div className="visibility-grid">
+                      {VISIBILITY_CHOICES.map((vc) => (
+                        <button
+                          type="button"
+                          key={vc.value}
+                          className={`visibility-card ${resultsVisibility === vc.value ? "active" : ""}`}
+                          onClick={() => setResultsVisibility(vc.value)}
+                        >
+                          <div className="vis-title">{vc.label}</div>
+                          <div className="vis-hint">{vc.hint}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Duplicate & Fraud Protection */}
+                  <div className="block">
+                    <label className="field-label">Duplicate Vote Protection</label>
+                    <div className="visibility-grid">
+                      {SECURITY_CHOICES.map((sc) => (
+                        <button
+                          type="button"
+                          key={sc.value}
+                          className={`visibility-card ${securityMode === sc.value ? "active" : ""}`}
+                          onClick={() => setSecurityMode(sc.value)}
+                        >
+                          <div className="vis-title">{sc.label}</div>
+                          <div className="vis-hint">{sc.hint}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Voter Identity */}
+                  <div className="block">
+                    <label className="field-label">Voter Identity</label>
+                    <div className="expiry-row">
+                      <button
+                        type="button"
+                        className={`expiry-chip ${!requireName ? "active" : ""}`}
+                        onClick={() => setRequireName(false)}
+                      >
+                        Anonymous
+                      </button>
+                      <button
+                        type="button"
+                        className={`expiry-chip ${requireName ? "active" : ""}`}
+                        onClick={() => setRequireName(true)}
+                      >
+                        Ask for name
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Poll Expiry */}
+                  <div className="block">
+                    <label className="field-label">Poll Deadline</label>
+                    <div className="expiry-row">
+                      {EXPIRY_CHOICES.map((c) => (
+                        <button
+                          type="button"
+                          key={c.label}
+                          className={`expiry-chip ${expiryMs === c.ms ? "active" : ""}`}
+                          onClick={() => setExpiryMs(c.ms)}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+
+            {error && <div className="err" role="alert" style={{ marginBottom: 12 }}>{error}</div>}
+
+            <div className="poll-actions" style={{ justifyContent: "flex-start", gap: 14, marginTop: 16 }}>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={submitting}
+                onClick={handleCreate}
+                style={{ padding: "12px 24px", fontSize: 15 }}
+              >
+                {submitting ? "Creating poll…" : "Create poll →"}
+              </button>
+              <Link href="/" className="btn-ghost">Cancel</Link>
+            </div>
+          </div>
         </div>
 
-        {error && <div className="err" role="alert">{error}</div>}
-
-        <div className="poll-actions" style={{ justifyContent: "flex-start", gap: 16, marginTop: 24 }}>
-          <button
-            type="button"
-            className="btn-primary"
-            disabled={submitting}
-            onClick={handleCreate}
-          >
-            {submitting ? "Creating poll…" : "Create poll →"}
-          </button>
-          <Link href="/" className="btn-ghost">Cancel</Link>
-        </div>
-
-        <div className="privacy-disclosure" style={{ marginTop: 32, fontSize: 11, color: "var(--faint)", lineHeight: 1.5, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
-          🔒 <strong>Privacy & Fraud Notice:</strong> Ballot uses private session cookies and one-way salted IP digests solely to deter duplicate votes. No personal browsing activity is tracked or sold.
+        <div className="privacy-disclosure" style={{ marginTop: 40, fontSize: 11, color: "var(--faint)", lineHeight: 1.5, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+          🔒 <strong>Privacy & Fraud Notice:</strong> Ballot uses private session cookies and one-way salted IP digests solely to deter duplicate votes. No personal browsing activity is tracked, profiled, or sold.
         </div>
       </main>
 
@@ -604,7 +642,3 @@ export default function NewPollPage() {
     </div>
   );
 }
-
-
-
-
