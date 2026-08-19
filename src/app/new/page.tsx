@@ -19,6 +19,12 @@ const VISIBILITY_CHOICES = [
   { value: "creator_only", label: "Creator only", hint: "Only you (with your secret key) can see results" },
 ];
 
+const SECURITY_CHOICES = [
+  { value: "standard", label: "Standard (Cookie + IP)", hint: "Balances anti-stuffing protection with shared network flexibility" },
+  { value: "relaxed", label: "Relaxed (Cookie only)", hint: "Ideal for campuses, offices & events sharing one Wi-Fi IP" },
+  { value: "strict", label: "Strict (Bot Defense)", hint: "Enforces verification challenge to block automated bots" },
+];
+
 export default function NewPollPage() {
   const router = useRouter();
   const [question, setQuestion] = useState("");
@@ -29,6 +35,7 @@ export default function NewPollPage() {
   const [minChoices, setMinChoices] = useState(1);
   const [maxChoices, setMaxChoices] = useState<number | "">("");
   const [resultsVisibility, setResultsVisibility] = useState("always_public");
+  const [securityMode, setSecurityMode] = useState("standard");
   const [expiryMs, setExpiryMs] = useState<number | null>(null);
   const [requireName, setRequireName] = useState(false);
   const [error, setError] = useState("");
@@ -96,6 +103,7 @@ export default function NewPollPage() {
           minChoices: allowMultiple ? Math.max(1, minChoices) : 1,
           maxChoices: allowMultiple && typeof maxChoices === "number" ? maxChoices : null,
           resultsVisibility,
+          securityMode,
           expiresInMs: expiryMs,
           requireName,
         }),
@@ -129,7 +137,7 @@ export default function NewPollPage() {
         console.error("Failed to save to localStorage", e);
       }
 
-      // Navigate to poll with admin key parameter
+      // Navigate to poll
       router.push(`/p/${data.slug}?created=1`);
     } catch {
       setError("Could not create poll — check your connection.");
@@ -323,6 +331,24 @@ export default function NewPollPage() {
           </div>
         </div>
 
+        {/* Duplicate & Fraud Protection */}
+        <div className="block">
+          <label className="field-label">Duplicate Vote Protection</label>
+          <div className="visibility-grid">
+            {SECURITY_CHOICES.map((sc) => (
+              <button
+                type="button"
+                key={sc.value}
+                className={`visibility-card ${securityMode === sc.value ? "active" : ""}`}
+                onClick={() => setSecurityMode(sc.value)}
+              >
+                <div className="vis-title">{sc.label}</div>
+                <div className="vis-hint">{sc.hint}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Voter Identity */}
         <div className="block">
           <label className="field-label">Voter Identity</label>
@@ -379,8 +405,13 @@ export default function NewPollPage() {
           </button>
           <Link href="/" className="btn-ghost">Cancel</Link>
         </div>
+
+        <div className="privacy-disclosure" style={{ marginTop: 32, fontSize: 11, color: "var(--faint)", lineHeight: 1.5, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
+          🔒 <strong>Privacy & Fraud Notice:</strong> Ballot uses private session cookies and one-way salted IP digests solely to deter duplicate votes. No personal browsing activity is tracked or sold.
+        </div>
       </main>
     </div>
   );
 }
+
 

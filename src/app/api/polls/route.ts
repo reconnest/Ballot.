@@ -3,11 +3,21 @@ import { db } from "@/db";
 import { polls, options } from "@/db/schema";
 import { nanoid, customAlphabet } from "nanoid";
 import { randomBytes, createHash } from "crypto";
+import { getClientIp, generateIpSalt, checkPollCreationRateLimit } from "@/lib/security";
 
 const slugId = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 8);
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req);
+    const rateCheck = checkPollCreationRateLimit(clientIp);
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: `Too many polls created. Please wait ${rateCheck.retryAfterSeconds}s before creating another.` },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const question = (body.question ?? "").toString().trim().slice(0, 140);
     const description = body.description ? body.description.toString().trim().slice(0, 1000) : null;
@@ -25,6 +35,9 @@ export async function POST(req: NextRequest) {
     const validVisibilities = ["always_public", "after_vote", "after_deadline", "creator_only"];
     const resultsVisibility = validVisibilities.includes(body.resultsVisibility) ? body.resultsVisibility : "always_public";
 
+    const validSecurity = ["relaxed", "standard", "strict"];
+    const securityMode = validSecurity.includes(body.securityMode) ? body.securityMode : "standard";
+
     if (!question) {
       return NextResponse.json({ error: "Question is required." }, { status: 400 });
     }
@@ -36,9 +49,10 @@ export async function POST(req: NextRequest) {
     const pollId = nanoid();
     const slug = slugId();
 
-    // Generate secure admin key and its hash
+    // Generate secure admin key and per-poll IP salt
     const adminKey = randomBytes(24).toString("hex");
     const adminKeyHash = createHash("sha256").update(adminKey).digest("hex");
+    const ipSalt = generateIpSalt();
 
     await db.insert(polls).values({
       id: pollId,
@@ -50,6 +64,8 @@ export async function POST(req: NextRequest) {
       maxChoices,
       resultsVisibility,
       requireName: requireName ? 1 : 0,
+      securityMode,
+      ipSalt,
       adminKeyHash,
       createdAt: now,
       expiresAt: expiresInMs ? now + expiresInMs : null,
@@ -70,4 +86,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not create poll." }, { status: 500 });
   }
 }
+
 

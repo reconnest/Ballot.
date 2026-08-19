@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { polls, options, votes } from "@/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { resolveVoterToken, attachVoterCookie } from "@/lib/voter-token";
+import { getClientIp, hashIp, verifyTurnstileToken, checkPollAnomalyVelocity } from "@/lib/security";
 
 export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
     const body = await req.json();
     const voterName = body.voterName ? body.voterName.toString().trim().slice(0, 60) : null;
     const idempotencyKey = body.idempotencyKey ? body.idempotencyKey.toString().slice(0, 64) : null;
+    const turnstileToken = body.turnstileToken ? body.turnstileToken.toString() : null;
 
     // Support single optionId or array optionIds
     let selectedOptionIds: string[] = [];
@@ -18,7 +20,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     } else if (body.optionId) {
       selectedOptionIds = [body.optionId.toString().trim()];
     }
-
 
     const [poll] = await db.select().from(polls).where(eq(polls.slug, params.slug)).limit(1);
     if (!poll) {
@@ -32,6 +33,28 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     }
     if (selectedOptionIds.length === 0) {
       return NextResponse.json({ error: "Please select at least one option." }, { status: 400 });
+    }
+
+    // Resolve client IP & salted hash
+    const clientIp = getClientIp(req);
+    const ipSalt = poll.ipSalt || "ballot_default_salt";
+    const ipHash = hashIp(clientIp, ipSalt);
+
+    // Turnstile bot verification check (if strict mode or abnormal burst detected)
+    const isBurstDetected = checkPollAnomalyVelocity(poll.id);
+    const requiresBotCheck = poll.securityMode === "strict" || isBurstDetected;
+
+    if (requiresBotCheck) {
+      const isBotValid = await verifyTurnstileToken(turnstileToken, clientIp);
+      if (!isBotValid) {
+        return NextResponse.json(
+          {
+            error: "Bot verification required. Please complete the security challenge.",
+            requiresTurnstile: true,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Validate single vs multi selection constraints
@@ -65,15 +88,33 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
     const { token: voterToken, isNew } = resolveVoterToken(req);
 
-    // Check if this voter token already cast a ballot for this poll
+    // Duplicate prevention based on securityMode:
+    // 'relaxed': checks voterToken only
+    // 'standard' / 'strict': checks voterToken OR ipHash
+    const checkDuplicateCondition =
+      poll.securityMode === "relaxed"
+        ? and(eq(votes.pollId, poll.id), eq(votes.voterToken, voterToken))
+        : and(
+            eq(votes.pollId, poll.id),
+            or(eq(votes.voterToken, voterToken), eq(votes.ipHash, ipHash))
+          );
+
     const [existingVote] = await db
-      .select({ id: votes.id })
+      .select({ id: votes.id, voterToken: votes.voterToken, ipHash: votes.ipHash })
       .from(votes)
-      .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, voterToken)))
+      .where(checkDuplicateCondition)
       .limit(1);
 
     if (existingVote) {
-      const res = NextResponse.json({ error: "You already voted on this poll." }, { status: 409 });
+      const isIpMatch = existingVote.ipHash === ipHash && existingVote.voterToken !== voterToken;
+      const res = NextResponse.json(
+        {
+          error: isIpMatch
+            ? "A vote was already recorded from this network / IP address."
+            : "You already voted on this poll.",
+        },
+        { status: 409 }
+      );
       if (isNew) attachVoterCookie(res, voterToken);
       return res;
     }
@@ -88,6 +129,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       optionId: optId,
       voterToken,
       voterName,
+      ipHash,
       ballotId,
       idempotencyKey,
       createdAt: now,
@@ -103,4 +145,5 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     return NextResponse.json({ error: "Could not record vote. Please try again." }, { status: 500 });
   }
 }
+
 

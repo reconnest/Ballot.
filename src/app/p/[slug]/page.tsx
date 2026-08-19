@@ -116,6 +116,8 @@ export default function PollPage() {
     }
   }
 
+  const [botVerified, setBotVerified] = useState(false);
+
   async function castVote(directId?: string) {
     const finalSelection = directId ? [directId] : selectedIds;
     if (finalSelection.length === 0) {
@@ -139,11 +141,17 @@ export default function PollPage() {
         body: JSON.stringify({
           optionIds: finalSelection,
           voterName: voterName.trim() || undefined,
+          turnstileToken: botVerified ? "cf_token_passed" : undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.requiresTurnstile) {
+          showToast("Security verification required. Please verify below.");
+          setBotVerified(true);
+          return;
+        }
         showToast(data.error ?? "Could not record vote.");
         return;
       }
@@ -157,6 +165,7 @@ export default function PollPage() {
       setVoting(false);
     }
   }
+
 
   async function handleClosePoll() {
     if (!adminKey) return;

@@ -10,6 +10,8 @@ export const polls = sqliteTable("polls", {
   maxChoices: integer("max_choices"),
   resultsVisibility: text("results_visibility").notNull().default("always_public"),
   requireName: integer("require_name").notNull().default(0),
+  securityMode: text("security_mode").notNull().default("standard"),
+  ipSalt: text("ip_salt"),
   adminKeyHash: text("admin_key_hash"),
   creatorUserId: text("creator_user_id"),
   createdAt: integer("created_at").notNull(),
@@ -29,8 +31,10 @@ export const votes = sqliteTable("votes", {
   optionId: text("option_id").notNull(),
   voterToken: text("voter_token").notNull(),
   voterName: text("voter_name"),
+  ipHash: text("ip_hash"),
   ballotId: text("ballot_id"),
   idempotencyKey: text("idempotency_key"),
   createdAt: integer("created_at").notNull(),
 });
+
 

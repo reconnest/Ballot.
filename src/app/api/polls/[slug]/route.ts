@@ -92,6 +92,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       minChoices: poll.minChoices ?? 1,
       maxChoices: poll.maxChoices,
       resultsVisibility: visibility,
+      securityMode: poll.securityMode || "standard",
       options: pollOptions.map((o) => ({
         id: o.id,
         label: o.label,
