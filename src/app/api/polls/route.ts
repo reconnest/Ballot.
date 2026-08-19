@@ -21,11 +21,29 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const question = (body.question ?? "").toString().trim().slice(0, 140);
     const description = body.description ? body.description.toString().trim().slice(0, 1000) : null;
-    const rawOptions: string[] = Array.isArray(body.options) ? body.options : [];
+    const pollType = ["standard", "ranked_choice", "image", "availability"].includes(body.pollType) ? body.pollType : "standard";
+    const category = (body.category ?? "general").toString().trim().slice(0, 30);
+    const isPublic = body.isPublic !== undefined ? (body.isPublic ? 1 : 0) : 1;
+
+    // Support both string[] and { label: string, imageUrl?: string }[]
+    const rawOptions: unknown[] = Array.isArray(body.options) ? body.options : [];
     const cleanOptions = rawOptions
-      .map((o) => (o ?? "").toString().trim().slice(0, 100))
-      .filter((o) => o.length > 0)
+      .map((o: any) => {
+        if (typeof o === "object" && o !== null) {
+          return {
+            label: (o.label ?? "").toString().trim().slice(0, 100),
+            imageUrl: o.imageUrl ? o.imageUrl.toString().trim().slice(0, 500) : null,
+          };
+        }
+        return {
+          label: (o ?? "").toString().trim().slice(0, 100),
+          imageUrl: null,
+        };
+      })
+      .filter((o) => o.label.length > 0)
       .slice(0, 30);
+
+
     const expiresInMs: number | null = typeof body.expiresInMs === "number" ? body.expiresInMs : null;
     const requireName: boolean = !!body.requireName;
     const allowMultiple: boolean = !!body.allowMultiple;
@@ -59,6 +77,9 @@ export async function POST(req: NextRequest) {
       slug,
       question,
       description,
+      pollType,
+      category,
+      isPublic,
       allowMultiple: allowMultiple ? 1 : 0,
       minChoices,
       maxChoices,
@@ -72,13 +93,15 @@ export async function POST(req: NextRequest) {
     });
 
     await db.insert(options).values(
-      cleanOptions.map((label, i) => ({
+      cleanOptions.map((opt, i) => ({
         id: nanoid(),
         pollId,
-        label,
+        label: opt.label,
+        imageUrl: opt.imageUrl,
         position: i,
       }))
     );
+
 
     return NextResponse.json({ slug, adminKey });
   } catch (e) {

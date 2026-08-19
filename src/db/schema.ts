@@ -5,6 +5,9 @@ export const polls = sqliteTable("polls", {
   slug: text("slug").notNull().unique(),
   question: text("question").notNull(),
   description: text("description"),
+  pollType: text("poll_type").notNull().default("standard"), // 'standard' | 'ranked_choice' | 'image' | 'availability'
+  isPublic: integer("is_public").notNull().default(1),
+  category: text("category").default("general"),
   allowMultiple: integer("allow_multiple").notNull().default(0),
   minChoices: integer("min_choices").notNull().default(1),
   maxChoices: integer("max_choices"),
@@ -22,6 +25,8 @@ export const options = sqliteTable("options", {
   id: text("id").primaryKey(),
   pollId: text("poll_id").notNull(),
   label: text("label").notNull(),
+  imageUrl: text("image_url"),
+  slotDetails: text("slot_details"),
   position: integer("position").notNull(),
 });
 
@@ -33,8 +38,11 @@ export const votes = sqliteTable("votes", {
   voterName: text("voter_name"),
   ipHash: text("ip_hash"),
   ballotId: text("ballot_id"),
+  rankPosition: integer("rank_position"), // 1, 2, 3... for ranked choice
+  availabilityResponse: text("availability_response"), // 'yes' | 'maybe' | 'no'
   idempotencyKey: text("idempotency_key"),
   createdAt: integer("created_at").notNull(),
 });
+
 
 

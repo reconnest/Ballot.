@@ -227,9 +227,17 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
 .expiry-chip { font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); cursor: pointer; }
 .expiry-chip.active { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }
 .name-input-wrap { margin-bottom: 20px; }
-.voter-section { margin-top: 32px; }
-.voter-row { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; gap: 12px; }
-.voter-name { color: var(--ink); font-weight: 500; }
-.voter-choice { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); text-align: right; }
+.badge-category {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+  background: var(--line); color: var(--muted); padding: 2px 6px; border-radius: 4px; font-weight: 600;
+}
+.badge-type {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+  background: var(--accent-soft); color: var(--accent-ink); padding: 2px 6px; border-radius: 4px; font-weight: 600;
+}
+.image-option-card { transition: all 0.15s ease; }
+.image-option-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+.image-option-card.selected { border-color: var(--accent) !important; background: var(--accent-soft) !important; }
+
 
 

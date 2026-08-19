@@ -59,8 +59,12 @@ export default function HomePage() {
           Ballot<span>.</span>
           <div className="brand-sub">quick polls</div>
         </Link>
-        <Link href="/new" className="btn-primary">New poll</Link>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
+          <Link href="/new" className="btn-primary">New poll</Link>
+        </div>
       </header>
+
       <main>
         <div className="section-label">Your polls</div>
         {polls === null && <div className="loading" role="status">Loading…</div>}

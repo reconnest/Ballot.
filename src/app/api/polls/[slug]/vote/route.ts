@@ -123,8 +123,8 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     const ballotId = nanoid();
     const now = Date.now();
 
-    // Insert all choices under one atomic ballot transaction
-    const voteRows = selectedOptionIds.map((optId) => ({
+    // Insert all choices under one atomic ballot transaction with rank position
+    const voteRows = selectedOptionIds.map((optId, index) => ({
       id: nanoid(),
       pollId: poll.id,
       optionId: optId,
@@ -132,11 +132,13 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       voterName,
       ipHash,
       ballotId,
+      rankPosition: poll.pollType === "ranked_choice" ? index + 1 : null,
       idempotencyKey,
       createdAt: now,
     }));
 
     await db.insert(votes).values(voteRows);
+
 
     // Trigger debounced realtime broadcast to all active spectators
     try {

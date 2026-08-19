@@ -6,12 +6,15 @@ import { useParams, useSearchParams } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
 import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/chart-utils";
 
-type OptionData = { id: string; label: string; votes: number | null };
+type OptionData = { id: string; label: string; imageUrl?: string | null; votes: number | null };
 type VoterEntry = { name: string; choices: string[] };
 
 type PollData = {
   question: string;
   description: string | null;
+  pollType: string;
+  category: string;
+  isPublic: boolean;
   createdAt: number;
   expiresAt: number | null;
   isExpired: boolean;
@@ -30,6 +33,7 @@ type PollData = {
   isAdmin: boolean;
   voters: VoterEntry[];
 };
+
 
 function PollContent() {
   const params = useParams();
@@ -152,13 +156,40 @@ function PollContent() {
     }
   }
 
+  const [rankedOrder, setRankedOrder] = useState<string[]>([]);
+
+  // Initialize ranked choices order
+  useEffect(() => {
+    if (poll && poll.pollType === "ranked_choice" && rankedOrder.length === 0) {
+      setRankedOrder(poll.options.map((o) => o.id));
+    }
+  }, [poll, rankedOrder.length]);
+
+  function moveRank(index: number, direction: "up" | "down") {
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (target < 0 || target >= rankedOrder.length) return;
+    setRankedOrder((prev) => {
+      const copy = [...prev];
+      const temp = copy[index];
+      copy[index] = copy[target];
+      copy[target] = temp;
+      return copy;
+    });
+  }
+
   async function castVote(directId?: string) {
-    const finalSelection = directId ? [directId] : selectedIds;
+    let finalSelection: string[] = [];
+    if (poll?.pollType === "ranked_choice") {
+      finalSelection = rankedOrder;
+    } else {
+      finalSelection = directId ? [directId] : selectedIds;
+    }
+
     if (finalSelection.length === 0) {
       showToast("Please choose an option first.");
       return;
     }
-    if (poll?.allowMultiple && finalSelection.length < poll.minChoices) {
+    if (poll?.pollType === "standard" && poll.allowMultiple && finalSelection.length < poll.minChoices) {
       showToast(`Please choose at least ${poll.minChoices} option${poll.minChoices === 1 ? "" : "s"}.`);
       return;
     }
@@ -199,6 +230,7 @@ function PollContent() {
       setVoting(false);
     }
   }
+
 
   async function handleClosePoll() {
     if (!adminKey) return;
@@ -305,9 +337,11 @@ function PollContent() {
               ⚙ Creator Admin
             </button>
           )}
+          <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
           <Link href="/new" className="btn-primary">New poll</Link>
         </div>
       </header>
+
 
       <main>
         <div className="poll-header">
@@ -349,8 +383,101 @@ function PollContent() {
               </div>
             )}
 
-            {/* Single Click Choice for Single Choice polls */}
-            {!isMulti ? (
+            {/* Mode 1: Ranked Choice IRV Voting */}
+            {poll.pollType === "ranked_choice" ? (
+              <div role="group" aria-label="Ranked choice voting preferences">
+                <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
+                  Rank your preferences from top (1st choice) to bottom. Use ▲ and ▼ to reorder:
+                </div>
+                {rankedOrder.map((id, index) => {
+                  const opt = poll.options.find((o) => o.id === id);
+                  if (!opt) return null;
+                  return (
+                    <div key={id} className="choice-multi checked" style={{ justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        <span className="badge-rank" style={{ background: "var(--accent)", color: "#fff", padding: "2px 8px", borderRadius: 12, fontSize: 12, fontWeight: 700 }}>
+                          #{index + 1}
+                        </span>
+                        <span className="choice-label">{opt.label}</span>
+                      </div>
+                      <div className="option-row-actions">
+                        <button
+                          type="button"
+                          className="reorder-btn"
+                          disabled={index === 0}
+                          aria-label={`Move ${opt.label} up`}
+                          onClick={() => moveRank(index, "up")}
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          className="reorder-btn"
+                          disabled={index === rankedOrder.length - 1}
+                          aria-label={`Move ${opt.label} down`}
+                          onClick={() => moveRank(index, "down")}
+                        >
+                          ▼
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="multi-submit-bar" style={{ marginTop: 20 }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled={voting}
+                    onClick={() => castVote()}
+                  >
+                    {voting ? "Submitting…" : "Submit Ranked Ballot →"}
+                  </button>
+                </div>
+              </div>
+            ) : poll.pollType === "image" ? (
+              /* Mode 2: Image Poll Card Grid */
+              <div className="image-poll-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 20 }}>
+                {poll.options.map((o) => {
+                  const isSelected = selectedIds.includes(o.id);
+                  return (
+                    <div
+                      key={o.id}
+                      className={`image-option-card ${isSelected ? "selected" : ""}`}
+                      onClick={() => (poll.allowMultiple ? toggleOption(o.id) : castVote(o.id))}
+                      style={{
+                        border: `2px solid ${isSelected ? "var(--accent)" : "var(--line)"}`,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        background: "var(--surface)",
+                        cursor: "pointer",
+                        textAlign: "center",
+                      }}
+                    >
+                      {o.imageUrl ? (
+                        <img
+                          src={o.imageUrl}
+                          alt={o.label}
+                          style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }}
+                          onError={(e) => {
+                            // Fallback if broken image URL
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div style={{ height: 90, background: "var(--paper)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
+                          🖼️
+                        </div>
+                      )}
+                      <div style={{ padding: "10px 8px", fontSize: 14, fontWeight: 600 }}>{o.label}</div>
+                      <div style={{ paddingBottom: 8, fontSize: 12, color: "var(--accent)" }}>
+                        {isSelected ? "Selected ✓" : "Vote →"}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : !isMulti ? (
+              /* Mode 3: Standard Single Click Choice */
               <div role="radiogroup" aria-label="Single choice voting options">
                 {poll.options.map((o) => (
                   <button
@@ -370,7 +497,7 @@ function PollContent() {
                 ))}
               </div>
             ) : (
-              /* Multi-choice Checkboxes */
+              /* Mode 4: Standard Multi-choice Checkboxes */
               <div role="group" aria-label="Multiple choice voting options">
                 {poll.options.map((o) => {
                   const isChecked = selectedIds.includes(o.id);
@@ -409,6 +536,7 @@ function PollContent() {
                 </div>
               </div>
             )}
+
           </div>
         )}
 

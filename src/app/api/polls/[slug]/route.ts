@@ -88,6 +88,9 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       expiresAt: poll.expiresAt,
       isExpired,
       requireName: !!poll.requireName,
+      pollType: poll.pollType || "standard",
+      category: poll.category || "general",
+      isPublic: poll.isPublic === 1,
       allowMultiple: !!poll.allowMultiple,
       minChoices: poll.minChoices ?? 1,
       maxChoices: poll.maxChoices,
@@ -96,8 +99,10 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       options: pollOptions.map((o) => ({
         id: o.id,
         label: o.label,
+        imageUrl: o.imageUrl,
         votes: canViewResults ? (counts[o.id] ?? 0) : null,
       })),
+
       totalVotes: canViewResults ? uniqueVoters : null,
       totalSelections: canViewResults ? pollVotes.length : null,
       myVote,
