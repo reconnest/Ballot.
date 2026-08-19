@@ -537,31 +537,61 @@ export default function HomePage() {
                 </div>
               </button>
 
-              {/* Dynamic Step Spot Illustration */}
-              <div className="stepper-illustration-box" aria-hidden="true">
+              {/* Dynamic Step Spot Illustration (Transparent Floating) */}
+              <div className="stepper-illustration-box" aria-hidden="true" key={workflowStep}>
                 {workflowStep === "create" && (
-                  <img
-                    src="/illustrations/step_1_create.png"
-                    alt="Create poll on laptop"
-                    width={512}
-                    height={512}
-                  />
+                  <>
+                    <img
+                      src="/illustrations/step_1_light.png"
+                      alt="Create poll on laptop"
+                      className="illustration-light"
+                      width={512}
+                      height={512}
+                    />
+                    <img
+                      src="/illustrations/step_1_dark.png"
+                      alt="Create poll on laptop"
+                      className="illustration-dark"
+                      width={512}
+                      height={512}
+                    />
+                  </>
                 )}
                 {workflowStep === "share" && (
-                  <img
-                    src="/illustrations/step_2_share.png"
-                    alt="Share poll link and QR code"
-                    width={512}
-                    height={512}
-                  />
+                  <>
+                    <img
+                      src="/illustrations/step_2_light.png"
+                      alt="Share poll link and QR code"
+                      className="illustration-light"
+                      width={512}
+                      height={512}
+                    />
+                    <img
+                      src="/illustrations/step_2_dark.png"
+                      alt="Share poll link and QR code"
+                      className="illustration-dark"
+                      width={512}
+                      height={512}
+                    />
+                  </>
                 )}
                 {workflowStep === "decide" && (
-                  <img
-                    src="/illustrations/step_3_decide.png"
-                    alt="Live poll results and charts"
-                    width={512}
-                    height={512}
-                  />
+                  <>
+                    <img
+                      src="/illustrations/step_3_light.png"
+                      alt="Live poll results and charts"
+                      className="illustration-light"
+                      width={512}
+                      height={512}
+                    />
+                    <img
+                      src="/illustrations/step_3_dark.png"
+                      alt="Live poll results and charts"
+                      className="illustration-dark"
+                      width={512}
+                      height={512}
+                    />
+                  </>
                 )}
               </div>
             </div>

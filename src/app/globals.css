@@ -659,34 +659,48 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
   text-decoration: underline;
 }
 
-/* Stepper Sidebar Spot Illustration */
+/* Stepper Sidebar Spot Illustration (Transparent Floating) */
 .stepper-illustration-box {
-  margin-top: 8px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px;
+  margin-top: 16px;
+  background: transparent;
+  border: none;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  transition: all 0.25s ease;
+  overflow: visible;
+  box-shadow: none;
+  animation: stepperFadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .stepper-illustration-box img {
   width: 100%;
   height: auto;
-  max-width: 260px;
-  border-radius: 8px;
+  max-width: 250px;
   object-fit: contain;
   display: block;
 }
+
+/* Light / Dark Mode Illustration Adaptive Visibility */
+.illustration-light {
+  display: block;
+}
+.illustration-dark {
+  display: none;
+}
+[data-theme="dark"] .illustration-light {
+  display: none !important;
+}
+[data-theme="dark"] .illustration-dark {
+  display: block !important;
+}
+
 @media (max-width: 899px) {
   .stepper-illustration-box {
     display: none;
   }
 }
+
 
 
 
