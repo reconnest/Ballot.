@@ -25,6 +25,8 @@ export default function HomePage() {
 
   // Ephemeral Sandbox State (100% client-side, zero network API calls)
   const [sandboxFormat, setSandboxFormat] = useState<"standard" | "ranked" | "image">("standard");
+  const [workflowStep, setWorkflowStep] = useState<"create" | "share" | "decide">("create");
+
   
   // Standard format state
   const [standardVote, setStandardVote] = useState<number | null>(null);
@@ -468,218 +470,289 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* 3. HOW IT WORKS */}
-        <section aria-labelledby="how-it-works-heading">
+        {/* 3. INTERACTIVE 3-STAGE WORKFLOW STEPPER */}
+        <section aria-labelledby="workflow-heading" style={{ margin: "48px 0" }}>
           <div className="section-label">HOW IT WORKS</div>
-          <h2 id="how-it-works-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+          <h2 id="workflow-heading" style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
             Three simple steps to a clear consensus
           </h2>
           <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
             No complicated setup. From idea to decision in seconds:
           </p>
 
-          <div className="steps-grid">
-            <div className="step-card">
-              <span className="step-num">01 — CREATE</span>
-              <div className="step-title">Create in Seconds</div>
-              <div className="step-desc">
-                Set up your question with single choice, multi-selection, ranked voting (IRV), or visual image choices.
-              </div>
+          <div className="stepper-layout">
+            {/* Left Column: Progressive Sized Step Tabs */}
+            <div className="stepper-tabs" role="tablist" aria-label="Workflow step tabs">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={workflowStep === "create"}
+                className={`stepper-tab-btn step-1 ${workflowStep === "create" ? "active" : ""}`}
+                onClick={() => setWorkflowStep("create")}
+              >
+                <div className="stepper-circle">01</div>
+                <div>
+                  <div style={{ fontSize: 11, fontFamily: "monospace", color: workflowStep === "create" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase" }}>
+                    CREATE
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>Create in Seconds</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={workflowStep === "share"}
+                className={`stepper-tab-btn step-2 ${workflowStep === "share" ? "active" : ""}`}
+                onClick={() => setWorkflowStep("share")}
+              >
+                <div className="stepper-circle">02</div>
+                <div>
+                  <div style={{ fontSize: 11, fontFamily: "monospace", color: workflowStep === "share" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase" }}>
+                    SHARE
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>Share Everywhere</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={workflowStep === "decide"}
+                className={`stepper-tab-btn step-3 ${workflowStep === "decide" ? "active" : ""}`}
+                onClick={() => setWorkflowStep("decide")}
+              >
+                <div className="stepper-circle">03</div>
+                <div>
+                  <div style={{ fontSize: 11, fontFamily: "monospace", color: workflowStep === "decide" ? "var(--accent-ink)" : "var(--muted)", fontWeight: 700, textTransform: "uppercase" }}>
+                    DECIDE
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>Decide with Confidence</div>
+                </div>
+              </button>
             </div>
 
-            <div className="step-card">
-              <span className="step-num">02 — SHARE</span>
-              <div className="step-title">Share Everywhere</div>
-              <div className="step-desc">
-                Send one clean link, generate a downloadable QR code, or embed the live poll directly into your website.
-              </div>
-            </div>
+            {/* Right Column: Detailed Benefit Rows */}
+            <div className="stepper-panel" role="tabpanel">
+              {/* STEP 1: CREATE */}
+              {workflowStep === "create" && (
+                <div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                    <span className="stepper-row-badge">01 — CREATE</span>
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Create in Seconds</h3>
+                  <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
+                    Set up your question with single choice, multi-selection, ranked voting (IRV), or visual image choices:
+                  </p>
 
-            <div className="step-card">
-              <span className="step-num">03 — DECIDE</span>
-              <div className="step-title">Watch Live Results</div>
-              <div className="step-desc">
-                Votes update in real time with interactive SVG charts (Donut, Pie, Ledger) and instant CSV/JSON exports.
-              </div>
+                  <div className="stepper-rows">
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">⚡</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">Standard Poll</span>
+                            <span className="stepper-row-title">Single & Multi-Choice</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Simple voting when you need a quick answer. Support for pick-one or bounded multi-selection rules.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Quick decisions & check-ins</span>
+                    </div>
+
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">🏆</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">Ranked Choice (IRV)</span>
+                            <span className="stepper-row-title">Instant Runoff Voting</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Let voters rank their preferences and find the strongest overall choice without vote splitting or spoilers.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Elections & group consensus</span>
+                    </div>
+
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">🖼️</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">Image Poll</span>
+                            <span className="stepper-row-title">Visual Choices</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Let people vote visually with image-based choices. Add high-res thumbnails for designs, products, and contests.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Design critiques & picks</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="stepper-next-btn"
+                    onClick={() => setWorkflowStep("share")}
+                  >
+                    Next: Share Everywhere →
+                  </button>
+                </div>
+              )}
+
+              {/* STEP 2: SHARE */}
+              {workflowStep === "share" && (
+                <div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                    <span className="stepper-row-badge">02 — SHARE</span>
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Reach Your Audience Everywhere</h3>
+                  <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
+                    Distribute your poll in seconds through direct links, downloadable QR codes, or embedded widgets:
+                  </p>
+
+                  <div className="stepper-rows">
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">🔗</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">Direct Link</span>
+                            <span className="stepper-row-title">One Clean URL</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Copy a shareable link and send it over email, Slack, Discord, or any messaging app instantly.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Team channels & messages</span>
+                    </div>
+
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">📱</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">QR Code</span>
+                            <span className="stepper-row-title">Downloadable QR</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Generate a high-res QR code as PNG or SVG. Print it anywhere, project on live screens or presentation slides.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Events & physical spaces</span>
+                    </div>
+
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">💻</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">Embed</span>
+                            <span className="stepper-row-title">Live Website Embed</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Drop a single lightweight iframe snippet into any webpage or blog and your poll renders inline, live and interactive.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Blogs, landing pages & apps</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="stepper-next-btn"
+                    onClick={() => setWorkflowStep("decide")}
+                  >
+                    Next: Decide with Confidence →
+                  </button>
+                </div>
+              )}
+
+              {/* STEP 3: DECIDE (VOTER DECISION & CREATOR/GROUP CONSENSUS) */}
+              {workflowStep === "decide" && (
+                <div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                    <span className="stepper-row-badge">03 — DECIDE</span>
+                  </div>
+                  <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Decide with Confidence</h3>
+                  <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
+                    How voters cast their true choices and how creators reach undeniable consensus:
+                  </p>
+
+                  <div className="stepper-rows">
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">🗳️</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">Voter Decision</span>
+                            <span className="stepper-row-title">Cast with Absolute Clarity</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Voters easily express their authentic preferences through single votes, ranked IRV ballots, or visual cards—with zero signup friction.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Frictionless voter experience</span>
+                    </div>
+
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">👑</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">Group Consensus</span>
+                            <span className="stepper-row-title">Automated Majority Winner</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Live real-time SSE streams and automated IRV elimination algorithms reveal the genuine majority consensus without endless debate.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Fast, trustworthy outcome</span>
+                    </div>
+
+                    <div className="stepper-row-card">
+                      <div className="stepper-row-left">
+                        <span className="stepper-row-icon">📊</span>
+                        <div>
+                          <div>
+                            <span className="stepper-row-badge">Actionable Data</span>
+                            <span className="stepper-row-title">Live Analytics & Raw Export</span>
+                          </div>
+                          <div className="stepper-row-desc">
+                            Inspect real-time SVG charts (Donut, Pie, Ledger) and download raw CSV/JSON records to document and share your final decision.
+                          </div>
+                        </div>
+                      </div>
+                      <span className="stepper-row-tag">→ Complete data transparency</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="stepper-next-btn"
+                    onClick={() => setWorkflowStep("create")}
+                  >
+                    Start with Step 1: Create in Seconds ↺
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </section>
 
-        {/* 4. POLL TYPES */}
-        <section aria-labelledby="poll-types-heading">
-          <div className="section-label">POLL FORMATS</div>
-          <h2 id="poll-types-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
-            Choose the format that fits your decision
-          </h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
-            Every poll format is built-in and free with zero paywalls:
-          </p>
-
-          <div className="poll-types-grid">
-            <div className="poll-type-card">
-              <div>
-                <span className="poll-type-badge">Standard Poll</span>
-                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Single & Multi-Choice</div>
-                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 16 }}>
-                  Simple voting when you need a quick answer. Support for pick-one or bounded multi-selection rules.
-                </div>
-              </div>
-              <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
-                ⚡ Quick decisions & team check-ins
-              </div>
-            </div>
-
-            <div className="poll-type-card">
-              <div>
-                <span className="poll-type-badge">Ranked Choice (IRV)</span>
-                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Instant Runoff Voting</div>
-                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 16 }}>
-                  Let voters rank their preferences and find the strongest overall choice without vote splitting or spoilers.
-                </div>
-              </div>
-              <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
-                🏆 Elections & complex group consensus
-              </div>
-            </div>
-
-            <div className="poll-type-card">
-              <div>
-                <span className="poll-type-badge">Image Poll</span>
-                <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Visual Choices</div>
-                <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 16 }}>
-                  Let people vote visually with image-based choices. Add high-res thumbnails for designs, products, and contests.
-                </div>
-              </div>
-              <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600 }}>
-                🖼️ Design critiques & thumbnail picks
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Connected Decision Engine Pipeline Flowchart */}
-        <section aria-labelledby="pipeline-heading">
-          <div className="section-label">CONNECTED PIPELINE</div>
-          <h2 id="pipeline-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
-            How Ballot Powers Your Decision
-          </h2>
-          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
-            A unified end-to-end workflow from question format selection to live consensus:
-          </p>
-
-          <div className="pipeline-container">
-            <div className="pipeline-flow">
-              {/* Stage 1: 01 - CREATE */}
-              <div className="pipeline-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="step-num">01 — CREATE</span>
-                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--muted)" }}>Step 1</span>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>Choose Poll Format</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div className="pipeline-sub-item">
-                    <span>⚡</span>
-                    <div>
-                      <strong style={{ display: "block" }}>Standard Poll</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Single & Multi-choice</span>
-                    </div>
-                  </div>
-                  <div className="pipeline-sub-item">
-                    <span>🏆</span>
-                    <div>
-                      <strong style={{ display: "block" }}>Ranked Choice</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Instant Runoff (IRV)</span>
-                    </div>
-                  </div>
-                  <div className="pipeline-sub-item">
-                    <span>🖼️</span>
-                    <div>
-                      <strong style={{ display: "block" }}>Image Poll</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Visual card choices</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Connector 1 -> 2 */}
-              <div className="pipeline-connector" aria-hidden="true">
-                →
-              </div>
-
-              {/* Stage 2: 02 - SHARE */}
-              <div className="pipeline-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="step-num">02 — SHARE</span>
-                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--muted)" }}>Step 2</span>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>Distribute Everywhere</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div className="pipeline-sub-item">
-                    <span>🔗</span>
-                    <div>
-                      <strong style={{ display: "block" }}>Instant Clean Link</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>1-click copy for chats & email</span>
-                    </div>
-                  </div>
-                  <div className="pipeline-sub-item">
-                    <span>📱</span>
-                    <div>
-                      <strong style={{ display: "block" }}>Dynamic QR Code</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>For slides & live screens</span>
-                    </div>
-                  </div>
-                  <div className="pipeline-sub-item">
-                    <span>💻</span>
-                    <div>
-                      <strong style={{ display: "block" }}>Iframe Embed</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Embed directly in websites</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Connector 2 -> 3 */}
-              <div className="pipeline-connector" aria-hidden="true">
-                →
-              </div>
-
-              {/* Stage 3: 03 - DECIDE */}
-              <div className="pipeline-card">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span className="step-num">03 — DECIDE</span>
-                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--muted)" }}>Step 3</span>
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>Consensus & Analytics</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div className="pipeline-sub-item">
-                    <span>⚡</span>
-                    <div>
-                      <strong style={{ display: "block" }}>Adaptive Realtime SSE</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Live stream with spectator count</span>
-                    </div>
-                  </div>
-                  <div className="pipeline-sub-item">
-                    <span>📊</span>
-                    <div>
-                      <strong style={{ display: "block" }}>SVG Visual Charts</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Donut, Pie & Ledger exports</span>
-                    </div>
-                  </div>
-                  <div className="pipeline-sub-item">
-                    <span>🥇</span>
-                    <div>
-                      <strong style={{ display: "block" }}>Consensus Winner</strong>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Instant final decision</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 5. DIFFERENTIATORS ("Built for trustworthy decisions") */}
+        {/* 4. DIFFERENTIATORS ("Built for trustworthy decisions") */}
         <section aria-labelledby="pillars-heading">
+
 
           <div className="section-label">WHY BALLOT</div>
           <h2 id="pillars-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
