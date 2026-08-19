@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
+import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/chart-utils";
 
 type OptionData = { id: string; label: string; votes: number | null };
 type VoterEntry = { name: string; choices: string[] };
@@ -234,9 +235,34 @@ export default function PollPage() {
   const isMulti = poll.allowMultiple;
   const pageUrl = typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : "";
 
+  const [chartType, setChartType] = useState<"ledger" | "donut" | "pie">("ledger");
+  const [showEmbedModal, setShowEmbedModal] = useState(false);
+
+  const embedCode = typeof window !== "undefined"
+    ? `<iframe src="${window.location.origin}/embed/${slug}" width="100%" height="450" frameborder="0" style="border-radius: 8px; border: 1px solid #E4E1D9;"></iframe>`
+    : "";
+
+  const chartData = poll?.options.map((o) => ({
+    id: o.id,
+    label: o.label,
+    votes: o.votes ?? 0,
+  })) || [];
+
+  const totalChartVotes = poll?.totalVotes && poll.totalVotes > 0
+    ? poll.totalVotes
+    : chartData.reduce((acc, curr) => acc + curr.votes, 0);
+
+  const slices = calculateSlices(
+    chartData,
+    totalChartVotes,
+    chartType === "donut" ? 95 : 95,
+    chartType === "donut" ? 55 : 0
+  );
+
   return (
     <div className="wrap">
       <header className="top">
+
         <Link href="/" className="brand">
           Ballot<span>.</span>
           <div className="brand-sub">quick polls</div>
@@ -363,30 +389,120 @@ export default function PollPage() {
           </div>
         )}
 
-        {/* Live Results Ledger */}
+        {/* Visual Analytics / Results Section */}
         {showResults && (
-          <div className="ledger-section" aria-label="Poll results breakdown">
-            {poll.options.map((o) => {
-              const count = o.votes ?? 0;
-              const total = poll.totalVotes && poll.totalVotes > 0 ? poll.totalVotes : (poll.totalSelections || 0);
-              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-              const isMine = poll.myVotes.includes(o.id);
+          <div className="results-container">
+            {/* View Selector & Export Toolbar */}
+            <div className="chart-toolbar">
+              <div className="chart-type-toggle">
+                <button
+                  type="button"
+                  className={`chart-btn ${chartType === "ledger" ? "active" : ""}`}
+                  onClick={() => setChartType("ledger")}
+                >
+                  Bars
+                </button>
+                <button
+                  type="button"
+                  className={`chart-btn ${chartType === "donut" ? "active" : ""}`}
+                  onClick={() => setChartType("donut")}
+                >
+                  Donut
+                </button>
+                <button
+                  type="button"
+                  className={`chart-btn ${chartType === "pie" ? "active" : ""}`}
+                  onClick={() => setChartType("pie")}
+                >
+                  Pie
+                </button>
+              </div>
 
-              return (
-                <div className="ledger-row" key={o.id}>
-                  <div className="ledger-top">
-                    <div className={`ledger-label ${isMine ? "mine" : ""}`}>
-                      {o.label}
-                      {isMine && <span className="mine-badge"> · your pick</span>}
+              <div className="export-actions">
+                <button
+                  type="button"
+                  className="btn-ghost-small"
+                  onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes ?? 0 })), totalChartVotes)}
+                >
+                  CSV
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost-small"
+                  onClick={() => exportToJSON(poll)}
+                >
+                  JSON
+                </button>
+              </div>
+            </div>
+
+            {/* View 1: Horizontal Ledger */}
+            {chartType === "ledger" && (
+              <div className="ledger-section" aria-label="Poll results breakdown">
+                {poll.options.map((o, idx) => {
+                  const count = o.votes ?? 0;
+                  const total = totalChartVotes > 0 ? totalChartVotes : 1;
+                  const pct = Math.round((count / total) * 100);
+                  const isMine = poll.myVotes.includes(o.id);
+                  const color = CHART_COLORS[idx % CHART_COLORS.length];
+
+                  return (
+                    <div className="ledger-row" key={o.id}>
+                      <div className="ledger-top">
+                        <div className={`ledger-label ${isMine ? "mine" : ""}`}>
+                          <span className="color-dot" style={{ background: color }} />
+                          {o.label}
+                          {isMine && <span className="mine-badge"> · your pick</span>}
+                        </div>
+                        <div className="ledger-nums">{pct}% · {count}</div>
+                      </div>
+                      <div className="ledger-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${o.label}: ${pct}%`}>
+                        <div className="ledger-fill" style={{ width: `${pct}%`, background: color }} />
+                      </div>
                     </div>
-                    <div className="ledger-nums">{pct}% · {count}</div>
-                  </div>
-                  <div className="ledger-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${o.label}: ${pct}%`}>
-                    <div className="ledger-fill" style={{ width: `${pct}%` }} />
-                  </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* View 2 & 3: Donut & Pie Chart */}
+            {(chartType === "donut" || chartType === "pie") && (
+              <div className="svg-chart-wrap">
+                <div className="svg-chart-container">
+                  <svg viewBox="0 0 240 240" width="220" height="220" className="chart-svg">
+                    {slices.map((slice) =>
+                      slice.path ? (
+                        <path
+                          key={slice.id}
+                          d={slice.path}
+                          fill={slice.color}
+                          stroke="#FAFAF7"
+                          strokeWidth="2"
+                          className="slice-path"
+                        >
+                          <title>{`${slice.label}: ${slice.pct}% (${slice.votes} votes)`}</title>
+                        </path>
+                      ) : null
+                    )}
+                    {chartType === "donut" && (
+                      <text x="120" y="125" textAnchor="middle" className="donut-center-text">
+                        {totalChartVotes} {totalChartVotes === 1 ? "vote" : "votes"}
+                      </text>
+                    )}
+                  </svg>
                 </div>
-              );
-            })}
+
+                <div className="chart-legend">
+                  {slices.map((slice) => (
+                    <div className="legend-item" key={slice.id}>
+                      <span className="legend-color" style={{ background: slice.color }} />
+                      <span className="legend-name">{slice.label}</span>
+                      <span className="legend-val">{slice.pct}% ({slice.votes})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -408,12 +524,50 @@ export default function PollPage() {
           <button type="button" className="copy-link" onClick={copyLink}>
             Copy share link
           </button>
+          <button type="button" className="btn-ghost" onClick={() => setShowEmbedModal(true)}>
+            ⟨/⟩ Embed
+          </button>
           <button type="button" className="btn-ghost" onClick={() => setShowQR(true)}>
             📱 QR Code
           </button>
           <Link href="/" className="btn-ghost">← All polls</Link>
         </div>
       </main>
+
+      {/* Embed Modal */}
+      {showEmbedModal && (
+        <div className="modal-backdrop" onClick={() => setShowEmbedModal(false)}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Embed Poll Widget">
+            <div className="modal-head">
+              <h3>Embed on your Website</h3>
+              <button className="close-btn" onClick={() => setShowEmbedModal(false)} aria-label="Close modal">&times;</button>
+            </div>
+            <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
+              Copy and paste this HTML code into your blog post, news article, or forum:
+            </div>
+            <textarea
+              readOnly
+              className="input-textarea"
+              rows={3}
+              value={embedCode}
+              style={{ fontFamily: "monospace", fontSize: 12 }}
+            />
+            <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  navigator.clipboard?.writeText(embedCode);
+                  showToast("Embed code copied!");
+                  setShowEmbedModal(false);
+                }}
+              >
+                Copy Embed Code
+              </button>
+              <button className="btn-ghost" onClick={() => setShowEmbedModal(false)}>Done</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* QR Code Modal */}
       {showQR && (
@@ -476,4 +630,5 @@ export default function PollPage() {
     </div>
   );
 }
+
 
