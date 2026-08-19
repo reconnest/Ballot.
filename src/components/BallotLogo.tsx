@@ -88,8 +88,9 @@ export function BallotLogo({ size = 28, showText = true, className = "" }: Ballo
             lineHeight: 1,
           }}
         >
-          Ballot
+          Ballot<span style={{ color: "var(--accent)" }}>.</span>
         </span>
+
       )}
     </div>
   );
