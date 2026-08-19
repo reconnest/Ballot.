@@ -276,10 +276,113 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
 }
 .theme-toggle-btn:hover { border-color: var(--accent); }
 
-/* Confetti canvas overlay */
-.confetti-canvas {
-  position: fixed; inset: 0; pointer-events: none; z-index: 1001; width: 100vw; height: 100vh;
+/* Landing Page Hero & Sandbox */
+.hero-section {
+  text-align: center; padding: 24px 0 40px; border-bottom: 1px solid var(--line); margin-bottom: 40px;
 }
+.hero-badge-row {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;
+}
+.hero-pill {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 10px;
+  background: var(--accent-soft); color: var(--accent-ink); border-radius: 100px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.hero-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 34px; line-height: 1.15;
+  font-weight: 700; color: var(--ink); margin-bottom: 16px; letter-spacing: -0.02em;
+}
+.hero-desc {
+  font-size: 16px; color: var(--muted); line-height: 1.5; max-width: 520px;
+  margin: 0 auto 24px;
+}
+.hero-cta-group {
+  display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 32px;
+}
+
+/* Ephemeral Sandbox Demo Card */
+.sandbox-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 24px; text-align: left; max-width: 480px; margin: 0 auto;
+  box-shadow: var(--shadow-md); position: relative;
+}
+.sandbox-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+}
+.sandbox-tag {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
+  background: var(--line); color: var(--muted); padding: 2px 8px; border-radius: 100px; font-weight: 600;
+}
+.sandbox-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 14px;
+}
+.sandbox-option-btn {
+  width: 100%; padding: 10px 14px; margin-bottom: 8px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+  transition: all 0.15s ease; font-size: 13px; font-weight: 500;
+}
+.sandbox-option-btn:hover {
+  border-color: var(--accent); background: var(--accent-soft);
+}
+.sandbox-option-btn.selected {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 600;
+}
+
+/* Pillars Comparison Grid */
+.pillars-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 24px 0 40px;
+}
+.pillar-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 20px; box-shadow: var(--shadow-sm);
+}
+.pillar-icon {
+  font-size: 24px; margin-bottom: 10px;
+}
+.pillar-title {
+  font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 6px;
+}
+.pillar-desc {
+  font-size: 13px; color: var(--muted); line-height: 1.45;
+}
+
+/* Feature Showcase Tabs */
+.showcase-section {
+  margin: 40px 0; padding: 24px 0; border-top: 1px solid var(--line);
+}
+.showcase-tabs {
+  display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0;
+}
+.showcase-tab {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 8px 14px;
+  border-radius: var(--radius); border: 1px solid var(--line); background: var(--surface);
+  color: var(--muted); cursor: pointer; transition: all 0.15s ease;
+}
+.showcase-tab.active {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); font-weight: 600;
+}
+.showcase-preview-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 20px; margin-top: 12px;
+}
+
+/* Footer */
+.landing-footer {
+  margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 12px;
+}
+.footer-top {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+}
+.footer-links {
+  display: flex; gap: 14px;
+}
+.footer-link {
+  color: var(--muted); text-decoration: none;
+}
+.footer-link:hover { color: var(--ink); }
+
 
 
 

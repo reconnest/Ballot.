@@ -2,9 +2,22 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Ballot — quick polls",
-  description: "Create a poll, share the link, watch results live.",
+  title: "Ballot — Modern, Ad-Free Polling Engine",
+  description: "Create real-time polls with ranked-choice voting, 3-tier anti-fraud protection, and interactive SVG analytics in seconds. No account required.",
+  openGraph: {
+    title: "Ballot — Modern, Ad-Free Polling Engine",
+    description: "Create real-time polls with ranked-choice voting, 3-tier anti-fraud protection, and interactive SVG analytics in seconds.",
+    url: "https://ballot-phi.vercel.app",
+    siteName: "Ballot",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ballot — Modern, Ad-Free Polling Engine",
+    description: "Create real-time polls with ranked-choice voting, 3-tier anti-fraud protection, and interactive SVG analytics in seconds.",
+  },
 };
+
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
