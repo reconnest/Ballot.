@@ -159,12 +159,15 @@ export default function HomePage() {
         <Link href="/" style={{ textDecoration: "none" }}>
           <BallotLogo size={32} />
         </Link>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <a href="#how-it-works" className="btn-ghost" style={{ fontSize: 13 }}>How It Works</a>
+          <a href="#why-ballot" className="btn-ghost" style={{ fontSize: 13 }}>Why Ballot</a>
           <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
           <ThemeToggle />
           <Link href="/new" className="btn-primary">+ Create poll</Link>
         </div>
       </header>
+
 
       <main>
         {/* 1. HERO SECTION */}
@@ -471,8 +474,9 @@ export default function HomePage() {
         )}
 
         {/* 3. INTERACTIVE 3-STAGE WORKFLOW STEPPER */}
-        <section aria-labelledby="workflow-heading" style={{ margin: "48px 0" }}>
+        <section id="how-it-works" aria-labelledby="workflow-heading" style={{ margin: "48px 0" }}>
           <div className="section-label">HOW IT WORKS</div>
+
           <h2 id="workflow-heading" style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
             Three simple steps to a clear consensus
           </h2>
@@ -819,7 +823,7 @@ export default function HomePage() {
         </section>
 
         {/* 4. DIFFERENTIATORS ("Built for trustworthy decisions") */}
-        <section aria-labelledby="pillars-heading" style={{ margin: "48px 0" }}>
+        <section id="why-ballot" aria-labelledby="pillars-heading" style={{ margin: "48px 0" }}>
           <div className="section-label">WHY BALLOT</div>
           <h2 id="pillars-heading" style={{ fontSize: 26, fontWeight: 700, marginBottom: 8 }}>
             Built for trustworthy decisions
@@ -869,7 +873,7 @@ export default function HomePage() {
               </div>
 
               {/* 50% Center Hero Feature */}
-              <div className="pillar-card" style={{ borderLeft: "2px solid var(--accent)" }}>
+              <div className="pillar-card">
                 <div>
                   <div className="pillar-icon">📊</div>
                   <div className="pillar-title">Interactive SVG Charts & Data Exports</div>
@@ -894,6 +898,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
 
 
         {/* 6. NO ACCOUNT / NO FRICTION */}
