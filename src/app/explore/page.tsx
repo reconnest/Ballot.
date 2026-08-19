@@ -158,31 +158,30 @@ function ExploreContent() {
             </button>
           </div>
         ) : (
-          <div role="list" aria-label="Public polls list">
+          <div className="explore-cards-grid" role="list" aria-label="Public polls list">
             {polls.map((p) => (
-              <Link href={`/p/${p.slug}`} key={p.id} className="poll-row" role="listitem">
-                <div className="poll-row-top">
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
-                      <span className="badge-category">{p.category || "general"}</span>
-                      {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
-                      {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
+              <Link href={`/p/${p.slug}`} key={p.id} className="poll-row" role="listitem" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+                    <span className="badge-category">{p.category || "general"}</span>
+                    {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+                    {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
+                  </div>
+                  <div className="poll-q" style={{ fontSize: 15 }}>{p.question}</div>
+                  {p.description && (
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>
+                      {p.description}
                     </div>
-                    <div className="poll-q">{p.question}</div>
-                    {p.description && (
-                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 460 }}>
-                        {p.description}
-                      </div>
-                    )}
-                  </div>
-                  <div className="poll-meta" style={{ textAlign: "right", marginLeft: 16 }}>
-                    <div style={{ fontWeight: 600, color: "var(--ink)" }}>{p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}</div>
-                    <div>{p.isExpired ? "closed" : "active"}</div>
-                  </div>
+                  )}
+                </div>
+                <div className="poll-meta" style={{ marginTop: 14, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontWeight: 600, color: "var(--ink)" }}>{p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}</span>
+                  <span>{p.isExpired ? "closed" : "active · vote →"}</span>
                 </div>
               </Link>
             ))}
           </div>
+
         )}
       </main>
     </div>

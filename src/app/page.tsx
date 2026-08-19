@@ -101,7 +101,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="wrap" style={{ maxWidth: 720 }}>
+    <div className="wrap">
       {/* Top Navigation */}
       <header className="top">
         <Link href="/" className="brand">
@@ -116,92 +116,100 @@ export default function HomePage() {
       </header>
 
       <main>
-        {/* Hero Section */}
+        {/* Responsive Desktop 2-Column Hero Section */}
         <section className="hero-section" aria-labelledby="hero-heading">
-          <div className="hero-badge-row">
-            <span className="hero-pill">⚡ 100% Ad-Free</span>
-            <span className="hero-pill">🏆 Ranked Choice IRV</span>
-            <span className="hero-pill">🛡️ 3-Tier Anti-Fraud</span>
-            <span className="hero-pill">📊 Live Charts</span>
-          </div>
+          <div className="hero-grid">
+            {/* Left Column: Value Proposition & CTAs */}
+            <div>
+              <div className="hero-badge-row">
+                <span className="hero-pill">⚡ 100% Ad-Free</span>
+                <span className="hero-pill">🏆 Ranked Choice IRV</span>
+                <span className="hero-pill">🛡️ 3-Tier Anti-Fraud</span>
+                <span className="hero-pill">📊 Live Charts</span>
+              </div>
 
-          <h1 id="hero-heading" className="hero-title">
-            Modern, Ad-Free Polling<br />for Fast Decisions
-          </h1>
-          <p className="hero-desc">
-            Create real-time polls with ranked-choice voting, 3-tier duplicate protection, and interactive SVG analytics in seconds. No account required.
-          </p>
+              <h1 id="hero-heading" className="hero-title">
+                Modern, Ad-Free Polling for Fast Decisions
+              </h1>
+              <p className="hero-desc">
+                Create real-time polls with ranked-choice voting, 3-tier duplicate protection, and interactive SVG analytics in seconds. No account required.
+              </p>
 
-          <div className="hero-cta-group">
-            <Link href="/new" className="btn-primary" style={{ padding: "12px 24px", fontSize: 15 }}>
-              + Create a Poll (Free) →
-            </Link>
-            <Link href="/explore" className="btn-ghost" style={{ padding: "12px 18px", fontSize: 14 }}>
-              🌐 Explore Public Feed
-            </Link>
-          </div>
-
-          {/* Ephemeral Interactive Sandbox Widget */}
-          <div className="sandbox-card" role="region" aria-label="Interactive demo poll">
-            <div className="sandbox-header">
-              <span className="sandbox-tag">Interactive Sandbox</span>
-              <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
-                {sandboxVote !== null ? `${sandboxTotal} test votes` : "Try voting below:"}
-              </span>
+              <div className="hero-cta-group">
+                <Link href="/new" className="btn-primary" style={{ padding: "12px 24px", fontSize: 15 }}>
+                  + Create a Poll (Free) →
+                </Link>
+                <Link href="/explore" className="btn-ghost" style={{ padding: "12px 18px", fontSize: 14 }}>
+                  🌐 Explore Public Feed
+                </Link>
+              </div>
             </div>
 
-            <div className="sandbox-title">Which feature matters most to your team?</div>
-
-            {sandboxVote === null ? (
-              <div role="radiogroup" aria-label="Demo poll options">
-                {sandboxOptions.map((opt, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    role="radio"
-                    aria-checked={false}
-                    className="sandbox-option-btn"
-                    onClick={() => handleSandboxVote(i)}
-                  >
-                    <span>{opt.label}</span>
-                    <span style={{ color: "var(--accent)", fontSize: 12 }}>Vote →</span>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div aria-live="polite" aria-label="Simulated demo results">
-                {sandboxOptions.map((opt, i) => {
-                  const count = sandboxTallies[i];
-                  const pct = Math.round((count / sandboxTotal) * 100);
-                  const isMine = sandboxVote === i;
-
-                  return (
-                    <div key={i} style={{ marginBottom: 10 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                        <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
-                          {opt.label} {isMine && "(your pick ✓)"}
-                        </span>
-                        <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% · {count}</span>
-                      </div>
-                      <div className="ledger-track" style={{ height: 6 }}>
-                        <div
-                          className="ledger-fill"
-                          style={{
-                            width: `${pct}%`,
-                            background: isMine ? "var(--accent)" : "var(--faint)",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-                <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 12 }}>
-                  ✨ Instant client-side preview — create your real poll above in 5 seconds!
+            {/* Right Column: Ephemeral Interactive Sandbox Demo */}
+            <div>
+              <div className="sandbox-card" role="region" aria-label="Interactive demo poll">
+                <div className="sandbox-header">
+                  <span className="sandbox-tag">Interactive Sandbox</span>
+                  <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
+                    {sandboxVote !== null ? `${sandboxTotal} test votes` : "Try voting below:"}
+                  </span>
                 </div>
+
+                <div className="sandbox-title">Which feature matters most to your team?</div>
+
+                {sandboxVote === null ? (
+                  <div role="radiogroup" aria-label="Demo poll options">
+                    {sandboxOptions.map((opt, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        role="radio"
+                        aria-checked={false}
+                        className="sandbox-option-btn"
+                        onClick={() => handleSandboxVote(i)}
+                      >
+                        <span>{opt.label}</span>
+                        <span style={{ color: "var(--accent)", fontSize: 12 }}>Vote →</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div aria-live="polite" aria-label="Simulated demo results">
+                    {sandboxOptions.map((opt, i) => {
+                      const count = sandboxTallies[i];
+                      const pct = Math.round((count / sandboxTotal) * 100);
+                      const isMine = sandboxVote === i;
+
+                      return (
+                        <div key={i} style={{ marginBottom: 10 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                            <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
+                              {opt.label} {isMine && "(your pick ✓)"}
+                            </span>
+                            <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% · {count}</span>
+                          </div>
+                          <div className="ledger-track" style={{ height: 6 }}>
+                            <div
+                              className="ledger-fill"
+                              style={{
+                                width: `${pct}%`,
+                                background: isMine ? "var(--accent)" : "var(--faint)",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 12 }}>
+                      ✨ Instant client-side preview — create your real poll above in 5 seconds!
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </section>
+
 
         {/* User's Created Polls Drawer (if any exist) */}
         {polls && polls.length > 0 && (
@@ -291,129 +299,131 @@ export default function HomePage() {
             Explore how Ballot handles complex voting scenarios with zero friction:
           </p>
 
-          <div className="showcase-tabs" role="tablist" aria-label="Feature showcase tabs">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "irv"}
-              className={`showcase-tab ${activeTab === "irv" ? "active" : ""}`}
-              onClick={() => setActiveTab("irv")}
-            >
-              🏆 Ranked Choice
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "image"}
-              className={`showcase-tab ${activeTab === "image" ? "active" : ""}`}
-              onClick={() => setActiveTab("image")}
-            >
-              🖼️ Image Polls
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "realtime"}
-              className={`showcase-tab ${activeTab === "realtime" ? "active" : ""}`}
-              onClick={() => setActiveTab("realtime")}
-            >
-              ⚡ Adaptive Realtime
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "security"}
-              className={`showcase-tab ${activeTab === "security" ? "active" : ""}`}
-              onClick={() => setActiveTab("security")}
-            >
-              🔒 Privacy & Salted IP
-            </button>
-          </div>
+          <div className="showcase-desktop-layout">
+            <div className="showcase-tabs" role="tablist" aria-label="Feature showcase tabs">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "irv"}
+                className={`showcase-tab ${activeTab === "irv" ? "active" : ""}`}
+                onClick={() => setActiveTab("irv")}
+              >
+                🏆 Ranked Choice
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "image"}
+                className={`showcase-tab ${activeTab === "image" ? "active" : ""}`}
+                onClick={() => setActiveTab("image")}
+              >
+                🖼️ Image Polls
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "realtime"}
+                className={`showcase-tab ${activeTab === "realtime" ? "active" : ""}`}
+                onClick={() => setActiveTab("realtime")}
+              >
+                ⚡ Adaptive Realtime
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "security"}
+                className={`showcase-tab ${activeTab === "security" ? "active" : ""}`}
+                onClick={() => setActiveTab("security")}
+              >
+                🔒 Privacy & Salted IP
+              </button>
+            </div>
 
-          <div className="showcase-preview-card" role="tabpanel">
-            {activeTab === "irv" && (
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Instant Runoff Voting (IRV)</h3>
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
-                  Voters rank choices in order of preference (1st, 2nd, 3rd Choice). If no choice hits 50%, lowest-ranked options are eliminated and ballots reallocated until a consensus winner emerges.
-                </p>
-                <div style={{ background: "var(--paper)", padding: 12, borderRadius: 6, fontSize: 12, fontFamily: "monospace" }}>
-                  ✓ Drag & drop priority ordering · ✓ Eliminates spoiler effect · ✓ Built into all free polls
+            <div className="showcase-preview-card" role="tabpanel">
+              {activeTab === "irv" && (
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Instant Runoff Voting (IRV)</h3>
+                  <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
+                    Voters rank choices in order of preference (1st, 2nd, 3rd Choice). If no choice hits 50%, lowest-ranked options are eliminated and ballots reallocated until a consensus winner emerges.
+                  </p>
+                  <div style={{ background: "var(--paper)", padding: 14, borderRadius: 6, fontSize: 13, fontFamily: "monospace" }}>
+                    ✓ Drag & drop priority ordering · ✓ Eliminates spoiler effect · ✓ Built into all free polls
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === "image" && (
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Visual Image Choices</h3>
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
-                  Perfect for design critiques, thumbnail selection, product feedback, and photo contests. Add high-res image URLs to any choice.
-                </p>
-                <div style={{ background: "var(--paper)", padding: 12, borderRadius: 6, fontSize: 12, fontFamily: "monospace" }}>
-                  ✓ Responsive card grid · ✓ Mobile optimized · ✓ Automatic fallback icons
+              {activeTab === "image" && (
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Visual Image Choices</h3>
+                  <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
+                    Perfect for design critiques, thumbnail selection, product feedback, and photo contests. Add high-res image URLs to any choice.
+                  </p>
+                  <div style={{ background: "var(--paper)", padding: 14, borderRadius: 6, fontSize: 13, fontFamily: "monospace" }}>
+                    ✓ Responsive card grid · ✓ Mobile optimized · ✓ Automatic fallback icons
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === "realtime" && (
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Server-Sent Events (SSE) Engine</h3>
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
-                  Zero-polling live updates stream tallies to spectators instantly. When vote velocity spikes during viral events, a smart 1.5s circuit-breaker aggregates changes to protect client CPUs.
-                </p>
-                <div style={{ background: "var(--paper)", padding: 12, borderRadius: 6, fontSize: 12, fontFamily: "monospace" }}>
-                  ✓ 🟢 Live spectator counter · ✓ 15s keepalive heartbeats · ✓ 90%+ bandwidth savings
+              {activeTab === "realtime" && (
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Server-Sent Events (SSE) Engine</h3>
+                  <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
+                    Zero-polling live updates stream tallies to spectators instantly. When vote velocity spikes during viral events, a smart 1.5s circuit-breaker aggregates changes to protect client CPUs.
+                  </p>
+                  <div style={{ background: "var(--paper)", padding: 14, borderRadius: 6, fontSize: 13, fontFamily: "monospace" }}>
+                    ✓ 🟢 Live spectator counter · ✓ 15s keepalive heartbeats · ✓ 90%+ bandwidth savings
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === "security" && (
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Pseudo-Anonymized Salted IP Digests</h3>
-                <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
-                  Ballot never stores raw IP addresses in plain text. Every poll generates a unique 16-byte cryptographic salt to hash voter IP digests solely for duplicate ballot deterrence.
-                </p>
-                <div style={{ background: "var(--paper)", padding: 12, borderRadius: 6, fontSize: 12, fontFamily: "monospace" }}>
-                  ✓ Per-poll salt isolation · ✓ Relaxed mode for school/office Wi-Fi · ✓ Turnstile bot defense
+              {activeTab === "security" && (
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Pseudo-Anonymized Salted IP Digests</h3>
+                  <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.6, marginBottom: 16 }}>
+                    Ballot never stores raw IP addresses in plain text. Every poll generates a unique 16-byte cryptographic salt to hash voter IP digests solely for duplicate ballot deterrence.
+                  </p>
+                  <div style={{ background: "var(--paper)", padding: 14, borderRadius: 6, fontSize: 13, fontFamily: "monospace" }}>
+                    ✓ Per-poll salt isolation · ✓ Relaxed mode for school/office Wi-Fi · ✓ Turnstile bot defense
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </section>
 
         {/* Trending Community Polls Snippet */}
         {trendingPolls.length > 0 && (
-          <section style={{ margin: "40px 0" }}>
+          <section style={{ margin: "48px 0" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div>
                 <div className="section-label">Community</div>
-                <h2 style={{ fontSize: 20, fontWeight: 700 }}>Trending Public Polls</h2>
+                <h2 style={{ fontSize: 22, fontWeight: 700 }}>Trending Public Polls</h2>
               </div>
-              <Link href="/explore" className="btn-ghost" style={{ fontSize: 12 }}>
+              <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>
                 View all in Explore →
               </Link>
             </div>
 
-            <div role="list" aria-label="Trending public polls">
+            <div className="explore-cards-grid" role="list" aria-label="Trending public polls">
               {trendingPolls.map((tp) => (
-                <Link href={`/p/${tp.slug}`} key={tp.id} className="poll-row" role="listitem">
-                  <div className="poll-row-top">
-                    <div>
-                      <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
-                        <span className="badge-category">{tp.category || "general"}</span>
-                        {tp.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
-                      </div>
-                      <div className="poll-q">{tp.question}</div>
+                <Link href={`/p/${tp.slug}`} key={tp.id} className="poll-row" role="listitem" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                      <span className="badge-category">{tp.category || "general"}</span>
+                      {tp.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
                     </div>
-                    <div className="poll-meta" style={{ textAlign: "right", marginLeft: 16 }}>
-                      <div style={{ fontWeight: 600, color: "var(--ink)" }}>{tp.voteCount} votes</div>
-                    </div>
+                    <div className="poll-q" style={{ fontSize: 15 }}>{tp.question}</div>
+                  </div>
+                  <div className="poll-meta" style={{ marginTop: 12, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{tp.voteCount} votes</span>
+                    <span>Vote now →</span>
                   </div>
                 </Link>
               ))}
             </div>
           </section>
         )}
+
 
         {/* Footer */}
         <footer className="landing-footer">
