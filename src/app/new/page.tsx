@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BallotLogo } from "@/components/BallotLogo";
+
 
 const EXPIRY_CHOICES = [
   { label: "No limit", ms: null },
@@ -206,15 +208,15 @@ export default function NewPollPage() {
     <div className="wrap">
       {/* Top Header */}
       <header className="top">
-        <Link href="/" className="brand">
-          Ballot<span>.</span>
-          <div className="brand-sub">quick polls</div>
+        <Link href="/" style={{ textDecoration: "none" }}>
+          <BallotLogo size={32} />
         </Link>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
           <ThemeToggle />
         </div>
       </header>
+
 
       <main>
         <div className="section-label">Create new poll</div>
@@ -402,9 +404,10 @@ export default function NewPollPage() {
                   className={`expiry-chip ${!isPublic ? "active" : ""}`}
                   onClick={() => setIsPublic(false)}
                 >
-                  Unlisted (Link only)
+                  Private (Link only)
                 </button>
               </div>
+
             </div>
 
             {/* Requirement: Category only visible when Public, plus Custom Category */}

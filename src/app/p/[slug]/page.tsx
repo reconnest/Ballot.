@@ -6,7 +6,9 @@ import { useParams, useSearchParams } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
 import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/chart-utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BallotLogo } from "@/components/BallotLogo";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
+
 
 
 type OptionData = { id: string; label: string; imageUrl?: string | null; votes: number | null };
@@ -336,11 +338,11 @@ function PollContent() {
   return (
     <div className="wrap">
       <header className="top">
-        <Link href="/" className="brand">
-          Ballot<span>.</span>
-          <div className="brand-sub">quick polls</div>
+        <Link href="/" style={{ textDecoration: "none" }}>
+          <BallotLogo size={32} />
         </Link>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+
           {poll.isAdmin && (
             <button
               type="button"

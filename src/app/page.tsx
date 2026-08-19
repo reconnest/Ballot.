@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BallotLogo } from "@/components/BallotLogo";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
+
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
@@ -104,9 +106,8 @@ export default function HomePage() {
     <div className="wrap">
       {/* Top Navigation */}
       <header className="top">
-        <Link href="/" className="brand">
-          Ballot<span>.</span>
-          <div className="brand-sub">quick polls</div>
+        <Link href="/" style={{ textDecoration: "none" }}>
+          <BallotLogo size={32} />
         </Link>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
@@ -114,6 +115,7 @@ export default function HomePage() {
           <Link href="/new" className="btn-primary">+ Create poll</Link>
         </div>
       </header>
+
 
       <main>
         {/* Responsive Desktop 2-Column Hero Section */}

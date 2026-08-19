@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BallotLogo } from "@/components/BallotLogo";
+
 
 type PollSummary = {
 
@@ -70,15 +72,15 @@ function ExploreContent() {
   return (
     <div className="wrap">
       <header className="top">
-        <Link href="/" className="brand">
-          Ballot<span>.</span>
-          <div className="brand-sub">quick polls</div>
+        <Link href="/" style={{ textDecoration: "none" }}>
+          <BallotLogo size={32} />
         </Link>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <ThemeToggle />
           <Link href="/new" className="btn-primary">+ Create poll</Link>
         </div>
       </header>
+
 
 
       <main>
