@@ -557,8 +557,130 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Connected Decision Engine Pipeline Flowchart */}
+        <section aria-labelledby="pipeline-heading">
+          <div className="section-label">CONNECTED PIPELINE</div>
+          <h2 id="pipeline-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
+            How Ballot Powers Your Decision
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16 }}>
+            A unified end-to-end workflow from question format selection to live consensus:
+          </p>
+
+          <div className="pipeline-container">
+            <div className="pipeline-flow">
+              {/* Stage 1: 01 - CREATE */}
+              <div className="pipeline-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="step-num">01 — CREATE</span>
+                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--muted)" }}>Step 1</span>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>Choose Poll Format</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div className="pipeline-sub-item">
+                    <span>⚡</span>
+                    <div>
+                      <strong style={{ display: "block" }}>Standard Poll</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Single & Multi-choice</span>
+                    </div>
+                  </div>
+                  <div className="pipeline-sub-item">
+                    <span>🏆</span>
+                    <div>
+                      <strong style={{ display: "block" }}>Ranked Choice</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Instant Runoff (IRV)</span>
+                    </div>
+                  </div>
+                  <div className="pipeline-sub-item">
+                    <span>🖼️</span>
+                    <div>
+                      <strong style={{ display: "block" }}>Image Poll</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Visual card choices</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connector 1 -> 2 */}
+              <div className="pipeline-connector" aria-hidden="true">
+                →
+              </div>
+
+              {/* Stage 2: 02 - SHARE */}
+              <div className="pipeline-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="step-num">02 — SHARE</span>
+                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--muted)" }}>Step 2</span>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>Distribute Everywhere</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div className="pipeline-sub-item">
+                    <span>🔗</span>
+                    <div>
+                      <strong style={{ display: "block" }}>Instant Clean Link</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>1-click copy for chats & email</span>
+                    </div>
+                  </div>
+                  <div className="pipeline-sub-item">
+                    <span>📱</span>
+                    <div>
+                      <strong style={{ display: "block" }}>Dynamic QR Code</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>For slides & live screens</span>
+                    </div>
+                  </div>
+                  <div className="pipeline-sub-item">
+                    <span>💻</span>
+                    <div>
+                      <strong style={{ display: "block" }}>Iframe Embed</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Embed directly in websites</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connector 2 -> 3 */}
+              <div className="pipeline-connector" aria-hidden="true">
+                →
+              </div>
+
+              {/* Stage 3: 03 - DECIDE */}
+              <div className="pipeline-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="step-num">03 — DECIDE</span>
+                  <span style={{ fontSize: 11, fontFamily: "monospace", color: "var(--muted)" }}>Step 3</span>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>Consensus & Analytics</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div className="pipeline-sub-item">
+                    <span>⚡</span>
+                    <div>
+                      <strong style={{ display: "block" }}>Adaptive Realtime SSE</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Live stream with spectator count</span>
+                    </div>
+                  </div>
+                  <div className="pipeline-sub-item">
+                    <span>📊</span>
+                    <div>
+                      <strong style={{ display: "block" }}>SVG Visual Charts</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Donut, Pie & Ledger exports</span>
+                    </div>
+                  </div>
+                  <div className="pipeline-sub-item">
+                    <span>🥇</span>
+                    <div>
+                      <strong style={{ display: "block" }}>Consensus Winner</strong>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>Instant final decision</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* 5. DIFFERENTIATORS ("Built for trustworthy decisions") */}
         <section aria-labelledby="pillars-heading">
+
           <div className="section-label">WHY BALLOT</div>
           <h2 id="pillars-heading" style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
             Built for trustworthy decisions
