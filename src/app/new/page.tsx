@@ -16,6 +16,7 @@ export default function NewPollPage() {
   const [question, setQuestion] = useState("");
   const [opts, setOpts] = useState(["", ""]);
   const [expiryMs, setExpiryMs] = useState<number | null>(null);
+  const [requireName, setRequireName] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -46,7 +47,7 @@ export default function NewPollPage() {
       const res = await fetch("/api/polls", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, options: cleanOpts, expiresInMs: expiryMs }),
+        body: JSON.stringify({ question: q, options: cleanOpts, expiresInMs: expiryMs, requireName }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -123,6 +124,28 @@ export default function NewPollPage() {
               </button>
             ))}
           </div>
+        </div>
+        <div className="block">
+          <label className="field-label">Voter identity</label>
+          <div className="expiry-row">
+            <button
+              className={`expiry-chip ${!requireName ? "active" : ""}`}
+              onClick={() => setRequireName(false)}
+            >
+              Anonymous
+            </button>
+            <button
+              className={`expiry-chip ${requireName ? "active" : ""}`}
+              onClick={() => setRequireName(true)}
+            >
+              Ask for name
+            </button>
+          </div>
+          {requireName && (
+            <div className="poll-meta" style={{ marginTop: 8 }}>
+              You'll see who picked what in the results.
+            </div>
+          )}
         </div>
         {error && <div className="err">{error}</div>}
         <div className="poll-actions" style={{ justifyContent: "flex-start", gap: 16 }}>

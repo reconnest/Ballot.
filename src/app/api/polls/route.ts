@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       .filter((o) => o.length > 0)
       .slice(0, 10);
     const expiresInMs: number | null = typeof body.expiresInMs === "number" ? body.expiresInMs : null;
+    const requireName: boolean = !!body.requireName;
 
     if (!question) {
       return NextResponse.json({ error: "Question is required." }, { status: 400 });
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       question,
       createdAt: now,
       expiresAt: expiresInMs ? now + expiresInMs : null,
+      requireName: requireName ? 1 : 0,
     });
 
     await db.insert(options).values(

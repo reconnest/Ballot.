@@ -5,12 +5,15 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 type OptionData = { id: string; label: string; votes: number };
+type VoterEntry = { name: string; choice: string };
 type PollData = {
   question: string;
   isExpired: boolean;
+  requireName: boolean;
   options: OptionData[];
   totalVotes: number;
   myVote: string | null;
+  voters: VoterEntry[];
 };
 
 export default function PollPage() {
@@ -19,6 +22,7 @@ export default function PollPage() {
   const [poll, setPoll] = useState<PollData | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [voting, setVoting] = useState(false);
+  const [voterName, setVoterName] = useState("");
   const [toast, setToast] = useState("");
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -47,24 +51,35 @@ export default function PollPage() {
 
   function showToast(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 1800);
+    setTimeout(() => setToast(""), 2400);
   }
 
   async function castVote(optionId: string) {
+    if (poll?.requireName && !voterName.trim()) {
+      showToast("Enter your name first");
+      return;
+    }
     setVoting(true);
     try {
       const res = await fetch(`/api/polls/${slug}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ optionId }),
+        body: JSON.stringify({ optionId, voterName: voterName.trim() || undefined }),
       });
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = { error: "Unexpected server response." };
+      }
       if (!res.ok) {
         showToast(data.error ?? "Could not vote.");
-        setVoting(false);
         return;
       }
       await fetchPoll();
+    } catch (e) {
+      console.error("vote request failed", e);
+      showToast("Could not vote — check your connection and try again.");
     } finally {
       setVoting(false);
     }
@@ -125,6 +140,20 @@ export default function PollPage() {
           {poll.isExpired ? " · closed" : showResults ? " · you voted" : " · pick one"}
         </div>
 
+        {!showResults && poll.requireName && (
+          <div className="name-input-wrap">
+            <label className="field-label" htmlFor="voterName">Your name</label>
+            <input
+              id="voterName"
+              type="text"
+              maxLength={60}
+              placeholder="e.g. Priya"
+              value={voterName}
+              onChange={(e) => setVoterName(e.target.value)}
+            />
+          </div>
+        )}
+
         {!showResults &&
           poll.options.map((o) => (
             <button
@@ -159,6 +188,18 @@ export default function PollPage() {
               </div>
             );
           })}
+
+        {showResults && poll.requireName && poll.voters.length > 0 && (
+          <div className="voter-section">
+            <div className="section-label">Who voted</div>
+            {poll.voters.map((v, i) => (
+              <div className="voter-row" key={i}>
+                <div className="voter-name">{v.name}</div>
+                <div className="voter-choice">{v.choice}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="poll-actions">
           <button className="copy-link" onClick={copyLink}>Copy share link</button>

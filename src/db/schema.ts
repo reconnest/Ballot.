@@ -6,6 +6,7 @@ export const polls = sqliteTable("polls", {
   question: text("question").notNull(),
   createdAt: integer("created_at").notNull(),
   expiresAt: integer("expires_at"),
+  requireName: integer("require_name").notNull().default(0),
 });
 
 export const options = sqliteTable("options", {
@@ -20,5 +21,6 @@ export const votes = sqliteTable("votes", {
   pollId: text("poll_id").notNull(),
   optionId: text("option_id").notNull(),
   voterToken: text("voter_token").notNull(),
+  voterName: text("voter_name"),
   createdAt: integer("created_at").notNull(),
 });

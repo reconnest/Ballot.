@@ -87,3 +87,8 @@ input[type="text"]:focus { border-bottom-color: var(--accent); outline: none; }
 .expiry-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .expiry-chip { font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--radius); color: var(--muted); }
 .expiry-chip.active { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); }
+.name-input-wrap { margin-bottom: 20px; }
+.voter-section { margin-top: 32px; }
+.voter-row { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; gap: 12px; }
+.voter-name { color: var(--ink); font-weight: 500; }
+.voter-choice { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); text-align: right; }

@@ -63,6 +63,15 @@ This creates the `polls`, `options`, and `votes` tables in your Turso database.
 That's it — that URL is your real, live polling site. Anyone with a poll link
 can vote from any device.
 
+## Updating an already-deployed site
+If you already deployed an earlier version, after replacing these files:
+1. Push the new code (`git add . && git commit -m "fix voting + voter names" && git push`) — Vercel redeploys automatically.
+2. Apply the new database columns once:
+   ```
+   TURSO_DATABASE_URL="paste-url" TURSO_AUTH_TOKEN="paste-token" npm run db:push
+   ```
+   This adds the new `require_name` and `voter_name` columns without deleting any existing polls or votes.
+
 ## How voting is kept fair
 Each browser gets a private cookie the first time it votes on a poll. That
 cookie is checked before every vote, so the same browser can't vote twice on
