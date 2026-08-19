@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
@@ -31,7 +31,7 @@ type PollData = {
   voters: VoterEntry[];
 };
 
-export default function PollPage() {
+function PollContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
@@ -44,7 +44,10 @@ export default function PollPage() {
   const [toast, setToast] = useState("");
   const [showQR, setShowQR] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showEmbedModal, setShowEmbedModal] = useState(false);
   const [adminKey, setAdminKey] = useState<string | null>(null);
+  const [botVerified, setBotVerified] = useState(false);
+  const [chartType, setChartType] = useState<"ledger" | "donut" | "pie">("ledger");
 
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -117,8 +120,6 @@ export default function PollPage() {
     }
   }
 
-  const [botVerified, setBotVerified] = useState(false);
-
   async function castVote(directId?: string) {
     const finalSelection = directId ? [directId] : selectedIds;
     if (finalSelection.length === 0) {
@@ -166,7 +167,6 @@ export default function PollPage() {
       setVoting(false);
     }
   }
-
 
   async function handleClosePoll() {
     if (!adminKey) return;
@@ -234,21 +234,17 @@ export default function PollPage() {
   const showResults = poll.canViewResults;
   const isMulti = poll.allowMultiple;
   const pageUrl = typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : "";
-
-  const [chartType, setChartType] = useState<"ledger" | "donut" | "pie">("ledger");
-  const [showEmbedModal, setShowEmbedModal] = useState(false);
-
   const embedCode = typeof window !== "undefined"
     ? `<iframe src="${window.location.origin}/embed/${slug}" width="100%" height="450" frameborder="0" style="border-radius: 8px; border: 1px solid #E4E1D9;"></iframe>`
     : "";
 
-  const chartData = poll?.options.map((o) => ({
+  const chartData = poll.options.map((o) => ({
     id: o.id,
     label: o.label,
     votes: o.votes ?? 0,
-  })) || [];
+  }));
 
-  const totalChartVotes = poll?.totalVotes && poll.totalVotes > 0
+  const totalChartVotes = poll.totalVotes && poll.totalVotes > 0
     ? poll.totalVotes
     : chartData.reduce((acc, curr) => acc + curr.votes, 0);
 
@@ -262,7 +258,6 @@ export default function PollPage() {
   return (
     <div className="wrap">
       <header className="top">
-
         <Link href="/" className="brand">
           Ballot<span>.</span>
           <div className="brand-sub">quick polls</div>
@@ -630,5 +625,14 @@ export default function PollPage() {
     </div>
   );
 }
+
+export default function PollPage() {
+  return (
+    <Suspense fallback={<div className="wrap"><div className="loading" style={{ padding: 40, textAlign: "center" }}>Loading poll…</div></div>}>
+      <PollContent />
+    </Suspense>
+  );
+}
+
 
 
