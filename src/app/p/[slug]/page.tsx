@@ -838,7 +838,60 @@ function PollContent() {
           )}
         </div>
 
+        {/* Viral Voter Marketing Section */}
+        <section className="poll-marketing-section" aria-label="Create your own poll">
+          <div className="poll-marketing-card">
+            <div className="poll-marketing-badge">POWERED BY BALLOT</div>
+            <h3 className="poll-marketing-title">Host your own decision in seconds.</h3>
+            <p className="poll-marketing-desc">
+              Create real-time polls with ranked voting, share one instant link with your audience, and decide together with live analytics. Zero signup required for voters.
+            </p>
+
+            <div className="poll-marketing-grid">
+              <div className="poll-marketing-feature">
+                <div className="poll-marketing-feature-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <span>Ranked Choice</span>
+                </div>
+                <div className="poll-marketing-feature-desc">Instant runoff consensus voting</div>
+              </div>
+
+              <div className="poll-marketing-feature">
+                <div className="poll-marketing-feature-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                  <span>Live Realtime Sync</span>
+                </div>
+                <div className="poll-marketing-feature-desc">Instant spectator vote tallies</div>
+              </div>
+
+              <div className="poll-marketing-feature">
+                <div className="poll-marketing-feature-title">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span>Anti-Fraud</span>
+                </div>
+                <div className="poll-marketing-feature-desc">Device & IP deduplication defense</div>
+              </div>
+            </div>
+
+            <div className="poll-marketing-actions">
+              <Link href="/new" className="btn-primary" style={{ padding: "10px 18px", fontSize: 14 }}>
+                + Create a Poll →
+              </Link>
+              <Link href="/explore" className="btn-ghost" style={{ padding: "10px 18px", fontSize: 14 }}>
+                Explore Trending Polls
+              </Link>
+            </div>
+          </div>
+        </section>
+
       </main>
+
 
 
       {/* Redesigned Poll Management Modal */}
