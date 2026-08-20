@@ -412,19 +412,9 @@ function PollContent() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <span className="badge-category">{poll.category || "general"}</span>
-              <span style={{
-                fontSize: 10,
-                fontFamily: "monospace",
-                padding: "2px 6px",
-                borderRadius: 4,
-                background: isBPC ? "var(--accent-soft)" : "var(--line)",
-                color: isBPC ? "var(--accent-ink)" : "var(--muted)",
-                fontWeight: 700
-              }}>
-                {poll.slug}
-              </span>
               {poll.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
             </div>
+
 
             {/* Live Spectator Indicator */}
             <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>

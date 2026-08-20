@@ -425,47 +425,42 @@ export default function NewPollPage() {
 
           {/* Right Column: Visibility, Category, Mode & Advanced Settings */}
           <div>
-            {/* Top Requirement: Discovery & Directory (BPC Community vs BPP Private) */}
+            {/* Top Requirement: Discovery & Directory */}
             <div className="block">
-              <label className="field-label">Poll Type & Visibility</label>
+              <label className="field-label">Poll Visibility</label>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {/* Community BPC */}
+                {/* Public Community */}
                 <button
                   type="button"
                   className={`visibility-card ${isPublic ? "active" : ""}`}
                   onClick={handleSelectCommunity}
                   style={{ padding: "14px 16px", textAlign: "left" }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13 }}>🌐 Community (BPC)</span>
-                    <span style={{ fontSize: 10, background: "var(--accent-soft)", color: "var(--accent-ink)", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>
-                      EXPLORE
-                    </span>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4 }}>
+                    🌐 Public Poll
                   </div>
-                  <div className="vis-hint" style={{ fontSize: 12 }}>
-                    Public & listed in Explore feed. Requires creator account.
+                  <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
+                    Discoverable in Explore. Requires sign in.
                   </div>
                 </button>
 
-                {/* Private BPP */}
+                {/* Private Poll */}
                 <button
                   type="button"
                   className={`visibility-card ${!isPublic ? "active" : ""}`}
                   onClick={() => setIsPublic(false)}
                   style={{ padding: "14px 16px", textAlign: "left" }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <span style={{ fontWeight: 700, fontSize: 13 }}>🔒 Private (BPP)</span>
-                    <span style={{ fontSize: 10, background: "var(--line)", color: "var(--muted)", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>
-                      UNLISTED
-                    </span>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4 }}>
+                    🔒 Private Poll
                   </div>
-                  <div className="vis-hint" style={{ fontSize: 12 }}>
-                    Secret link only. No account required.
+                  <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
+                    Direct link only. No sign in required.
                   </div>
                 </button>
               </div>
             </div>
+
 
             {/* Category: Only for Community Polls */}
             {isPublic && (
@@ -693,7 +688,7 @@ export default function NewPollPage() {
               className="btn-primary"
               style={{ width: "100%", padding: "14px 24px", fontSize: 16, marginTop: 8 }}
             >
-              {submitting ? "Creating poll..." : isPublic ? "Publish Community Poll (BPC) →" : "Create Private Poll (BPP) →"}
+              {submitting ? "Creating poll..." : isPublic ? "Publish Public Poll →" : "Create Private Poll →"}
             </button>
           </div>
         </div>
@@ -701,26 +696,37 @@ export default function NewPollPage() {
         {/* Bulk Paste Modal */}
         {showBulkModal && (
           <div className="modal-backdrop">
-            <div className="modal-box">
+            <div className="modal-box" style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, padding: 24, maxWidth: 480, width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.3)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <h2 style={{ fontSize: 16, fontWeight: 700 }}>Paste Multiple Options</h2>
+                <h2 style={{ fontSize: 18, fontWeight: 700 }}>Paste Multiple Options</h2>
                 <button
                   type="button"
                   className="btn-link"
                   onClick={() => setShowBulkModal(false)}
+                  style={{ fontSize: 18, color: "var(--muted)" }}
                 >
                   ✕
                 </button>
               </div>
               <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
-                Paste one option per line. Leading numbers and bullet points will be removed automatically:
+                Paste one option per line. Leading numbers, dashes, and bullet points will be stripped automatically:
               </p>
               <textarea
                 rows={8}
                 value={bulkText}
                 onChange={(e) => setBulkText(e.target.value)}
                 placeholder={"Option 1\nOption 2\nOption 3\nOption 4"}
-                style={{ fontFamily: "monospace", fontSize: 13, marginBottom: 16 }}
+                style={{
+                  width: "100%",
+                  fontFamily: "monospace",
+                  fontSize: 13,
+                  marginBottom: 16,
+                  padding: "10px 12px",
+                  background: "var(--paper)",
+                  border: "1px solid var(--line)",
+                  borderRadius: 6,
+                  color: "var(--ink)"
+                }}
               />
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                 <button
@@ -741,6 +747,7 @@ export default function NewPollPage() {
             </div>
           </div>
         )}
+
       </main>
     </div>
   );

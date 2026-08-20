@@ -272,14 +272,28 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
 
 /* Modals */
 .modal-backdrop {
-  position: fixed; inset: 0; background: rgba(20, 24, 26, 0.6);
-  display: flex; align-items: center; justify-content: center; z-index: 999; padding: 20px;
-  backdrop-filter: blur(2px);
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
-.modal-card {
-  background: var(--surface); border-radius: 6px; max-width: 440px; width: 100%;
-  padding: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+.modal-card, .modal-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  max-width: 480px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  position: relative;
 }
+
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .modal-head h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
 .close-btn { font-size: 22px; color: var(--faint); cursor: pointer; padding: 0 4px; }
