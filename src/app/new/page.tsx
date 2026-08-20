@@ -188,11 +188,57 @@ export default function NewPollPage() {
   function updateOptImage(i: number, val: string) {
     setOpts((prev) => prev.map((o, idx) => (idx === i ? { ...o, imageUrl: val } : o)));
   }
+  function handleImageUpload(i: number, file: File) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please select a valid image file (PNG, JPG, WEBP, GIF).");
+      return;
+    }
+    setError("");
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (!result) return;
+
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 800;
+        let w = img.width;
+        let h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressed = canvas.toDataURL("image/jpeg", 0.85);
+          updateOptImage(i, compressed);
+        } else {
+          updateOptImage(i, result);
+        }
+      };
+      img.onerror = () => {
+        updateOptImage(i, result);
+      };
+      img.src = result;
+    };
+    reader.readAsDataURL(file);
+  }
   function addOpt() {
     if (opts.length < 30) {
       setOpts((prev) => [...prev, { label: "", imageUrl: "" }]);
     }
   }
+
   function removeOpt(i: number) {
     if (opts.length > 2) {
       setOpts((prev) => prev.filter((_, idx) => idx !== i));
@@ -429,7 +475,7 @@ export default function NewPollPage() {
                 {opts.map((opt, i) => (
                   <div key={i} className="option-row">
                     <span className="drag-handle">{i + 1}</span>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
                       <input
                         type="text"
                         maxLength={100}
@@ -438,14 +484,96 @@ export default function NewPollPage() {
                         onChange={(e) => updateOptLabel(i, e.target.value)}
                         className="input-text"
                       />
+
+                      {/* Direct File Upload & Instant Thumbnail Preview for Image Polls */}
                       {pollType === "image" && (
-                        <input
-                          type="url"
-                          placeholder="Image URL (https://...)"
-                          value={opt.imageUrl}
-                          onChange={(e) => updateOptImage(i, e.target.value)}
-                          style={{ fontSize: 12, padding: "6px 10px" }}
-                        />
+                        <div>
+                          {opt.imageUrl ? (
+                            <div style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 12,
+                              background: "var(--paper)",
+                              border: "1px solid var(--line)",
+                              padding: "6px 10px",
+                              borderRadius: 6
+                            }}>
+                              <img
+                                src={opt.imageUrl}
+                                alt={`Option ${i + 1} preview`}
+                                style={{
+                                  width: 48,
+                                  height: 48,
+                                  objectFit: "cover",
+                                  borderRadius: 4,
+                                  border: "1px solid var(--line)",
+                                  background: "var(--surface)"
+                                }}
+                              />
+                              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                                <label
+                                  style={{
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    color: "var(--ink)",
+                                    background: "var(--surface)",
+                                    border: "1px solid var(--line)",
+                                    padding: "4px 8px",
+                                    borderRadius: 4,
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  Change Image
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: "none" }}
+                                    onChange={(e) => {
+                                      const f = e.target.files?.[0];
+                                      if (f) handleImageUpload(i, f);
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => updateOptImage(i, "")}
+                                  className="btn-ghost"
+                                  style={{ fontSize: 11, color: "#EF4444", padding: "4px 8px" }}
+                                >
+                                  ✕ Remove
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <label
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: "var(--accent-ink)",
+                                background: "var(--accent-soft)",
+                                border: "1px dashed var(--accent)",
+                                padding: "6px 12px",
+                                borderRadius: 6,
+                                cursor: "pointer",
+                                transition: "all 0.15s ease",
+                              }}
+                            >
+                              <span>📷 Upload Image</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: "none" }}
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) handleImageUpload(i, f);
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
                       )}
                     </div>
                     {opts.length > 2 && (
@@ -460,6 +588,7 @@ export default function NewPollPage() {
                     )}
                   </div>
                 ))}
+
 
                 {opts.length < 30 && (
                   <button type="button" className="add-opt" onClick={addOpt}>
