@@ -119,7 +119,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
 
   // Scoping: How It Works & Why Ballot only show on Landing Page ('/'), for both logged-in and logged-out users
   const isLandingPage = pathname === "/";
-  const logoHref = user ? "/explore" : "/";
+  const logoHref = "/";
 
   return (
     <>
@@ -128,6 +128,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
         <Link href={logoHref} style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
           <BallotLogo size={32} />
         </Link>
+
 
         {/* 2. Middle Section: Scoped Anchor Links (Desktop Only) */}
         <nav className="navbar-middle-links" aria-label="Main Navigation">
