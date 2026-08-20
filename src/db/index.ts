@@ -67,7 +67,23 @@ export async function ensureDbSchema() {
       await client.execute("ALTER TABLE polls ADD COLUMN creator_user_id TEXT;");
     }
 
+    // 5. Purge all legacy/seeded polls that do not follow the agreed BPC- or BPP- prefix
+    await client.execute(`
+      DELETE FROM votes WHERE poll_id IN (
+        SELECT id FROM polls WHERE slug NOT LIKE 'BPC-%' AND slug NOT LIKE 'BPP-%'
+      );
+    `);
+    await client.execute(`
+      DELETE FROM options WHERE poll_id IN (
+        SELECT id FROM polls WHERE slug NOT LIKE 'BPC-%' AND slug NOT LIKE 'BPP-%'
+      );
+    `);
+    await client.execute(`
+      DELETE FROM polls WHERE slug NOT LIKE 'BPC-%' AND slug NOT LIKE 'BPP-%';
+    `);
+
     schemaInitialized = true;
+
   } catch (err) {
     console.error("Schema init error:", err);
   }

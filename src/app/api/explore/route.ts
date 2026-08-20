@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { db, ensureDbSchema } from "@/db";
 import { polls, votes, options, users } from "@/db/schema";
-import { eq, desc, sql, and, ne } from "drizzle-orm";
+import { eq, desc, sql, and, ne, like } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,12 +9,13 @@ export const fetchCache = "force-no-store";
 
 export async function GET(req: NextRequest) {
   try {
+    await ensureDbSchema();
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const query = searchParams.get("q")?.toLowerCase() || "";
     const filter = searchParams.get("filter") || "trending"; // 'trending' | 'recent' | 'active'
 
-    // Fetch public community polls excluding deleted ones
+    // Fetch public community polls strictly matching BPC- prefix and excluding deleted
     const publicPolls = await db
       .select({
         id: polls.id,
@@ -34,12 +35,13 @@ export async function GET(req: NextRequest) {
       .where(
         and(
           eq(polls.isPublic, 1),
-          eq(polls.resultsVisibility, "always_public"),
-          ne(polls.status, "deleted")
+          ne(polls.status, "deleted"),
+          like(polls.slug, "BPC-%")
         )
       )
       .orderBy(desc(polls.createdAt))
       .limit(60);
+
 
     // Fetch all creators for enrichment
     const allUsers = await db.select({ id: users.id, username: users.username, displayName: users.displayName, avatarUrl: users.avatarUrl }).from(users);

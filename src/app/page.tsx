@@ -111,11 +111,15 @@ export default function HomePage() {
       } catch {
         stored = [];
       }
+      stored = stored.filter((p) => p.slug && (p.slug.startsWith("BPC-") || p.slug.startsWith("BPP-")));
       stored.sort((a, b) => b.createdAt - a.createdAt);
 
       if (stored.length > 0) {
         setShowMyPolls(true);
+      } else {
+        setShowMyPolls(false);
       }
+
 
       const results = await Promise.all(
         stored.map(async (p) => {
