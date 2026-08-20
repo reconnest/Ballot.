@@ -56,9 +56,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Code is valid! Invalidate code
-    await db.delete(authCodes).where(eq(authCodes.id, authRecord.id));
-
     // Check if user already exists
     let [existingUser] = await db
       .select()
@@ -69,6 +66,7 @@ export async function POST(req: NextRequest) {
     if (!existingUser) {
       // New User Registration Flow: requires handle selection
       if (!desiredUsername) {
+        // Return needsRegistration without deleting authCode yet, so step 2 can complete registration
         return NextResponse.json({
           needsRegistration: true,
           email,
@@ -105,9 +103,13 @@ export async function POST(req: NextRequest) {
       existingUser = created;
     }
 
+    // Code is fully consumed! Invalidate code now that user is registered/logged in
+    await db.delete(authCodes).where(eq(authCodes.id, authRecord.id));
+
     // Create session token
     const sessionToken = await createSession(existingUser.id);
     const res = NextResponse.json({
+
       ok: true,
       user: {
         id: existingUser.id,

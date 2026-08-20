@@ -4,6 +4,7 @@ import { authCodes } from "@/db/schema";
 import { eq, and, gt, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { hashOtpCode, generate6DigitCode } from "@/lib/auth";
+import { sendOtpEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,6 @@ export async function POST(req: NextRequest) {
     await ensureDbSchema();
     const body = await req.json();
     const email = (body.email ?? "").toString().trim().toLowerCase();
-
 
     if (!email || !email.includes("@") || email.length < 5) {
       return NextResponse.json({ error: "Please provide a valid email address." }, { status: 400 });
@@ -51,14 +51,20 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Ballot Auth] Verification Code for ${email}: ${code}`);
 
+    // Dispatch email to user's inbox
+    const mailResult = await sendOtpEmail(email, code);
+    if (!mailResult.success) {
+      console.warn("Could not dispatch via Resend, falling back to console log:", mailResult.error);
+    }
+
     return NextResponse.json({
       ok: true,
-      message: "Verification code sent.",
-      previewCode: code,
+      message: "Verification code sent to your email.",
     });
   } catch (err) {
     console.error("send-code error:", err);
     return NextResponse.json({ error: "Could not send verification code." }, { status: 500 });
   }
 }
+
 
