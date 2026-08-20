@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { BallotLogo } from "@/components/BallotLogo";
 import { AuthModal } from "@/components/AuthModal";
 
-const EXPIRY_CHOICES = [
+const EXPIRY_PRESETS = [
   { label: "No limit", ms: null },
   { label: "1 hour", ms: 60 * 60 * 1000 },
   { label: "24 hours", ms: 24 * 60 * 60 * 1000 },
@@ -16,16 +16,30 @@ const EXPIRY_CHOICES = [
 ];
 
 const VISIBILITY_CHOICES = [
-  { value: "always_public", label: "Always public", hint: "Anyone can view live results anytime" },
-  { value: "after_vote", label: "After voting", hint: "Voters see results only after casting their vote" },
-  { value: "after_deadline", label: "After deadline", hint: "Results stay hidden until the poll closes" },
-  { value: "creator_only", label: "Creator only", hint: "Only you (with your secret key) can see results" },
+  { value: "after_vote", label: "After voting", hint: "Voters see live results immediately after casting their ballot" },
+  { value: "after_deadline", label: "After deadline", hint: "Results stay hidden until the poll is closed" },
+  { value: "creator_only", label: "Creator only", hint: "Only you (with secret admin key) can see results" },
 ];
 
-const SECURITY_CHOICES = [
-  { value: "standard", label: "Standard (Cookie + IP)", hint: "Balances anti-stuffing protection with shared network flexibility" },
-  { value: "relaxed", label: "Relaxed (Cookie only)", hint: "Ideal for campuses, offices & events sharing one Wi-Fi IP" },
-  { value: "strict", label: "Strict (Bot Defense)", hint: "Enforces verification challenge to block automated bots" },
+const SECURITY_MODES = [
+  {
+    value: "relaxed",
+    label: "Relaxed",
+    short: "Shared Wi-Fi Friendly",
+    desc: "Cookie-based verification. Best for offices, schools, and conferences sharing a single network IP."
+  },
+  {
+    value: "standard",
+    label: "Standard",
+    short: "Balanced Protection",
+    desc: "Cookie + Network IP digest. Standard protection against casual double-voting."
+  },
+  {
+    value: "strict",
+    label: "Strict",
+    short: "High Security",
+    desc: "Verification challenge check. Maximum defense against automated bot traffic."
+  },
 ];
 
 const POLL_TYPES = [
@@ -63,21 +77,30 @@ export default function NewPollPage() {
   const [category, setCategory] = useState("general");
   const [customCategory, setCustomCategory] = useState("");
   const [isAddingCustom, setIsAddingCustom] = useState(false);
-  const [isPublic, setIsPublic] = useState(false); // Default to Private (BPP) for zero friction
+  const [isPublic, setIsPublic] = useState(false); // Default to Private
   const [opts, setOpts] = useState<{ label: string; imageUrl: string }[]>([
     { label: "", imageUrl: "" },
     { label: "", imageUrl: "" },
   ]);
+
+  // Multiple Choice Min / Max (Synced for uniformity)
   const [allowMultiple, setAllowMultiple] = useState(false);
-  const [minChoices, setMinChoices] = useState(1);
-  const [maxChoices, setMaxChoices] = useState<number | "">("");
-  const [resultsVisibility, setResultsVisibility] = useState("always_public");
+  const [minChoices, setMinChoices] = useState(2);
+  const [maxChoices, setMaxChoices] = useState(2);
+
+  // Settings
+  const [resultsVisibility, setResultsVisibility] = useState("after_vote"); // Locked spec: Default after_vote
   const [securityMode, setSecurityMode] = useState("relaxed");
-  const [allowVoteEdit, setAllowVoteEdit] = useState(true); // Locked spec: Default ON
+  const [allowVoteEdit, setAllowVoteEdit] = useState(true);
+
+  // Deadline & Custom Time Limit
+  const [expiryPreset, setExpiryPreset] = useState<number | null | "custom">(null);
+  const [customExpiryValue, setCustomExpiryValue] = useState<number>(3);
+  const [customExpiryUnit, setCustomExpiryUnit] = useState<"hours" | "days" | "minutes">("days");
+
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [expiryMs, setExpiryMs] = useState<number | null>(null);
   const [requireName, setRequireName] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -90,7 +113,7 @@ export default function NewPollPage() {
           const data = await res.json();
           if (data.user) {
             setSessionUser(data.user);
-            setIsPublic(true); // If already logged in, default to Community
+            setIsPublic(true);
           }
         }
       } catch {}
@@ -105,6 +128,20 @@ export default function NewPollPage() {
     } else {
       setIsPublic(true);
     }
+  }
+
+  function handleMinChoicesChange(newMin: number) {
+    const clampedMin = Math.max(1, Math.min(newMin, opts.length));
+    setMinChoices(clampedMin);
+    // Uniform sync: Default max to whatever min selects, but don't let max be less than min
+    if (maxChoices < clampedMin || maxChoices === minChoices) {
+      setMaxChoices(clampedMin);
+    }
+  }
+
+  function handleMaxChoicesChange(newMax: number) {
+    const clampedMax = Math.max(minChoices, Math.min(newMax, opts.length));
+    setMaxChoices(clampedMax);
   }
 
   function handleApplyBulkPaste() {
@@ -140,13 +177,27 @@ export default function NewPollPage() {
     }
   }
 
+  // Calculate final expiration in MS
+  function computeExpiresInMs(): number | null {
+    if (expiryPreset === null) return null;
+    if (typeof expiryPreset === "number") return expiryPreset;
+    if (expiryPreset === "custom") {
+      const multipliers = {
+        minutes: 60 * 1000,
+        hours: 60 * 60 * 1000,
+        days: 24 * 60 * 60 * 1000,
+      };
+      return Math.max(1, customExpiryValue) * multipliers[customExpiryUnit];
+    }
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
-    // Verification check for Public Community Polls
     if (isPublic && !sessionUser) {
-      setAuthModalMsg("Please log in to publish this community poll.");
+      setAuthModalMsg("Please sign in to publish this public poll.");
       setShowAuthModal(true);
       return;
     }
@@ -187,12 +238,12 @@ export default function NewPollPage() {
           isPublic,
           options: cleanOpts,
           allowMultiple: pollType === "standard" ? allowMultiple : false,
-          minChoices: allowMultiple ? Math.max(1, minChoices) : 1,
-          maxChoices: allowMultiple && typeof maxChoices === "number" ? maxChoices : null,
+          minChoices: allowMultiple ? minChoices : 1,
+          maxChoices: allowMultiple ? maxChoices : null,
           resultsVisibility,
           securityMode,
           allowVoteEdit,
-          expiresInMs: expiryMs,
+          expiresInMs: computeExpiresInMs(),
           requireName,
         }),
       });
@@ -219,7 +270,6 @@ export default function NewPollPage() {
         });
         localStorage.setItem("ballot:myPolls", JSON.stringify(stored));
 
-        // Store admin keys dictionary
         const adminKeys = JSON.parse(localStorage.getItem("ballot:adminKeys") ?? "{}");
         if (data.adminKey) {
           adminKeys[data.slug] = data.adminKey;
@@ -229,13 +279,14 @@ export default function NewPollPage() {
         console.error("Failed to save to localStorage", e);
       }
 
-      // Navigate to poll
       router.push(`/p/${data.slug}?created=1`);
     } catch {
       setError("Could not create poll — check your connection.");
       setSubmitting(false);
     }
   }
+
+  const selectedSecurityObj = SECURITY_MODES.find((s) => s.value === securityMode) || SECURITY_MODES[0];
 
   return (
     <div className="wrap">
@@ -282,7 +333,7 @@ export default function NewPollPage() {
       <main>
         <div className="section-label">Create new poll</div>
 
-        {/* Poll Format (Single Horizontal 3-Column Row) */}
+        {/* Poll Format (3-Column Row) */}
         <div className="block" style={{ marginBottom: 32 }}>
           <label className="field-label">Poll Format</label>
           <div className="format-grid-3">
@@ -461,8 +512,7 @@ export default function NewPollPage() {
               </div>
             </div>
 
-
-            {/* Category: Only for Community Polls */}
+            {/* Category: Only for Public Community Polls */}
             {isPublic && (
               <div className="block">
                 <label className="field-label">Community Category</label>
@@ -524,28 +574,33 @@ export default function NewPollPage() {
                 </div>
 
                 {allowMultiple && (
-                  <div style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center" }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 11, color: "var(--muted)", display: "block", marginBottom: 3 }}>Min Choices</label>
+                  <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 4 }}>
+                        Min Choices
+                      </label>
                       <input
                         type="number"
                         min={1}
                         max={opts.length}
                         value={minChoices}
-                        onChange={(e) => setMinChoices(parseInt(e.target.value) || 1)}
-                        style={{ padding: "6px 8px", fontSize: 13 }}
+                        onChange={(e) => handleMinChoicesChange(parseInt(e.target.value) || 1)}
+                        className="input-text"
+                        style={{ padding: "8px 10px", fontSize: 13 }}
                       />
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 11, color: "var(--muted)", display: "block", marginBottom: 3 }}>Max Choices (Optional)</label>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 4 }}>
+                        Max Choices (Uniform: {minChoices})
+                      </label>
                       <input
                         type="number"
                         min={minChoices}
                         max={opts.length}
-                        placeholder="No limit"
                         value={maxChoices}
-                        onChange={(e) => setMaxChoices(e.target.value ? parseInt(e.target.value) : "")}
-                        style={{ padding: "6px 8px", fontSize: 13 }}
+                        onChange={(e) => handleMaxChoicesChange(parseInt(e.target.value) || minChoices)}
+                        className="input-text"
+                        style={{ padding: "8px 10px", fontSize: 13 }}
                       />
                     </div>
                   </div>
@@ -553,7 +608,7 @@ export default function NewPollPage() {
               </div>
             )}
 
-            {/* Voter Vote Editing Toggle (Locked Spec) */}
+            {/* Voter Vote Editing Toggle */}
             <div className="block">
               <label className="field-label">Voter Editing</label>
               <div
@@ -607,33 +662,71 @@ export default function NewPollPage() {
                 style={{ width: "100%", justifyContent: "space-between", display: "flex", fontSize: 13 }}
                 onClick={() => setShowAdvanced(!showAdvanced)}
               >
-                <span>⚙️ More Settings (Deadline, Results Visibility)</span>
+                <span>⚙️ More Settings (Deadline, Security, Results)</span>
                 <span>{showAdvanced ? "▲" : "▼"}</span>
               </button>
 
               {showAdvanced && (
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-                  {/* Expiration */}
+                  {/* 1. Poll Deadline & Custom Duration */}
                   <div>
                     <label className="field-label">Poll Deadline</label>
-                    <div className="expiry-row">
-                      {EXPIRY_CHOICES.map((choice) => (
+                    <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                      {EXPIRY_PRESETS.map((choice) => (
                         <button
                           type="button"
                           key={choice.label}
-                          className={`expiry-chip ${expiryMs === choice.ms ? "active" : ""}`}
-                          onClick={() => setExpiryMs(choice.ms)}
+                          className={`expiry-chip ${expiryPreset === choice.ms ? "active" : ""}`}
+                          onClick={() => setExpiryPreset(choice.ms)}
                         >
                           {choice.label}
                         </button>
                       ))}
+                      <button
+                        type="button"
+                        className={`expiry-chip ${expiryPreset === "custom" ? "active" : ""}`}
+                        onClick={() => setExpiryPreset("custom")}
+                      >
+                        + Custom
+                      </button>
                     </div>
+
+                    {expiryPreset === "custom" && (
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", background: "var(--paper)", padding: "10px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                        <input
+                          type="number"
+                          min={1}
+                          max={365}
+                          value={customExpiryValue}
+                          onChange={(e) => setCustomExpiryValue(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="input-text"
+                          style={{ width: 80, padding: "6px 10px", fontSize: 13 }}
+                        />
+                        <select
+                          value={customExpiryUnit}
+                          onChange={(e) => setCustomExpiryUnit(e.target.value as any)}
+                          style={{
+                            padding: "6px 10px",
+                            fontSize: 13,
+                            borderRadius: 6,
+                            border: "1px solid var(--line)",
+                            background: "var(--surface)",
+                            color: "var(--ink)",
+                          }}
+                        >
+                          <option value="minutes">Minutes</option>
+                          <option value="hours">Hours</option>
+                          <option value="days">Days</option>
+                        </select>
+                        <span style={{ fontSize: 12, color: "var(--muted)" }}>from creation</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Results Visibility */}
+                  {/* 2. Results Visibility (Clean 3 Choices) */}
                   <div>
                     <label className="field-label">Results Visibility</label>
-                    <div className="expiry-row">
+                    <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6 }}>
                       {VISIBILITY_CHOICES.map((vc) => (
                         <button
                           type="button"
@@ -647,11 +740,13 @@ export default function NewPollPage() {
                     </div>
                   </div>
 
-                  {/* Security Mode */}
+                  {/* 3. Security & Anti-Abuse with Info Tooltip */}
                   <div>
-                    <label className="field-label">Security & Anti-Abuse</label>
-                    <div className="expiry-row">
-                      {SECURITY_CHOICES.map((sc) => (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                      <label className="field-label" style={{ marginBottom: 0 }}>Security & Duplicate Protection</label>
+                    </div>
+                    <div className="expiry-row" style={{ gap: 6, marginBottom: 8 }}>
+                      {SECURITY_MODES.map((sc) => (
                         <button
                           type="button"
                           key={sc.value}
@@ -662,9 +757,27 @@ export default function NewPollPage() {
                         </button>
                       ))}
                     </div>
+                    {/* User-friendly info box */}
+                    <div style={{
+                      background: "var(--paper)",
+                      border: "1px solid var(--line)",
+                      borderRadius: 6,
+                      padding: "8px 12px",
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 8,
+                      lineHeight: 1.4
+                    }}>
+                      <span style={{ fontSize: 14 }}>ℹ️</span>
+                      <div>
+                        <strong style={{ color: "var(--ink)" }}>{selectedSecurityObj.label} Mode:</strong> {selectedSecurityObj.desc}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Require Name */}
+                  {/* 4. Require Name */}
                   <label className="checkbox-row">
                     <input
                       type="checkbox"
@@ -747,7 +860,6 @@ export default function NewPollPage() {
             </div>
           </div>
         )}
-
       </main>
     </div>
   );
