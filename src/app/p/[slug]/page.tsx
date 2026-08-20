@@ -88,8 +88,10 @@ function PollContent() {
 
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const showAdminModalRef = useRef(false);
+  const submitBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+
     showAdminModalRef.current = showAdminModal;
   }, [showAdminModal]);
 
@@ -243,18 +245,17 @@ function PollContent() {
       return;
     }
 
-    // Capture button position for localized burst origin
-    const form = e.currentTarget as HTMLFormElement;
-    const submitBtn = form?.querySelector('button[type="submit"]') as HTMLElement | null;
+    // Synchronously capture exact button position BEFORE async fetch starts!
     let originX: number | undefined;
     let originY: number | undefined;
-    if (submitBtn) {
-      const rect = submitBtn.getBoundingClientRect();
+    if (submitBtnRef.current) {
+      const rect = submitBtnRef.current.getBoundingClientRect();
       originX = rect.left + rect.width / 2;
       originY = rect.top + rect.height / 2;
     }
 
     setVoting(true);
+
     try {
       const res = await fetch(`/api/polls/${slug}/vote`, {
         method: "POST",
@@ -640,6 +641,7 @@ function PollContent() {
             )}
 
             <button
+              ref={submitBtnRef}
               type="submit"
               disabled={voting || selectedIds.length === 0}
               className="btn-primary"
@@ -647,6 +649,7 @@ function PollContent() {
             >
               {voting ? "Submitting..." : isEditingVote ? "Update My Vote →" : "Submit Vote →"}
             </button>
+
           </form>
         ) : (
           /* 2. RESULTS VIEW */

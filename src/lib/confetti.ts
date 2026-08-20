@@ -10,10 +10,11 @@ export function fireMotionSafeConfetti(originX?: number, originY?: number) {
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (prefersReduced) return;
 
+  const dpr = window.devicePixelRatio || 1;
   const canvas = document.createElement("canvas");
   canvas.className = "confetti-canvas";
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
   canvas.style.position = "fixed";
   canvas.style.top = "0";
   canvas.style.left = "0";
@@ -28,6 +29,7 @@ export function fireMotionSafeConfetti(originX?: number, originY?: number) {
     document.body.removeChild(canvas);
     return;
   }
+  ctx.scale(dpr, dpr);
 
   const colors = ["#0F766E", "#14B8A6", "#2563EB", "#7C3AED", "#F59E0B", "#EF4444", "#10B981"];
   const particles: {
@@ -42,23 +44,28 @@ export function fireMotionSafeConfetti(originX?: number, originY?: number) {
     alpha: number;
   }[] = [];
 
-  const startX = typeof originX === "number" ? originX : window.innerWidth / 2;
-  const startY = typeof originY === "number" ? originY : window.innerHeight * 0.7;
+  const startX = typeof originX === "number" && !isNaN(originX) ? originX : window.innerWidth / 2;
+  const startY = typeof originY === "number" && !isNaN(originY) ? originY : window.innerHeight * 0.6;
 
-  const count = 55;
+  const count = 65;
   for (let i = 0; i < count; i++) {
+    // Fan out upward between 210 deg (top-left) to 330 deg (top-right)
+    const angle = ((210 + Math.random() * 120) * Math.PI) / 180;
+    const speed = Math.random() * 13 + 6;
+
     particles.push({
-      x: startX + (Math.random() - 0.5) * 60,
+      x: startX + (Math.random() - 0.5) * 20,
       y: startY,
       size: Math.random() * 6 + 4,
       color: colors[Math.floor(Math.random() * colors.length)],
-      vx: (Math.random() - 0.5) * 16,
-      vy: -(Math.random() * 14 + 8),
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
       rotation: Math.random() * 360,
-      rotSpeed: (Math.random() - 0.5) * 12,
+      rotSpeed: (Math.random() - 0.5) * 14,
       alpha: 1,
     });
   }
+
 
 
   let animationFrame: number;
