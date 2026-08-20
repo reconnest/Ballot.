@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { BallotLogo } from "@/components/BallotLogo";
+import { Navbar } from "@/components/Navbar";
 
 type CreatorProfile = {
   id: string;
@@ -62,16 +62,7 @@ export default function CreatorProfilePage() {
   return (
     <div className="wrap">
       {/* Top Header */}
-      <header className="top">
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <BallotLogo size={32} />
-        </Link>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
-          <ThemeToggle />
-          <Link href="/new" className="btn-primary">+ Create poll</Link>
-        </div>
-      </header>
+      <Navbar />
 
       <main style={{ maxWidth: 780, margin: "0 auto", paddingBottom: 60 }}>
         {loading ? (

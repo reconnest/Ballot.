@@ -6,7 +6,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
 import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/chart-utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { BallotLogo } from "@/components/BallotLogo";
+import { Navbar } from "@/components/Navbar";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
 
 type OptionData = { id: string; label: string; imageUrl?: string | null; votes: number | null };
@@ -401,16 +401,7 @@ function PollContent() {
   return (
     <div className="wrap">
       {/* Top Header */}
-      <header className="top">
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <BallotLogo size={32} />
-        </Link>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
-          <ThemeToggle />
-          <Link href="/new" className="btn-primary" style={{ fontSize: 13 }}>+ Create poll</Link>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Repoll Round Banner */}
       {poll.repolledFrom && (

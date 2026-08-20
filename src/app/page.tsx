@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Navbar } from "@/components/Navbar";
 import { BallotLogo } from "@/components/BallotLogo";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
+
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
@@ -160,18 +162,7 @@ export default function HomePage() {
   return (
     <div className="wrap">
       {/* Top Navigation */}
-      <header className="top">
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <BallotLogo size={32} />
-        </Link>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <a href="#how-it-works" className="btn-ghost" style={{ fontSize: 13 }}>How It Works</a>
-          <a href="#why-ballot" className="btn-ghost" style={{ fontSize: 13 }}>Why Ballot</a>
-          <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
-          <ThemeToggle />
-          <Link href="/new" className="btn-primary">+ Create poll</Link>
-        </div>
-      </header>
+      <Navbar showLandingLinks={true} />
 
 
       <main>

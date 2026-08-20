@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Navbar } from "@/components/Navbar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BallotLogo } from "@/components/BallotLogo";
 import { AuthModal } from "@/components/AuthModal";
@@ -291,33 +292,7 @@ export default function NewPollPage() {
   return (
     <div className="wrap">
       {/* Top Header */}
-      <header className="top">
-        <Link href="/" style={{ textDecoration: "none" }}>
-          <BallotLogo size={32} />
-        </Link>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
-          <ThemeToggle />
-          {sessionUser ? (
-            <Link
-              href={`/u/${sessionUser.username}`}
-              className="btn-ghost"
-              style={{ fontSize: 12, fontFamily: "monospace", display: "flex", alignItems: "center", gap: 6 }}
-            >
-              <span>👤</span> @{sessionUser.username}
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={() => { setAuthModalMsg("Sign in to manage your creator profile."); setShowAuthModal(true); }}
-              className="btn-ghost"
-              style={{ fontSize: 13 }}
-            >
-              Sign in
-            </button>
-          )}
-        </div>
-      </header>
+      <Navbar onUserChange={(u) => { setSessionUser(u); if (u) setIsPublic(true); }} />
 
       {/* Auth Modal */}
       <AuthModal
