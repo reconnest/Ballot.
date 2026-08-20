@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
 import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/chart-utils";
+import type { IRVResult } from "@/lib/irv";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
@@ -41,8 +42,10 @@ type PollData = {
   securityMode: string;
   creator?: CreatorProfile | null;
   options: OptionData[];
+  irvResult?: IRVResult | null;
   totalVotes: number | null;
   totalSelections: number | null;
+
   myVote: string | null;
   myVotes: string[];
   hasVoted: boolean;
@@ -89,8 +92,10 @@ function PollContent() {
   
   const [adminKey, setAdminKey] = useState<string | null>(null);
   const [chartType, setChartType] = useState<"ledger" | "donut">("ledger");
+  const [showIRVSteps, setShowIRVSteps] = useState(false);
   const [activeViewers, setActiveViewers] = useState<number>(1);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
+
 
   // Admin Editable States
   const [editQuestion, setEditQuestion] = useState("");
@@ -879,163 +884,365 @@ function PollContent() {
         ) : (
           /* 2. RESULTS VIEW */
           <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            {poll.pollType === "ranked_choice" ? (
+              /* RANKED CHOICE (IRV) DEDICATED CONSENSUS VIEW */
               <div>
-                <h2 style={{ fontSize: 18, fontWeight: 700 }}>Live Results</h2>
-                <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                  {poll.totalVotes || 0} {poll.totalVotes === 1 ? "vote recorded" : "total votes recorded"}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div>
+                    <h2 style={{ fontSize: 18, fontWeight: 700 }}>Consensus Results</h2>
+                    <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                      {poll.totalVotes || 0} {poll.totalVotes === 1 ? "ballot recorded" : "total ballots recorded"} · Instant Runoff Voting (IRV)
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)", background: "var(--accent-soft)", border: "1px solid var(--accent)", padding: "4px 8px", borderRadius: 6, fontFamily: "monospace" }}>
+                    IRV Consensus
+                  </div>
                 </div>
-              </div>
 
-              {/* Chart Switcher */}
-              <div style={{ display: "flex", gap: 4, background: "var(--paper)", padding: 3, borderRadius: 6, border: "1px solid var(--line)" }}>
-                <button
-                  type="button"
-                  onClick={() => setChartType("ledger")}
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: 4,
-                    border: "none",
-                    background: chartType === "ledger" ? "var(--surface)" : "none",
-                    fontWeight: chartType === "ledger" ? 700 : 500,
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
-                >
-                  Bars
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChartType("donut")}
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: 4,
-                    border: "none",
-                    background: chartType === "donut" ? "var(--surface)" : "none",
-                    fontWeight: chartType === "donut" ? 700 : 500,
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
-                >
-                  Donut
-                </button>
-              </div>
-            </div>
-
-            {/* 1. Horizontal Bars View */}
-            {chartType === "ledger" ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                {poll.options.map((opt, i) => {
-                  const count = opt.votes ?? 0;
-                  const total = poll.totalVotes || 1;
-                  const pct = Math.round((count / total) * 100);
-                  const isMyPick = poll.myVotes.includes(opt.id);
-
-                  return (
-                    <div key={opt.id}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
-                        <span style={{ fontWeight: isMyPick ? 700 : 500, color: isMyPick ? "var(--accent-ink)" : "var(--ink)" }}>
-                          {opt.label} {isMyPick && "✓ (your pick)"}
-                        </span>
-                        <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>
-                          {pct}% ({count})
-                        </span>
-                      </div>
-                      <div className="ledger-track" style={{ height: 10, borderRadius: 5 }}>
-                        <div
-                          className="ledger-fill"
-                          style={{
-                            width: `${pct}%`,
-                            background: isMyPick ? "var(--accent)" : CHART_COLORS[i % CHART_COLORS.length],
-                            borderRadius: 5,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              /* 2. Interactive SVG Donut Chart View */
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, padding: "10px 0" }}>
-                <div style={{ position: "relative", width: 220, height: 220 }}>
-                  <svg width="220" height="220" viewBox="0 0 240 240">
-                    {calculateSlices(
-                      poll.options.map((o) => ({ id: o.id, label: o.label, votes: o.votes || 0 })),
-                      poll.totalVotes || 0,
-                      95,
-                      60
-                    ).map((slice, i) => (
-                      slice.path ? (
-                        <path
-                          key={slice.id || i}
-                          d={slice.path}
-                          fill={slice.color}
-                          stroke="var(--surface)"
-                          strokeWidth="2"
-                          style={{ transition: "opacity 0.2s ease", cursor: "pointer" }}
-                        >
-                          <title>{`${slice.label}: ${slice.votes} votes (${slice.pct}%)`}</title>
-                        </path>
-                      ) : null
-                    ))}
-                  </svg>
-                  {/* Donut Center Count */}
+                {/* 🏆 Consensus Winner Banner */}
+                {poll.irvResult?.winner ? (
                   <div style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    textAlign: "center",
-                    pointerEvents: "none"
+                    background: "var(--accent-soft)",
+                    border: "1px solid var(--accent)",
+                    borderRadius: 8,
+                    padding: "14px 16px",
+                    marginBottom: 20
                   }}>
-                    <div style={{ fontSize: 24, fontWeight: 800, color: "var(--ink)", lineHeight: 1 }}>
-                      {poll.totalVotes || 0}
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 18 }}>🏆</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: "var(--accent-ink)" }}>
+                        IRV Consensus Winner: {poll.irvResult.winner.label}
+                      </span>
                     </div>
-                    <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 2 }}>
-                      Votes
+                    <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                      {poll.irvResult.winner.pct}% majority achieved in Round {poll.irvResult.winningRound} · Instant Runoff eliminated lower ranks until reaching true majority consensus.
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    background: "var(--paper)",
+                    border: "1px solid var(--line)",
+                    borderRadius: 8,
+                    padding: "12px 14px",
+                    marginBottom: 20,
+                    fontSize: 12,
+                    color: "var(--muted)"
+                  }}>
+                    ⚡ Waiting for ballots to calculate majority consensus winner...
+                  </div>
+                )}
+
+                {/* ↔ Split Comparison: Left = Your Preference, Right = Group Consensus */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>
+                  {/* Left Column: Your Personal Preference */}
+                  <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: 14 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      <span>🗳️ Your Preference Order</span>
+                    </div>
+                    {poll.myVotes && poll.myVotes.length > 0 ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {poll.myVotes.map((id, idx) => {
+                          const opt = poll.options.find((o) => o.id === id);
+                          if (!opt) return null;
+                          const isTop = idx === 0;
+                          return (
+                            <div
+                              key={id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "8px 10px",
+                                borderRadius: 6,
+                                background: isTop ? "var(--accent-soft)" : "var(--surface)",
+                                border: isTop ? "1px solid var(--accent)" : "1px solid var(--line)",
+                                fontSize: 13,
+                              }}
+                            >
+                              <span style={{ fontFamily: "monospace", fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--muted)", minWidth: 22 }}>
+                                #{idx + 1}
+                              </span>
+                              <span style={{ fontWeight: isTop ? 700 : 500, color: "var(--ink)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {opt.label}
+                              </span>
+                              {isTop && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent-ink)", background: "var(--surface)", padding: "2px 6px", borderRadius: 4 }}>
+                                  1st Pick
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, color: "var(--muted)", padding: "16px 0", textAlign: "center" }}>
+                        No personal ballot recorded.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right Column: Group Consensus Ranking */}
+                  <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: 14 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      <span>📊 Group Consensus Order</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {(poll.irvResult?.consensusOrder || poll.options).map((item, idx) => {
+                        const isWinner = idx === 0 && poll.irvResult?.winner;
+                        const rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
+
+                        return (
+                          <div
+                            key={item.id}
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 4,
+                              padding: "8px 10px",
+                              borderRadius: 6,
+                              background: isWinner ? "var(--accent-soft)" : "var(--surface)",
+                              border: isWinner ? "1px solid var(--accent)" : "1px solid var(--line)",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                                <span style={{ minWidth: 22, fontSize: idx < 3 ? 14 : 12, fontWeight: 700, fontFamily: "monospace", color: isWinner ? "var(--accent-ink)" : "var(--muted)" }}>
+                                  {rankIcon}
+                                </span>
+                                <span style={{ fontWeight: isWinner ? 700 : 600, color: isWinner ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {item.label}
+                                </span>
+                              </div>
+                              {"finalPct" in item && (
+                                <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: isWinner ? "var(--accent-ink)" : "var(--muted)" }}>
+                                  {item.finalPct}%
+                                </span>
+                              )}
+                            </div>
+                            {"status" in item && (
+                              <div style={{ fontSize: 10, color: isWinner ? "var(--accent-ink)" : "var(--muted)", marginLeft: 30 }}>
+                                {item.status}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
 
-                {/* Donut Legend */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, width: "100%" }}>
-                  {poll.options.map((opt, i) => {
-                    const count = opt.votes ?? 0;
-                    const total = poll.totalVotes || 1;
-                    const pct = Math.round((count / total) * 100);
-                    const color = CHART_COLORS[i % CHART_COLORS.length];
-                    const isMyPick = poll.myVotes.includes(opt.id);
+                {/* Expandable Round-by-Round Runoff Details */}
+                {poll.irvResult && poll.irvResult.rounds.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <button
+                      type="button"
+                      onClick={() => setShowIRVSteps(!showIRVSteps)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--accent)",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        padding: "4px 0",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6
+                      }}
+                    >
+                      <span>{showIRVSteps ? "▼ Hide Round-by-Round Elimination Breakdown" : "► Inspect Round-by-Round Runoff Elimination Steps"}</span>
+                    </button>
 
-                    return (
-                      <div
-                        key={opt.id}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          fontSize: 12,
-                          padding: "6px 10px",
-                          background: "var(--paper)",
-                          borderRadius: 6,
-                          border: isMyPick ? "1px solid var(--accent)" : "1px solid var(--line)"
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
-                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
-                          <span style={{ fontWeight: isMyPick ? 700 : 500, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {opt.label}
-                          </span>
-                        </div>
-                        <span style={{ fontFamily: "monospace", color: "var(--muted)", marginLeft: 6 }}>
-                          {pct}%
-                        </span>
+                    {showIRVSteps && (
+                      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10, padding: 12, background: "var(--paper)", borderRadius: 6, border: "1px solid var(--line)" }}>
+                        {poll.irvResult.rounds.map((r) => (
+                          <div key={r.roundNumber} style={{ fontSize: 12, borderBottom: "1px solid var(--line)", paddingBottom: 8 }}>
+                            <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 4 }}>
+                              Round {r.roundNumber} ({r.totalActiveBallots} Active Ballots)
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3, marginLeft: 8 }}>
+                              {r.tallies.map((t) => (
+                                <div key={t.optionId} style={{ display: "flex", justifyContent: "space-between", color: "var(--muted)" }}>
+                                  <span>{t.label}</span>
+                                  <span style={{ fontFamily: "monospace" }}>{t.votes} votes ({t.pct}%)</span>
+                                </div>
+                              ))}
+                            </div>
+                            {r.eliminatedLabel && (
+                              <div style={{ marginTop: 4, color: "#EF4444", fontSize: 11, fontWeight: 600 }}>
+                                ↳ Eliminated: {r.eliminatedLabel} ({r.transferredVotes} ballots transferred to next choice)
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })}
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* STANDARD & MULTIPLE CHOICE POLL RESULTS VIEW */
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div>
+                    <h2 style={{ fontSize: 18, fontWeight: 700 }}>Live Results</h2>
+                    <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                      {poll.totalVotes || 0} {poll.totalVotes === 1 ? "vote recorded" : "total votes recorded"}
+                    </div>
+                  </div>
+
+                  {/* Chart Switcher */}
+                  <div style={{ display: "flex", gap: 4, background: "var(--paper)", padding: 3, borderRadius: 6, border: "1px solid var(--line)" }}>
+                    <button
+                      type="button"
+                      onClick={() => setChartType("ledger")}
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: 4,
+                        border: "none",
+                        background: chartType === "ledger" ? "var(--surface)" : "none",
+                        fontWeight: chartType === "ledger" ? 700 : 500,
+                        fontSize: 11,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Bars
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChartType("donut")}
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: 4,
+                        border: "none",
+                        background: chartType === "donut" ? "var(--surface)" : "none",
+                        fontWeight: chartType === "donut" ? 700 : 500,
+                        fontSize: 11,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Donut
+                    </button>
+                  </div>
                 </div>
+
+                {/* 1. Horizontal Bars View */}
+                {chartType === "ledger" ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {poll.options.map((opt, i) => {
+                      const count = opt.votes ?? 0;
+                      const total = poll.totalVotes || 1;
+                      const pct = Math.round((count / total) * 100);
+                      const isMyPick = poll.myVotes.includes(opt.id);
+
+                      return (
+                        <div key={opt.id}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
+                            <span style={{ fontWeight: isMyPick ? 700 : 500, color: isMyPick ? "var(--accent-ink)" : "var(--ink)" }}>
+                              {opt.label} {isMyPick && "✓ (your pick)"}
+                            </span>
+                            <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>
+                              {pct}% ({count})
+                            </span>
+                          </div>
+                          <div className="ledger-track" style={{ height: 10, borderRadius: 5 }}>
+                            <div
+                              className="ledger-fill"
+                              style={{
+                                width: `${pct}%`,
+                                background: isMyPick ? "var(--accent)" : CHART_COLORS[i % CHART_COLORS.length],
+                                borderRadius: 5,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* 2. Interactive SVG Donut Chart View */
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, padding: "10px 0" }}>
+                    <div style={{ position: "relative", width: 220, height: 220 }}>
+                      <svg width="220" height="220" viewBox="0 0 240 240">
+                        {calculateSlices(
+                          poll.options.map((o) => ({ id: o.id, label: o.label, votes: o.votes || 0 })),
+                          poll.totalVotes || 0,
+                          95,
+                          60
+                        ).map((slice, i) => (
+                          slice.path ? (
+                            <path
+                              key={slice.id || i}
+                              d={slice.path}
+                              fill={slice.color}
+                              stroke="var(--surface)"
+                              strokeWidth="2"
+                              style={{ transition: "opacity 0.2s ease", cursor: "pointer" }}
+                            >
+                              <title>{`${slice.label}: ${slice.votes} votes (${slice.pct}%)`}</title>
+                            </path>
+                          ) : null
+                        ))}
+                      </svg>
+                      {/* Donut Center Count */}
+                      <div style={{
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        textAlign: "center",
+                        pointerEvents: "none"
+                      }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: "var(--ink)", lineHeight: 1 }}>
+                          {poll.totalVotes || 0}
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 2 }}>
+                          Votes
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Donut Legend */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, width: "100%" }}>
+                      {poll.options.map((opt, i) => {
+                        const count = opt.votes ?? 0;
+                        const total = poll.totalVotes || 1;
+                        const pct = Math.round((count / total) * 100);
+                        const color = CHART_COLORS[i % CHART_COLORS.length];
+                        const isMyPick = poll.myVotes.includes(opt.id);
+
+                        return (
+                          <div
+                            key={opt.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              fontSize: 12,
+                              padding: "6px 10px",
+                              background: "var(--paper)",
+                              borderRadius: 6,
+                              border: isMyPick ? "1px solid var(--accent)" : "1px solid var(--line)"
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
+                              <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                              <span style={{ fontWeight: isMyPick ? 700 : 500, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {opt.label}
+                              </span>
+                            </div>
+                            <span style={{ fontFamily: "monospace", color: "var(--muted)", marginLeft: 6 }}>
+                              {pct}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
 
 
             {/* Voter Action: Change Vote Button */}

@@ -6,9 +6,12 @@ import { readVoterTokenFromRequest } from "@/lib/voter-token";
 import { createHash } from "crypto";
 import { getSessionUser } from "@/lib/auth";
 
+import { calculateIRV } from "@/lib/irv";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
+
 
 export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
 
@@ -110,6 +113,31 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
 
     const voterList = Object.values(voterMap);
 
+    // Calculate IRV Instant Runoff Consensus if ranked choice
+
+    let irvResult = null;
+    if (poll.pollType === "ranked_choice" && canViewResults) {
+      const ballotGroups = new Map<string, { optionId: string; rankPosition: number | null }[]>();
+      for (const v of pollVotes) {
+        const key = v.ballotId || v.voterToken;
+        if (!ballotGroups.has(key)) {
+          ballotGroups.set(key, []);
+        }
+        ballotGroups.get(key)!.push({
+          optionId: v.optionId,
+          rankPosition: v.rankPosition ?? null,
+        });
+      }
+
+      const ballots: string[][] = [];
+      for (const items of ballotGroups.values()) {
+        items.sort((a, b) => (a.rankPosition ?? 999) - (b.rankPosition ?? 999));
+        ballots.push(items.map((i) => i.optionId));
+      }
+
+      irvResult = calculateIRV(pollOptions, ballots);
+    }
+
     return NextResponse.json({
       id: poll.id,
       slug: poll.slug,
@@ -138,7 +166,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
         imageUrl: o.imageUrl,
         votes: canViewResults ? (counts[o.id] ?? 0) : null,
       })),
-
+      irvResult,
       totalVotes: canViewResults ? uniqueVoters : null,
       totalSelections: canViewResults ? pollVotes.length : null,
       myVote,
@@ -148,6 +176,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       isAdmin,
       voters: voterList,
     }, {
+
       headers: {
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
         "Pragma": "no-cache",
