@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { db, ensureDbSchema } from "@/db";
 import { authCodes } from "@/db/schema";
 import { eq, and, gt, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -9,8 +9,10 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureDbSchema();
     const body = await req.json();
     const email = (body.email ?? "").toString().trim().toLowerCase();
+
 
     if (!email || !email.includes("@") || email.length < 5) {
       return NextResponse.json({ error: "Please provide a valid email address." }, { status: 400 });

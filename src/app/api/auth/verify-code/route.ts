@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { db, ensureDbSchema } from "@/db";
 import { users, authCodes } from "@/db/schema";
 import { eq, and, gt, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureDbSchema();
     const body = await req.json();
+
     const email = (body.email ?? "").toString().trim().toLowerCase();
     const code = (body.code ?? "").toString().trim();
     const desiredUsername = body.username ? body.username.toString().trim().toLowerCase() : null;
