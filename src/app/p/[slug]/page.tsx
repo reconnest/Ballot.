@@ -621,7 +621,7 @@ function PollContent() {
             )}
 
             {poll.pollType === "ranked_choice" ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
                 <div style={{
                   fontSize: 12,
                   color: "var(--muted)",
@@ -632,11 +632,10 @@ function PollContent() {
                 }}>
                   <span>💡 Drag</span>
                   <span style={{ fontFamily: "monospace", fontWeight: 700 }}>⋮⋮</span>
-                  <span>or tap ▲ / ▼ to order from Most Preferred (Top) to Least (Bottom).</span>
+                  <span>or use ▲ / ▼ to rank preferences from 1st to {rankedOptions.length}th Choice:</span>
                 </div>
 
                 {rankedOptions.map((opt, i) => {
-                  const isTop = i === 0;
                   const isDragging = draggedIndex === i;
                   const isDragOver = dragOverIndex === i;
 
@@ -644,17 +643,14 @@ function PollContent() {
                     <div
                       key={opt.id}
                       draggable={true}
-                      onDragStart={() => setDraggedIndex(i)}
+                      onDragStart={(e) => {
+                        setDraggedIndex(i);
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
                       onDragOver={(e) => {
                         e.preventDefault();
-                        setDragOverIndex(i);
-                      }}
-                      onDragEnd={() => {
-                        if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
-                          moveRankedOption(draggedIndex, dragOverIndex);
-                        }
-                        setDraggedIndex(null);
-                        setDragOverIndex(null);
+                        e.dataTransfer.dropEffect = "move";
+                        if (dragOverIndex !== i) setDragOverIndex(i);
                       }}
                       onDrop={(e) => {
                         e.preventDefault();
@@ -664,32 +660,29 @@ function PollContent() {
                         setDraggedIndex(null);
                         setDragOverIndex(null);
                       }}
+                      onDragEnd={() => {
+                        setDraggedIndex(null);
+                        setDragOverIndex(null);
+                      }}
                       style={{
-                        border: isTop
-                          ? "2px solid var(--accent)"
-                          : isDragOver
-                          ? "2px dashed var(--accent)"
-                          : "1px solid var(--line)",
-                        background: isTop
-                          ? "var(--accent-soft)"
-                          : isDragOver
-                          ? "var(--paper)"
-                          : "var(--surface)",
-                        borderRadius: 8,
-                        padding: "12px 14px",
                         display: "flex",
-                        alignItems: "center",
                         justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "10px 14px",
+                        borderRadius: "var(--radius)",
+                        border: isDragOver ? "2px dashed var(--accent)" : "1px solid var(--line)",
+                        background: isDragOver ? "var(--accent-soft)" : "var(--paper)",
+                        fontSize: 14,
                         transition: "all 0.15s ease",
                         opacity: isDragging ? 0.4 : 1,
-                        boxShadow: isTop ? "0 2px 8px rgba(15, 118, 110, 0.08)" : "none",
+                        cursor: "grab",
                       }}
                     >
-                      {/* Left: 6-dot Drag Handle + Rank Pill + Label */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {/* Left: 6-dot Drag Handle + Rank Number + Option Label */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         {/* 6-dot Drag Handle */}
                         <div
-                          title="Drag to reorder preference"
+                          title="Drag to reorder"
                           style={{
                             cursor: "grab",
                             display: "flex",
@@ -699,91 +692,98 @@ function PollContent() {
                             userSelect: "none"
                           }}
                         >
-                          <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
-                            <circle cx="3" cy="2.5" r="1.5" />
-                            <circle cx="9" cy="2.5" r="1.5" />
-                            <circle cx="3" cy="8" r="1.5" />
-                            <circle cx="9" cy="8" r="1.5" />
-                            <circle cx="3" cy="13.5" r="1.5" />
-                            <circle cx="9" cy="13.5" r="1.5" />
+                          <svg width="14" height="18" viewBox="0 0 14 18" fill="currentColor">
+                            <circle cx="4" cy="3" r="1.5" />
+                            <circle cx="10" cy="3" r="1.5" />
+                            <circle cx="4" cy="9" r="1.5" />
+                            <circle cx="10" cy="9" r="1.5" />
+                            <circle cx="4" cy="15" r="1.5" />
+                            <circle cx="10" cy="15" r="1.5" />
                           </svg>
                         </div>
 
                         {/* Rank Badge */}
-                        <div style={{
-                          minWidth: 28,
-                          height: 26,
-                          padding: "0 6px",
-                          borderRadius: 13,
-                          background: isTop ? "var(--accent)" : "var(--line)",
-                          color: isTop ? "#FFFFFF" : "var(--ink)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 12,
-                          fontWeight: 700,
+                        <span style={{
                           fontFamily: "monospace",
+                          fontWeight: 700,
+                          color: "var(--accent)",
+                          fontSize: 13,
+                          minWidth: 24,
                         }}>
                           #{i + 1}
-                        </div>
+                        </span>
+
+                        {/* Optional Image */}
+                        {opt.imageUrl && (
+                          <img src={opt.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} />
+                        )}
 
                         {/* Option Label */}
                         <span style={{
-                          fontSize: 15,
-                          fontWeight: isTop ? 700 : 500,
-                          color: isTop ? "var(--accent-ink)" : "var(--ink)"
+                          fontWeight: 600,
+                          color: "var(--ink)",
+                          fontSize: 14,
                         }}>
-                          {opt.label} {isTop && <span style={{ fontSize: 11, color: "var(--accent-ink)", fontWeight: 600 }}>(1st Pick)</span>}
+                          {opt.label}
                         </span>
                       </div>
 
-                      {/* Right: Optional Image + ▲ / ▼ Controls */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        {opt.imageUrl && (
-                          <img src={opt.imageUrl} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: "cover" }} />
-                        )}
-
-                        {/* Up / Down Move Buttons */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          <button
-                            type="button"
-                            disabled={i === 0}
-                            onClick={() => moveRankedOption(i, i - 1)}
-                            style={{
-                              border: "1px solid var(--line)",
-                              background: "var(--paper)",
-                              borderRadius: 4,
-                              padding: "2px 6px",
-                              fontSize: 10,
-                              cursor: i === 0 ? "not-allowed" : "pointer",
-                              opacity: i === 0 ? 0.25 : 1,
-                              color: "var(--ink)",
-                              lineHeight: 1
-                            }}
-                            title="Move priority up"
-                          >
-                            ▲
-                          </button>
-                          <button
-                            type="button"
-                            disabled={i === rankedOptions.length - 1}
-                            onClick={() => moveRankedOption(i, i + 1)}
-                            style={{
-                              border: "1px solid var(--line)",
-                              background: "var(--paper)",
-                              borderRadius: 4,
-                              padding: "2px 6px",
-                              fontSize: 10,
-                              cursor: i === rankedOptions.length - 1 ? "not-allowed" : "pointer",
-                              opacity: i === rankedOptions.length - 1 ? 0.25 : 1,
-                              color: "var(--ink)",
-                              lineHeight: 1
-                            }}
-                            title="Move priority down"
-                          >
-                            ▼
-                          </button>
-                        </div>
+                      {/* Right: Side-by-side Green Up and Red Down Arrow Buttons */}
+                      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                        <button
+                          type="button"
+                          disabled={i === 0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            moveRankedOption(i, i - 1);
+                          }}
+                          style={{
+                            padding: "4px 8px",
+                            fontSize: 12,
+                            border: "1px solid var(--line)",
+                            borderRadius: 4,
+                            background: "var(--surface)",
+                            cursor: i === 0 ? "not-allowed" : "pointer",
+                            opacity: i === 0 ? 0.25 : 1,
+                            color: i === 0 ? "var(--muted)" : "#10B981",
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          aria-label="Move priority up"
+                          title="Move priority up"
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          disabled={i === rankedOptions.length - 1}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            moveRankedOption(i, i + 1);
+                          }}
+                          style={{
+                            padding: "4px 8px",
+                            fontSize: 12,
+                            border: "1px solid var(--line)",
+                            borderRadius: 4,
+                            background: "var(--surface)",
+                            cursor: i === rankedOptions.length - 1 ? "not-allowed" : "pointer",
+                            opacity: i === rankedOptions.length - 1 ? 0.25 : 1,
+                            color: i === rankedOptions.length - 1 ? "var(--muted)" : "#EF4444",
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          aria-label="Move priority down"
+                          title="Move priority down"
+                        >
+                          ▼
+                        </button>
                       </div>
                     </div>
                   );
@@ -856,8 +856,13 @@ function PollContent() {
               className="btn-primary"
               style={{ width: "100%", padding: "14px", fontSize: 15 }}
             >
-              {voting ? "Submitting..." : isEditingVote ? "Update My Vote →" : "Submit Vote →"}
+              {voting
+                ? "Submitting..."
+                : poll.pollType === "ranked_choice"
+                ? (isEditingVote ? "Update Ranked Order →" : "Submit Ranked Order →")
+                : (isEditingVote ? "Update My Vote →" : "Submit Vote →")}
             </button>
+
 
 
           </form>
