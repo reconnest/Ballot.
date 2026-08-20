@@ -117,8 +117,8 @@ export function Navbar({ onUserChange }: NavbarProps) {
     setSavingSettings(false);
   }
 
-  // Scoping: How it works & Why Ballot only show on Landing Page ('/') for logged-out users
-  const isGuestLandingPage = pathname === "/" && !user;
+  // Scoping: How It Works & Why Ballot only show on Landing Page ('/'), for both logged-in and logged-out users
+  const isLandingPage = pathname === "/";
   const logoHref = user ? "/explore" : "/";
 
   return (
@@ -131,7 +131,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
 
         {/* 2. Middle Section: Scoped Anchor Links (Desktop Only) */}
         <nav className="navbar-middle-links" aria-label="Main Navigation">
-          {isGuestLandingPage ? (
+          {isLandingPage ? (
             <>
               <a href="#how-it-works" className="navbar-nav-link">How It Works</a>
               <a href="#why-ballot" className="navbar-nav-link">Why Ballot</a>
@@ -143,6 +143,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
             )
           )}
         </nav>
+
 
         {/* 3. Right Section: Theme Toggle, Create Poll & Auth State */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", position: "relative" }}>

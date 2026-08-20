@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Navbar } from "@/components/Navbar";
+import { Navbar, SessionUser } from "@/components/Navbar";
 import { BallotLogo } from "@/components/BallotLogo";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
-
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
@@ -21,6 +20,7 @@ type PublicPoll = {
 };
 
 export default function HomePage() {
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [polls, setPolls] = useState<Summary[] | null>(null);
   const [showMyPolls, setShowMyPolls] = useState(false);
   const [trendingPolls, setTrendingPolls] = useState<PublicPoll[]>([]);
@@ -28,6 +28,7 @@ export default function HomePage() {
   // Ephemeral Sandbox State (100% client-side, zero network API calls)
   const [sandboxFormat, setSandboxFormat] = useState<"standard" | "ranked" | "image">("standard");
   const [workflowStep, setWorkflowStep] = useState<"create" | "share" | "decide">("create");
+
 
   
   // Standard format state
@@ -83,6 +84,8 @@ export default function HomePage() {
   }
 
   function handleRankedSubmit() {
+
+    if (rankedSubmitted) return;
     setRankedSubmitted(true);
     try { fireMotionSafeConfetti(); } catch {}
   }
@@ -102,50 +105,8 @@ export default function HomePage() {
   const imageTotal = imageTallies.reduce((a, b) => a + b, 0);
 
 
-  // Load user's local polls
+  // Fetch top 3 trending public polls
   useEffect(() => {
-    async function load() {
-      let stored: StoredPoll[] = [];
-      let adminKeys: Record<string, string> = {};
-      try {
-        stored = JSON.parse(localStorage.getItem("ballot:myPolls") ?? "[]");
-        adminKeys = JSON.parse(localStorage.getItem("ballot:adminKeys") ?? "{}");
-      } catch {
-        stored = [];
-      }
-      stored = stored.filter((p) => p.slug && (p.slug.startsWith("BPC-") || p.slug.startsWith("BPP-")));
-      stored.sort((a, b) => b.createdAt - a.createdAt);
-
-      if (stored.length > 0) {
-        setShowMyPolls(true);
-      } else {
-        setShowMyPolls(false);
-      }
-
-
-      const results = await Promise.all(
-        stored.map(async (p) => {
-          const key = p.adminKey || adminKeys[p.slug];
-          const query = key ? `?key=${encodeURIComponent(key)}` : "";
-          try {
-            const res = await fetch(`/api/polls/${p.slug}${query}`);
-            if (!res.ok) return { ...p, totalVotes: 0, isExpired: false };
-            const data = await res.json();
-            return {
-              ...p,
-              totalVotes: data.totalVotes ?? data.totalSelections ?? 0,
-              isExpired: data.isExpired,
-            };
-          } catch {
-            return { ...p, totalVotes: 0, isExpired: false };
-          }
-        })
-      );
-      setPolls(results);
-    }
-    load();
-
-    // Fetch top 3 trending public polls (always fresh, zero browser caching)
     async function loadTrending() {
       try {
         const res = await fetch("/api/explore?filter=trending", { cache: "no-store" });
@@ -156,13 +117,43 @@ export default function HomePage() {
       } catch {}
     }
     loadTrending();
-
   }, []);
+
+  // Only load user's created polls when creator is logged in
+  useEffect(() => {
+    async function loadCreatorPolls() {
+      if (!sessionUser) {
+        setPolls(null);
+        setShowMyPolls(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/u/${sessionUser.username}?_t=${Date.now()}`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.polls && Array.isArray(data.polls)) {
+            const formatted: Summary[] = data.polls.map((p: any) => ({
+              slug: p.slug,
+              question: p.question,
+              createdAt: p.createdAt,
+              totalVotes: p.totalVotes || 0,
+              isExpired: p.isExpired || false,
+            }));
+            setPolls(formatted);
+            setShowMyPolls(formatted.length > 0);
+          }
+        }
+      } catch {}
+    }
+
+    loadCreatorPolls();
+  }, [sessionUser]);
 
   return (
     <div className="wrap">
       {/* Top Navigation */}
-      <Navbar showLandingLinks={true} />
+      <Navbar onUserChange={(u) => setSessionUser(u)} showLandingLinks={true} />
 
 
       <main>
@@ -433,9 +424,10 @@ export default function HomePage() {
 
         </section>
 
-        {/* User's Created Polls Drawer (if returning creator) */}
-        {polls && polls.length > 0 && (
+        {/* User's Created Polls Drawer (Only when creator is logged in) */}
+        {sessionUser && polls && polls.length > 0 && (
           <section style={{ marginBottom: 44, border: "1px solid var(--line)", borderRadius: 8, padding: 20, background: "var(--surface)" }}>
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 16 }}>📋</span>
