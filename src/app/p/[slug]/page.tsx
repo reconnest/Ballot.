@@ -506,7 +506,7 @@ function PollContent() {
   const hasZeroVotes = (poll.totalVotes || 0) === 0;
 
   return (
-    <div className="wrap">
+    <div className="wrap-840">
       {/* Top Header */}
       <Navbar />
 
@@ -569,7 +569,8 @@ function PollContent() {
         </div>
       )}
 
-      <main style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 60 }}>
+      <main style={{ width: "100%", paddingBottom: 60 }}>
+
         {/* Poll Metadata Header */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
