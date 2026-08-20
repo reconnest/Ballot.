@@ -60,11 +60,12 @@ export default function CreatorProfilePage() {
   }, [handle]);
 
   return (
-    <div className="wrap-840">
+    <div className="wrap">
       {/* Top Header */}
       <Navbar />
 
-      <main style={{ width: "100%", paddingBottom: 60 }}>
+      <main style={{ maxWidth: 920, margin: "0 auto", paddingBottom: 60, width: "100%" }}>
+
 
         {loading ? (
           <div style={{ padding: "80px 0", textAlign: "center", color: "var(--muted)", fontFamily: "monospace" }}>
