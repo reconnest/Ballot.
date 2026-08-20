@@ -24,6 +24,7 @@ type UserPoll = {
   status: string;
   voteCount: number;
   isExpired: boolean;
+  hasVoted?: boolean;
   createdAt: number;
 };
 
@@ -35,6 +36,7 @@ export default function CreatorProfilePage() {
   const [creator, setCreator] = useState<CreatorProfile | null>(null);
   const [polls, setPolls] = useState<UserPoll[]>([]);
   const [totalVotes, setTotalVotes] = useState(0);
+  const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -48,6 +50,7 @@ export default function CreatorProfilePage() {
           setCreator(data.creator);
           setPolls(data.polls || []);
           setTotalVotes(data.totalVotes || 0);
+          setIsOwner(!!data.isOwner);
         } else {
           setNotFound(true);
         }
@@ -58,6 +61,7 @@ export default function CreatorProfilePage() {
     }
     if (handle) loadProfile();
   }, [handle]);
+
 
   return (
     <div className="wrap">
@@ -198,8 +202,14 @@ export default function CreatorProfilePage() {
                         <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>
                           {p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}
                         </span>
-                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
-                          {p.status === "inactive" ? "View results →" : "Vote now →"}
+                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, fontWeight: isOwner ? 600 : 500 }}>
+                          {isOwner
+                            ? "Manage & Results →"
+                            : p.status === "inactive" || p.isExpired
+                            ? "Results Finalized →"
+                            : p.hasVoted
+                            ? "Voted ✓ · Results →"
+                            : "Vote now →"}
                         </div>
                       </div>
                     </div>
@@ -213,3 +223,4 @@ export default function CreatorProfilePage() {
     </div>
   );
 }
+

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { users, polls, votes } from "@/db/schema";
 import { eq, and, ne, desc } from "drizzle-orm";
+import { readVoterTokenFromRequest } from "@/lib/voter-token";
+import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -28,6 +30,10 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
       return NextResponse.json({ error: "Creator not found." }, { status: 404 });
     }
 
+    const sessionUser = await getSessionUser(req);
+    const isOwner = sessionUser ? sessionUser.id === user.id : false;
+    const myToken = readVoterTokenFromRequest(req);
+
     // Fetch user's public polls
     const userPolls = await db
       .select({
@@ -53,9 +59,14 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
     // Calculate votes for each poll
     const allVotes = await db.select({ pollId: votes.pollId, voterToken: votes.voterToken }).from(votes);
     const votesByPoll: Record<string, Set<string>> = {};
+    const myVotedPollIds = new Set<string>();
+
     for (const v of allVotes) {
       if (!votesByPoll[v.pollId]) votesByPoll[v.pollId] = new Set();
       votesByPoll[v.pollId].add(v.voterToken);
+      if (myToken && v.voterToken === myToken) {
+        myVotedPollIds.add(v.pollId);
+      }
     }
 
     let totalVotes = 0;
@@ -66,6 +77,7 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
         ...p,
         voteCount: count,
         isExpired: p.expiresAt ? Date.now() > p.expiresAt : false,
+        hasVoted: myVotedPollIds.has(p.id),
       };
     });
 
@@ -73,9 +85,11 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
       creator: user,
       polls: enrichedPolls,
       totalVotes,
+      isOwner,
     }, {
       headers: { "Cache-Control": "no-store, max-age=0" }
     });
+
   } catch (err) {
     console.error("user profile api error:", err);
     return NextResponse.json({ error: "Could not load creator profile." }, { status: 500 });

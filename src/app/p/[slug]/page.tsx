@@ -502,11 +502,16 @@ function PollContent() {
     );
   }
 
-  const showVotingUI = (!poll.hasVoted || isEditingVote) && !poll.isInactive;
+  // Voters see voting UI by default until they vote.
+  // Creators (admins) default directly to Live Results, but can click "Test / Cast Ballot" to switch to voting UI.
+  const showVotingUI = poll.isAdmin
+    ? isEditingVote
+    : (!poll.hasVoted || isEditingVote) && !poll.isInactive;
   const hasZeroVotes = (poll.totalVotes || 0) === 0;
 
   return (
     <div className="wrap">
+
       {/* Top Header */}
       <Navbar />
 
@@ -1247,24 +1252,39 @@ function PollContent() {
 
 
 
-            {/* Voter Action: Change Vote Button */}
-            {poll.hasVoted && !poll.isInactive && poll.allowVoteEdit && (
+            {/* Voter Action: Change Vote Button or Creator Test Vote Button */}
+            {!poll.isInactive && (
               <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedIds(poll.myVotes);
-                    setIsEditingVote(true);
-                  }}
-                  className="btn-ghost"
-                  style={{ fontSize: 13, gap: 6 }}
-                >
-                  ↺ Change your vote
-                </button>
+                {poll.hasVoted && poll.allowVoteEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedIds(poll.myVotes);
+                      setIsEditingVote(true);
+                    }}
+                    className="btn-ghost"
+                    style={{ fontSize: 13, gap: 6 }}
+                  >
+                    ↺ Change your vote
+                  </button>
+                ) : poll.isAdmin && !poll.hasVoted ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedIds([]);
+                      setIsEditingVote(true);
+                    }}
+                    className="btn-ghost"
+                    style={{ fontSize: 13, gap: 6 }}
+                  >
+                    🗳️ Test / Cast Ballot
+                  </button>
+                ) : null}
               </div>
             )}
           </div>
         )}
+
 
         {/* Typeform-Style Minimalist Squircle Action Bar */}
         <div className="typeform-action-bar">
