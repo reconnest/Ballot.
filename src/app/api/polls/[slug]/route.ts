@@ -6,7 +6,12 @@ import { readVoterTokenFromRequest } from "@/lib/voter-token";
 import { createHash } from "crypto";
 import { getSessionUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
+
   try {
     const [poll] = await db.select().from(polls).where(eq(polls.slug, params.slug)).limit(1);
     if (!poll || poll.status === "deleted") {
@@ -106,14 +111,15 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const voterList = Object.values(voterMap);
 
     return NextResponse.json({
+      id: poll.id,
       slug: poll.slug,
       question: poll.question,
       description: poll.description,
+      status: poll.status || "live",
+      allowVoteEdit: poll.allowVoteEdit === 1,
+      repolledFrom: poll.repolledFrom || null,
       createdAt: poll.createdAt,
       expiresAt: poll.expiresAt,
-      status: poll.status,
-      allowVoteEdit: poll.allowVoteEdit === 1,
-      repolledFrom: poll.repolledFrom,
       isExpired,
       isInactive,
       requireName: !!poll.requireName,
@@ -141,6 +147,12 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       canViewResults,
       isAdmin,
       voters: voterList,
+    }, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
     });
   } catch (e) {
 
@@ -148,4 +160,3 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     return NextResponse.json({ error: "Could not load poll." }, { status: 500 });
   }
 }
-

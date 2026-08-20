@@ -6,6 +6,12 @@ import { nanoid, customAlphabet } from "nanoid";
 import { randomBytes, createHash } from "crypto";
 import { getSessionUser } from "@/lib/auth";
 import { generateIpSalt } from "@/lib/security";
+import { broadcastVoteUpdate } from "@/lib/realtime";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
 
 const scopedCode = customAlphabet("23456789ABCDEFGHJKLMNPQRSTUVWXYZ", 6);
 
@@ -214,12 +220,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
       await db.update(polls).set(updateFields).where(eq(polls.id, poll.id));
     }
 
-    return NextResponse.json({ ok: true, updated: updateFields, hasVotes });
+    // Broadcast change to SSE listeners so live UI syncs instantly
+    broadcastVoteUpdate(params.slug, { type: "admin_update", timestamp: Date.now() });
+
+    return NextResponse.json({ ok: true, updated: updateFields, hasVotes }, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+      },
+    });
   } catch (e) {
     console.error("admin patch failed", e);
     return NextResponse.json({ error: "Could not update poll." }, { status: 500 });
   }
 }
+
 
 
 export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {

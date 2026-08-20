@@ -108,7 +108,10 @@ function PollContent() {
 
   async function fetchPoll(customKey?: string | null) {
     const activeKey = customKey !== undefined ? customKey : adminKey;
-    const url = activeKey ? `/api/polls/${slug}?key=${encodeURIComponent(activeKey)}` : `/api/polls/${slug}`;
+    const cacheBuster = `_t=${Date.now()}`;
+    const url = activeKey
+      ? `/api/polls/${slug}?key=${encodeURIComponent(activeKey)}&${cacheBuster}`
+      : `/api/polls/${slug}?${cacheBuster}`;
     try {
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) {
@@ -124,6 +127,7 @@ function PollContent() {
       setEditAllowVoteEdit(data.allowVoteEdit ?? true);
     } catch {}
   }
+
 
   useEffect(() => {
     fetchPoll();
@@ -319,7 +323,29 @@ function PollContent() {
       if (res.ok) {
         showToast("✓ Poll changes saved!");
         setShowAdminModal(false);
-        fetchPoll();
+
+        // Optimistically update React state immediately
+        setPoll((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            question: hasZeroVotes && editQuestion.trim() ? editQuestion.trim() : prev.question,
+            description: editDesc.trim() || null,
+            resultsVisibility: editVisibility as any,
+            allowVoteEdit: editAllowVoteEdit,
+            options: hasZeroVotes && editOptions.length >= 2
+              ? editOptions.filter((o) => o.label.trim().length > 0).map((o, idx) => ({
+                  id: prev.options[idx]?.id || `opt-${idx}`,
+                  label: o.label.trim(),
+                  imageUrl: o.imageUrl,
+                  votes: 0,
+                }))
+              : prev.options,
+          };
+        });
+
+        // Fetch fresh server state
+        await fetchPoll();
       } else {
         showToast(data.error || "Could not save changes.");
       }
@@ -328,6 +354,7 @@ function PollContent() {
     }
     setAdminLoading(false);
   }
+
 
   async function handleDeletePoll() {
     if (!confirm("Are you sure you want to delete this poll permanently? This cannot be undone.")) return;
