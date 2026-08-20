@@ -37,7 +37,7 @@ type PollData = {
   allowMultiple: boolean;
   minChoices: number;
   maxChoices: number | null;
-  resultsVisibility: "always_public" | "after_vote" | "after_deadline" | "creator_only";
+  resultsVisibility: "after_vote" | "after_deadline" | "creator_only";
   securityMode: string;
   creator?: CreatorProfile | null;
   options: OptionData[];
@@ -64,18 +64,23 @@ function PollContent() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isEditingVote, setIsEditingVote] = useState(false);
   const [toast, setToast] = useState("");
+  
+  // Modals
   const [showQR, setShowQR] = useState(false);
-  const [showAdminModal, setShowAdminModal] = useState(false);
   const [showEmbedModal, setShowEmbedModal] = useState(false);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminTab, setAdminTab] = useState<"edit" | "settings" | "actions">("edit");
+  
   const [adminKey, setAdminKey] = useState<string | null>(null);
-  const [chartType, setChartType] = useState<"ledger" | "donut" | "pie">("ledger");
-
+  const [chartType, setChartType] = useState<"ledger" | "donut">("ledger");
   const [activeViewers, setActiveViewers] = useState<number>(1);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
 
-  // Admin Settings Form States
+  // Admin Editable States
+  const [editQuestion, setEditQuestion] = useState("");
+  const [editOptions, setEditOptions] = useState<{ label: string; imageUrl: string }[]>([]);
   const [editDesc, setEditDesc] = useState("");
-  const [editVisibility, setEditVisibility] = useState("always_public");
+  const [editVisibility, setEditVisibility] = useState<string>("after_vote");
   const [editAllowVoteEdit, setEditAllowVoteEdit] = useState(true);
   const [adminLoading, setAdminLoading] = useState(false);
 
@@ -112,24 +117,21 @@ function PollContent() {
       }
       const data: PollData = await res.json();
       setPoll(data);
+      setEditQuestion(data.question || "");
+      setEditOptions((data.options || []).map((o) => ({ label: o.label, imageUrl: o.imageUrl || "" })));
       setEditDesc(data.description || "");
-      setEditVisibility(data.resultsVisibility || "always_public");
+      setEditVisibility(data.resultsVisibility || "after_vote");
       setEditAllowVoteEdit(data.allowVoteEdit ?? true);
-    } catch {
-      // transient network error
-    }
+    } catch {}
   }
 
-  // Real-time EventSource (SSE) stream listener
   useEffect(() => {
     fetchPoll();
 
     let eventSource: EventSource | null = null;
     try {
       eventSource = new EventSource(`/api/polls/${slug}/stream`);
-      eventSource.onopen = () => {
-        setIsLiveConnected(true);
-      };
+      eventSource.onopen = () => setIsLiveConnected(true);
       eventSource.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
@@ -142,10 +144,7 @@ function PollContent() {
       };
     } catch {}
 
-    // Fallback polling every 5s if disconnected
-    pollTimer.current = setInterval(() => {
-      fetchPoll();
-    }, 5000);
+    pollTimer.current = setInterval(() => fetchPoll(), 5000);
 
     return () => {
       if (eventSource) eventSource.close();
@@ -153,22 +152,34 @@ function PollContent() {
     };
   }, [slug, adminKey]);
 
-  function copyLink() {
-    const url = window.location.origin + window.location.pathname;
-    navigator.clipboard.writeText(url);
-    showToast("✓ Voter link copied to clipboard");
-  }
-
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
   }
 
+  function copyPollingLink() {
+    const url = window.location.origin + window.location.pathname;
+    navigator.clipboard.writeText(url);
+    showToast("✓ Polling link copied to clipboard");
+  }
+
+  async function handleShare() {
+    const url = window.location.origin + window.location.pathname;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: poll?.question || "Ballot Poll",
+          url,
+        });
+        return;
+      } catch {}
+    }
+    copyPollingLink();
+  }
+
   function handleSelect(id: string) {
     if (!poll) return;
-
     if (poll.pollType === "ranked_choice") {
-      // Ranked Choice ordering
       if (selectedIds.includes(id)) {
         setSelectedIds(selectedIds.filter((item) => item !== id));
       } else {
@@ -192,7 +203,7 @@ function PollContent() {
     if (!poll) return;
 
     if (poll.isInactive) {
-      showToast("❌ This poll is inactive/closed.");
+      showToast("❌ This poll is closed / inactive.");
       return;
     }
 
@@ -207,7 +218,6 @@ function PollContent() {
     }
 
     setVoting(true);
-
     try {
       const res = await fetch(`/api/polls/${slug}/vote`, {
         method: "POST",
@@ -233,9 +243,23 @@ function PollContent() {
     setVoting(false);
   }
 
+  // Pre-vote option editors
+  function updateEditOption(i: number, val: string) {
+    setEditOptions((prev) => prev.map((o, idx) => (idx === i ? { ...o, label: val } : o)));
+  }
+  function addEditOption() {
+    if (editOptions.length < 30) {
+      setEditOptions((prev) => [...prev, { label: "", imageUrl: "" }]);
+    }
+  }
+  function removeEditOption(i: number) {
+    if (editOptions.length > 2) {
+      setEditOptions((prev) => prev.filter((_, idx) => idx !== i));
+    }
+  }
+
   // Admin Actions
   async function handleToggleStatus() {
-    if (!adminKey && !poll?.isAdmin) return;
     setAdminLoading(true);
     try {
       const res = await fetch(`/api/polls/${slug}/admin`, {
@@ -252,7 +276,7 @@ function PollContent() {
   }
 
   async function handleRepoll() {
-    if (!confirm("Start a new round (Repoll)? The current round results will be finalized.")) return;
+    if (!confirm("Start a new round (Repoll)? Current round results will be finalized and preserved.")) return;
     setAdminLoading(true);
     try {
       const res = await fetch(`/api/polls/${slug}/admin`, {
@@ -269,30 +293,44 @@ function PollContent() {
     setAdminLoading(false);
   }
 
-  async function handleSaveSettings() {
+  async function handleSaveAdminChanges() {
     setAdminLoading(true);
+    const hasZeroVotes = (poll?.totalVotes || 0) === 0;
+
+    const payload: any = {
+      adminKey,
+      description: editDesc,
+      resultsVisibility: editVisibility,
+      allowVoteEdit: editAllowVoteEdit,
+    };
+
+    if (hasZeroVotes) {
+      payload.question = editQuestion.trim();
+      payload.options = editOptions.filter((o) => o.label.trim().length > 0);
+    }
+
     try {
       const res = await fetch(`/api/polls/${slug}/admin`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          adminKey,
-          description: editDesc,
-          resultsVisibility: editVisibility,
-          allowVoteEdit: editAllowVoteEdit,
-        }),
+        body: JSON.stringify(payload),
       });
+      const data = await res.json();
       if (res.ok) {
-        showToast("✓ Settings updated");
+        showToast("✓ Poll changes saved!");
         setShowAdminModal(false);
         fetchPoll();
+      } else {
+        showToast(data.error || "Could not save changes.");
       }
-    } catch {}
+    } catch {
+      showToast("Network error while saving.");
+    }
     setAdminLoading(false);
   }
 
   async function handleDeletePoll() {
-    if (!confirm("Are you sure you want to delete this poll? It will no longer be accessible.")) return;
+    if (!confirm("Are you sure you want to delete this poll permanently? This cannot be undone.")) return;
     setAdminLoading(true);
     try {
       const res = await fetch(`/api/polls/${slug}/admin`, {
@@ -331,7 +369,7 @@ function PollContent() {
   }
 
   const showVotingUI = (!poll.hasVoted || isEditingVote) && !poll.isInactive;
-  const isBPC = poll.slug.startsWith("BPC-");
+  const hasZeroVotes = (poll.totalVotes || 0) === 0;
 
   return (
     <div className="wrap">
@@ -347,7 +385,7 @@ function PollContent() {
         </div>
       </header>
 
-      {/* Repoll Round Banner (if linked) */}
+      {/* Repoll Round Banner */}
       {poll.repolledFrom && (
         <div style={{
           background: "var(--accent-soft)",
@@ -361,7 +399,7 @@ function PollContent() {
           fontSize: 13
         }}>
           <span style={{ color: "var(--accent-ink)", fontWeight: 600 }}>
-            🔄 Round 2 Consensus · Linked from {poll.repolledFrom}
+            🔄 Round 2 Consensus · Linked from previous round
           </span>
           <Link href={`/p/${poll.repolledFrom}`} style={{ color: "var(--accent-ink)", fontWeight: 700, textDecoration: "underline" }}>
             View Round 1 Results →
@@ -388,7 +426,7 @@ function PollContent() {
                 Results Finalized
               </div>
               <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                This poll is inactive and no longer accepting votes or vote changes.
+                This poll is inactive and no longer accepting votes.
               </div>
             </div>
           </div>
@@ -414,7 +452,6 @@ function PollContent() {
               <span className="badge-category">{poll.category || "general"}</span>
               {poll.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
             </div>
-
 
             {/* Live Spectator Indicator */}
             <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
@@ -533,7 +570,7 @@ function PollContent() {
               })}
             </div>
 
-            {/* Voter Name Field (if required) */}
+            {/* Voter Name Field */}
             {poll.requireName && !poll.hasVoted && (
               <div style={{ marginBottom: 16 }}>
                 <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
@@ -638,7 +675,7 @@ function PollContent() {
               })}
             </div>
 
-            {/* Voter Action: Change Vote Button (Locked Spec) */}
+            {/* Voter Action: Change Vote Button */}
             {poll.hasVoted && !poll.isInactive && poll.allowVoteEdit && (
               <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>
                 <button
@@ -659,27 +696,42 @@ function PollContent() {
 
         {/* Share & Admin Utility Bar */}
         <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "center", flexWrap: "wrap" }}>
-          <button type="button" onClick={copyLink} className="btn-ghost" style={{ fontSize: 13 }}>
-            📋 Copy Voter Link
-          </button>
-          <button type="button" onClick={() => setShowQR(true)} className="btn-ghost" style={{ fontSize: 13 }}>
-            📱 QR Code
-          </button>
-          <button
-            type="button"
-            onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
-            className="btn-ghost"
-            style={{ fontSize: 13 }}
-          >
-            📥 CSV
+          {/* 1. Polling Link (All users) */}
+          <button type="button" onClick={copyPollingLink} className="btn-ghost" style={{ fontSize: 13, gap: 6 }}>
+            🔗 Polling Link 📋
           </button>
 
+          {/* 2. QR Code (All users) */}
+          <button type="button" onClick={() => setShowQR(true)} className="btn-ghost" style={{ fontSize: 13, gap: 6 }}>
+            📱 QR Code
+          </button>
+
+          {/* 3. Embed (Creator only) */}
+          {poll.isAdmin && (
+            <button type="button" onClick={() => setShowEmbedModal(true)} className="btn-ghost" style={{ fontSize: 13, gap: 6 }}>
+              ‹/› Embed
+            </button>
+          )}
+
+          {/* 4. CSV Export (Creator only) */}
+          {poll.isAdmin && (
+            <button
+              type="button"
+              onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
+              className="btn-ghost"
+              style={{ fontSize: 13, gap: 6 }}
+            >
+              📥 CSV
+            </button>
+          )}
+
+          {/* 5. Manage Poll (Creator only) */}
           {poll.isAdmin && (
             <button
               type="button"
               onClick={() => setShowAdminModal(true)}
               className="btn-primary"
-              style={{ fontSize: 13 }}
+              style={{ fontSize: 13, gap: 6 }}
             >
               ⚙️ Manage Poll
             </button>
@@ -687,48 +739,126 @@ function PollContent() {
         </div>
       </main>
 
-      {/* Admin Management Modal Drawer */}
+      {/* Redesigned Poll Management Modal */}
       {showAdminModal && (
         <div className="modal-backdrop">
-          <div className="modal-box" style={{ maxWidth: 500 }}>
+          <div className="modal-box" style={{ maxWidth: 540, maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700 }}>⚙️ Poll Management</h2>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h2 style={{ fontSize: 18, fontWeight: 700 }}>⚙️ Poll Management</h2>
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: 12,
+                  background: poll.status === "live" ? "var(--accent-soft)" : "var(--line)",
+                  color: poll.status === "live" ? "var(--accent-ink)" : "var(--muted)",
+                  fontFamily: "monospace"
+                }}>
+                  ● {poll.status.toUpperCase()}
+                </span>
+              </div>
               <button type="button" className="btn-link" onClick={() => setShowAdminModal(false)}>✕</button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {/* Lifecycle Status */}
-              <div style={{ background: "var(--paper)", padding: 12, borderRadius: 8, border: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>Poll Lifecycle</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)" }}>Current status: {poll.status.toUpperCase()}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleToggleStatus}
-                  disabled={adminLoading}
-                  className="btn-ghost"
-                  style={{ fontSize: 12 }}
-                >
-                  {poll.status === "live" ? "⏸️ Pause Poll" : "▶️ Reactivate"}
-                </button>
+            {/* Pre-vote vs Post-vote Status Notice Banner */}
+            {hasZeroVotes ? (
+              <div style={{ background: "var(--accent-soft)", color: "var(--accent-ink)", border: "1px solid var(--accent)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
+                ✏️ Full Edit Mode · 0 votes cast so far. You can freely edit the question, options, and settings.
+              </div>
+            ) : (
+              <div style={{ background: "var(--paper)", color: "var(--muted)", border: "1px solid var(--line)", padding: "10px 14px", borderRadius: 8, fontSize: 12, marginBottom: 16 }}>
+                🔒 Question & options are locked permanently to protect voter integrity ({poll.totalVotes} votes received).
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              {/* Question Editing */}
+              <div>
+                <label className="field-label" style={{ marginBottom: 4 }}>Question</label>
+                {hasZeroVotes ? (
+                  <input
+                    type="text"
+                    maxLength={140}
+                    value={editQuestion}
+                    onChange={(e) => setEditQuestion(e.target.value)}
+                    className="input-text"
+                    style={{ width: "100%" }}
+                  />
+                ) : (
+                  <div style={{ padding: "10px 12px", background: "var(--paper)", borderRadius: 6, border: "1px solid var(--line)", fontSize: 14, color: "var(--ink)" }}>
+                    {poll.question}
+                  </div>
+                )}
               </div>
 
-              {/* Repoll / Next Round */}
-              <div style={{ background: "var(--paper)", padding: 12, borderRadius: 8, border: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              {/* Options Editing (Pre-Vote Only) */}
+              {hasZeroVotes && (
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>Start Next Round (Repoll)</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)" }}>Spawns Round 2 and preserves Round 1 history.</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <label className="field-label" style={{ marginBottom: 0 }}>Options ({editOptions.length})</label>
+                    {editOptions.length < 30 && (
+                      <button type="button" onClick={addEditOption} className="btn-link" style={{ fontSize: 12 }}>
+                        + Add option
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {editOptions.map((opt, i) => (
+                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "monospace", width: 16 }}>{i + 1}.</span>
+                        <input
+                          type="text"
+                          value={opt.label}
+                          onChange={(e) => updateEditOption(i, e.target.value)}
+                          className="input-text"
+                          style={{ flex: 1, padding: "8px 10px", fontSize: 13 }}
+                        />
+                        {editOptions.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => removeEditOption(i)}
+                            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14 }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRepoll}
-                  disabled={adminLoading}
-                  className="btn-primary"
-                  style={{ fontSize: 12 }}
-                >
-                  🔄 Repoll
-                </button>
+              )}
+
+              {/* Context Description */}
+              <div>
+                <label className="field-label" style={{ marginBottom: 4 }}>Context Description</label>
+                <textarea
+                  rows={2}
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  placeholder="Add or update context description..."
+                />
+              </div>
+
+              {/* Results Visibility */}
+              <div>
+                <label className="field-label" style={{ marginBottom: 6 }}>Results Visibility</label>
+                <div className="expiry-row" style={{ gap: 6 }}>
+                  {[
+                    { value: "after_vote", label: "After voting" },
+                    { value: "after_deadline", label: "After deadline" },
+                    { value: "creator_only", label: "Creator only" },
+                  ].map((v) => (
+                    <button
+                      type="button"
+                      key={v.value}
+                      className={`expiry-chip ${editVisibility === v.value ? "active" : ""}`}
+                      onClick={() => setEditVisibility(v.value)}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Allow Vote Edit Toggle */}
@@ -741,18 +871,45 @@ function PollContent() {
                 <span>Allow voters to change their vote while live</span>
               </label>
 
-              {/* Description Edit */}
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>Context Description</label>
-                <textarea
-                  rows={2}
-                  value={editDesc}
-                  onChange={(e) => setEditDesc(e.target.value)}
-                  placeholder="Update poll context..."
-                />
+              {/* Actions & Lifecycle Box */}
+              <div style={{ background: "var(--paper)", padding: 14, borderRadius: 8, border: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Lifecycle & Actions
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    onClick={handleToggleStatus}
+                    disabled={adminLoading}
+                    className="btn-ghost"
+                    style={{ fontSize: 12 }}
+                  >
+                    {poll.status === "live" ? "⏸️ Pause Poll" : "▶️ Reactivate Poll"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleRepoll}
+                    disabled={adminLoading}
+                    className="btn-ghost"
+                    style={{ fontSize: 12 }}
+                  >
+                    🔄 Repoll (Next Round)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
+                    className="btn-ghost"
+                    style={{ fontSize: 12 }}
+                  >
+                    📥 Download CSV
+                  </button>
+                </div>
               </div>
 
-              <div style={{ display: "flex", gap: 8, justifyContent: "space-between", marginTop: 8 }}>
+              {/* Bottom Footer Actions */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8, borderTop: "1px solid var(--line)" }}>
                 <button
                   type="button"
                   onClick={handleDeletePoll}
@@ -762,8 +919,12 @@ function PollContent() {
                   🗑️ Delete Poll
                 </button>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button type="button" onClick={() => setShowAdminModal(false)} className="btn-ghost">Cancel</button>
-                  <button type="button" onClick={handleSaveSettings} disabled={adminLoading} className="btn-primary">Save Changes</button>
+                  <button type="button" onClick={() => setShowAdminModal(false)} className="btn-ghost">
+                    Cancel
+                  </button>
+                  <button type="button" onClick={handleSaveAdminChanges} disabled={adminLoading} className="btn-primary">
+                    {adminLoading ? "Saving..." : "Save Changes"}
+                  </button>
                 </div>
               </div>
             </div>
@@ -771,19 +932,80 @@ function PollContent() {
         </div>
       )}
 
-      {/* QR Code Modal */}
+      {/* QR Code Modal with Share & Download */}
       {showQR && (
         <div className="modal-backdrop">
-          <div className="modal-box" style={{ textAlign: "center", maxWidth: 320 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Scan to Vote</h2>
+          <div className="modal-box" style={{ textAlign: "center", maxWidth: 360 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700 }}>Scan to Vote</h2>
+              <button type="button" className="btn-link" onClick={() => setShowQR(false)}>✕</button>
+            </div>
+            
             <img
               src={getQRCodeUrl(typeof window !== "undefined" ? window.location.href : "")}
               alt="Poll QR Code"
-              style={{ width: 200, height: 200, margin: "0 auto 16px", borderRadius: 8 }}
+              style={{ width: 220, height: 220, margin: "0 auto 16px", borderRadius: 8, border: "1px solid var(--line)", background: "#FFFFFF", padding: 8 }}
             />
-            <button type="button" onClick={() => setShowQR(false)} className="btn-primary" style={{ width: "100%" }}>
-              Done
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 16 }}>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="btn-primary"
+                style={{ flex: 1, fontSize: 13 }}
+              >
+                ↗ Share Link
+              </button>
+              <button
+                type="button"
+                onClick={copyPollingLink}
+                className="btn-ghost"
+                style={{ flex: 1, fontSize: 13 }}
+              >
+                📋 Copy Link
+              </button>
+            </div>
+
+            <button type="button" onClick={() => setShowQR(false)} className="btn-ghost" style={{ width: "100%", fontSize: 12 }}>
+              Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Embed Modal (Creator Only) */}
+      {showEmbedModal && (
+        <div className="modal-backdrop">
+          <div className="modal-box" style={{ maxWidth: 480 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 700 }}>Embed Poll Widget</h2>
+              <button type="button" className="btn-link" onClick={() => setShowEmbedModal(false)}>✕</button>
+            </div>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
+              Copy and paste this HTML embed snippet into your blog, notion page, or website:
+            </p>
+            <textarea
+              readOnly
+              rows={3}
+              value={`<iframe src="${typeof window !== "undefined" ? window.location.origin : ""}/embed/${slug}" width="100%" height="450" frameborder="0" style="border-radius: 12px; border: 1px solid #e2e8f0;"></iframe>`}
+              style={{ fontFamily: "monospace", fontSize: 12, marginBottom: 16 }}
+            />
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setShowEmbedModal(false)} className="btn-ghost">
+                Done
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const snippet = `<iframe src="${window.location.origin}/embed/${slug}" width="100%" height="450" frameborder="0" style="border-radius: 12px; border: 1px solid #e2e8f0;"></iframe>`;
+                  navigator.clipboard.writeText(snippet);
+                  showToast("✓ Embed snippet copied!");
+                }}
+                className="btn-primary"
+              >
+                Copy Embed Code
+              </button>
+            </div>
           </div>
         </div>
       )}

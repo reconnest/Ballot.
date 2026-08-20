@@ -146,7 +146,39 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
       return NextResponse.json({ ok: true, status: newStatus });
     }
 
-    // 3. SETTINGS UPDATES
+    // 3. CHECK VOTE COUNT FOR STRUCTURAL LOCK
+    const existingVotes = await db.select().from(votes).where(eq(votes.pollId, poll.id)).limit(1);
+    const hasVotes = existingVotes.length > 0;
+
+    // 4. PRE-VOTE STRUCTURAL EDITING (Question & Options)
+    if (body.question !== undefined || Array.isArray(body.options)) {
+      if (hasVotes) {
+        return NextResponse.json(
+          { error: "Question and options are permanently locked after votes have been received." },
+          { status: 400 }
+        );
+      }
+
+      if (body.question && typeof body.question === "string") {
+        await db.update(polls).set({ question: body.question.trim() }).where(eq(polls.id, poll.id));
+      }
+
+      if (Array.isArray(body.options) && body.options.length >= 2) {
+        // Replace options
+        await db.delete(options).where(eq(options.pollId, poll.id));
+        await db.insert(options).values(
+          body.options.map((opt: { label: string; imageUrl?: string }, idx: number) => ({
+            id: nanoid(),
+            pollId: poll.id,
+            label: (opt.label || "").trim(),
+            imageUrl: opt.imageUrl ? opt.imageUrl.trim() : null,
+            position: idx,
+          }))
+        );
+      }
+    }
+
+    // 5. SETTINGS UPDATES (Available Pre-vote and Post-vote)
     const updateFields: Partial<{
       description: string | null;
       expiresAt: number | null;
@@ -166,7 +198,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
       updateFields.expiresAt = body.expiresAt;
     }
     if (typeof body.resultsVisibility === "string") {
-      const valid = ["always_public", "after_vote", "after_deadline", "creator_only"];
+      const valid = ["after_vote", "after_deadline", "creator_only"];
       if (valid.includes(body.resultsVisibility)) {
         updateFields.resultsVisibility = body.resultsVisibility;
       }
@@ -182,12 +214,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
       await db.update(polls).set(updateFields).where(eq(polls.id, poll.id));
     }
 
-    return NextResponse.json({ ok: true, updated: updateFields });
+    return NextResponse.json({ ok: true, updated: updateFields, hasVotes });
   } catch (e) {
     console.error("admin patch failed", e);
     return NextResponse.json({ error: "Could not update poll." }, { status: 500 });
   }
 }
+
 
 export async function DELETE(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
