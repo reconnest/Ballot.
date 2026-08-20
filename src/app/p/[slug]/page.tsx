@@ -84,7 +84,25 @@ function PollContent() {
   const [editAllowVoteEdit, setEditAllowVoteEdit] = useState(true);
   const [adminLoading, setAdminLoading] = useState(false);
 
+
+
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const showAdminModalRef = useRef(false);
+
+  useEffect(() => {
+    showAdminModalRef.current = showAdminModal;
+  }, [showAdminModal]);
+
+  function openManageModal() {
+    if (poll) {
+      setEditQuestion(poll.question || "");
+      setEditOptions((poll.options || []).map((o) => ({ label: o.label, imageUrl: o.imageUrl || "" })));
+      setEditDesc(poll.description || "");
+      setEditVisibility(poll.resultsVisibility || "after_vote");
+      setEditAllowVoteEdit(poll.allowVoteEdit ?? true);
+    }
+    setShowAdminModal(true);
+  }
 
   // Read admin key from query or localStorage
   useEffect(() => {
@@ -120,13 +138,17 @@ function PollContent() {
       }
       const data: PollData = await res.json();
       setPoll(data);
-      setEditQuestion(data.question || "");
-      setEditOptions((data.options || []).map((o) => ({ label: o.label, imageUrl: o.imageUrl || "" })));
-      setEditDesc(data.description || "");
-      setEditVisibility(data.resultsVisibility || "after_vote");
-      setEditAllowVoteEdit(data.allowVoteEdit ?? true);
+      // ONLY update edit fields if user is NOT currently editing in the modal
+      if (!showAdminModalRef.current) {
+        setEditQuestion(data.question || "");
+        setEditOptions((data.options || []).map((o) => ({ label: o.label, imageUrl: o.imageUrl || "" })));
+        setEditDesc(data.description || "");
+        setEditVisibility(data.resultsVisibility || "after_vote");
+        setEditAllowVoteEdit(data.allowVoteEdit ?? true);
+      }
     } catch {}
   }
+
 
 
   useEffect(() => {
@@ -747,13 +769,14 @@ function PollContent() {
           {poll.isAdmin && (
             <button
               type="button"
-              onClick={() => setShowAdminModal(true)}
+              onClick={openManageModal}
               className="btn-primary"
               style={{ fontSize: 13, gap: 6 }}
             >
               ⚙️ Manage Poll
             </button>
           )}
+
         </div>
       </main>
 
