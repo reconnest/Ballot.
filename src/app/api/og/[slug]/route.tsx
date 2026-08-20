@@ -109,17 +109,19 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
               justifyContent: "space-between",
               alignItems: "center",
               marginTop: 20,
-              color: "#9CA3AF",
+              color: "#0F766E",
               fontSize: 16,
+              fontWeight: 600,
               borderTop: "2px solid #E4E1D9",
               paddingTop: 16,
             }}
           >
-            <span>Cast your vote at ballot.reconnest.com</span>
-            <span>Instant, fair polling</span>
+            <span>🔒 Verified Poll · No Signup Required · 100% Free</span>
+            <span style={{ color: "#6B7280" }}>ballot-poll.vercel.app</span>
           </div>
         </div>
       ),
+
       {
         width: 1200,
         height: 630,

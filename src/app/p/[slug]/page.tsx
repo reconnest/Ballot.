@@ -187,21 +187,28 @@ function PollContent() {
     setTimeout(() => setToast(""), 3000);
   }
 
+  function getFormattedShareMessage() {
+    const url = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const q = poll?.question ? `"${poll.question}"` : "this poll";
+    return `🗳️ Cast your vote on Ballot:\n${q}\n\n👉 Tap to vote (100% free, no signup needed):\n${url}`;
+  }
+
   function copyPollingLink() {
-    const url = window.location.origin + window.location.pathname;
-    navigator.clipboard.writeText(url);
+    const textToCopy = getFormattedShareMessage();
+    navigator.clipboard.writeText(textToCopy);
     setCopiedLink(true);
-    showToast("✓ Polling link copied to clipboard");
+    showToast("✓ Invite message with link copied!");
     setTimeout(() => setCopiedLink(false), 2000);
   }
 
-
   async function handleShare() {
-    const url = window.location.origin + window.location.pathname;
+    const url = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const q = poll?.question || "Ballot Poll";
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: poll?.question || "Ballot Poll",
+          title: `🗳️ ${q} — Ballot`,
+          text: `Cast your vote on: "${q}" (No signup required)`,
           url,
         });
         return;
@@ -209,6 +216,7 @@ function PollContent() {
     }
     copyPollingLink();
   }
+
 
   function handleSelect(id: string) {
     if (!poll) return;
@@ -1090,26 +1098,58 @@ function PollContent() {
       {/* QR Code Modal with Share & Download */}
       {showQR && (
         <div className="modal-backdrop">
-          <div className="modal-box" style={{ textAlign: "center", maxWidth: 360 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700 }}>Scan to Vote</h2>
+          <div className="modal-box" style={{ textAlign: "center", maxWidth: 380 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ textAlign: "left" }}>
+                <h2 style={{ fontSize: 16, fontWeight: 700 }}>Scan & Share Poll</h2>
+                <div style={{ fontSize: 11, color: "var(--muted)" }}>Instant mobile voting via camera</div>
+              </div>
               <button type="button" className="btn-link" onClick={() => setShowQR(false)}>✕</button>
             </div>
+
+            {poll && (
+              <div style={{
+                background: "var(--paper)",
+                border: "1px solid var(--line)",
+                borderRadius: 8,
+                padding: "8px 12px",
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--ink)",
+                marginBottom: 14,
+                textAlign: "left"
+              }}>
+                "{poll.question}"
+              </div>
+            )}
             
             <img
               src={getQRCodeUrl(typeof window !== "undefined" ? window.location.href : "")}
               alt="Poll QR Code"
-              style={{ width: 220, height: 220, margin: "0 auto 16px", borderRadius: 8, border: "1px solid var(--line)", background: "#FFFFFF", padding: 8 }}
+              style={{ width: 200, height: 200, margin: "0 auto 12px", borderRadius: 8, border: "1px solid var(--line)", background: "#FFFFFF", padding: 8 }}
             />
 
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 16 }}>
+            <div style={{
+              fontSize: 11,
+              color: "var(--accent-ink)",
+              background: "var(--accent-soft)",
+              border: "1px solid var(--accent)",
+              borderRadius: 6,
+              padding: "4px 8px",
+              marginBottom: 16,
+              fontFamily: "monospace"
+            }}>
+              🔒 100% Safe · No App Install · No Signup
+            </div>
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 12 }}>
               <button
                 type="button"
                 onClick={handleShare}
                 className="btn-primary"
                 style={{ flex: 1, fontSize: 13 }}
               >
-                ↗ Share Link
+                ↗ Share to Apps
               </button>
               <button
                 type="button"
@@ -1117,7 +1157,7 @@ function PollContent() {
                 className="btn-ghost"
                 style={{ flex: 1, fontSize: 13 }}
               >
-                📋 Copy Link
+                📋 Copy Invite
               </button>
             </div>
 
@@ -1127,6 +1167,7 @@ function PollContent() {
           </div>
         </div>
       )}
+
 
       {/* Embed Modal (Creator Only) */}
       {showEmbedModal && (
