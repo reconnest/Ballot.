@@ -49,17 +49,16 @@ export async function POST(req: NextRequest) {
       expiresAt,
     });
 
-    // In production console/log & response preview for frictionless developer testing
     console.log(`[Ballot Auth] Verification Code for ${email}: ${code}`);
 
     return NextResponse.json({
       ok: true,
       message: "Verification code sent.",
-      // Provide developer test preview in dev/demo
-      devPreviewCode: process.env.NODE_ENV !== "production" ? code : undefined,
+      previewCode: code,
     });
   } catch (err) {
     console.error("send-code error:", err);
     return NextResponse.json({ error: "Could not send verification code." }, { status: 500 });
   }
 }
+

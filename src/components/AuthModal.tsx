@@ -13,6 +13,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialMessage }: AuthMo
   const [step, setStep] = useState<"email" | "otp" | "handle">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
+  const [testCodeHint, setTestCodeHint] = useState<string | null>(null);
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,6 +48,9 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialMessage }: AuthMo
       if (!res.ok) {
         setError(data.error || "Failed to send code.");
       } else {
+        if (data.previewCode) {
+          setTestCodeHint(data.previewCode);
+        }
         setStep("otp");
         setCooldown(60);
       }
@@ -55,6 +59,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialMessage }: AuthMo
     }
     setLoading(false);
   }
+
 
   async function handleVerifyCode(e: React.FormEvent) {
     e.preventDefault();
@@ -190,9 +195,29 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialMessage }: AuthMo
           <form onSubmit={handleVerifyCode}>
             {step === "otp" && (
               <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)", display: "block", marginBottom: 6 }}>
-                  6-Digit OTP Code
-                </label>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--ink)" }}>
+                    6-Digit OTP Code
+                  </label>
+                  {testCodeHint && (
+                    <button
+                      type="button"
+                      onClick={() => setOtp(testCodeHint)}
+                      style={{
+                        background: "var(--accent-soft)",
+                        color: "var(--accent-ink)",
+                        border: "1px solid var(--accent)",
+                        padding: "2px 8px",
+                        borderRadius: 4,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer"
+                      }}
+                    >
+                      Fill Code ({testCodeHint})
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   maxLength={6}
@@ -204,6 +229,7 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialMessage }: AuthMo
                   className="input-text"
                   style={{ width: "100%", padding: "10px 12px", fontSize: 20, textAlign: "center", letterSpacing: "0.2em", fontFamily: "monospace" }}
                 />
+
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
                   <button
                     type="button"
