@@ -103,30 +103,40 @@ function PollContent() {
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const showAdminModalRef = useRef(false);
   const submitBtnRef = useRef<HTMLButtonElement>(null);
+  const rankedInitializedRef = useRef(false);
 
+  // Reset initialization flag when switching to a different poll slug
   useEffect(() => {
-    if (poll?.options) {
-      if (poll.myVotes && poll.myVotes.length > 0) {
-        const ordered: OptionData[] = [];
-        for (const id of poll.myVotes) {
-          const found = poll.options.find((o) => o.id === id);
-          if (found) ordered.push(found);
+    rankedInitializedRef.current = false;
+    setRankedOptions([]);
+  }, [slug]);
+
+  // Initialize rankedOptions ONLY when first loading or explicitly entering edit mode
+  useEffect(() => {
+    if (poll?.options && poll.options.length > 0) {
+      if (!rankedInitializedRef.current || isEditingVote) {
+        if (poll.myVotes && poll.myVotes.length > 0) {
+          const ordered: OptionData[] = [];
+          for (const id of poll.myVotes) {
+            const found = poll.options.find((o) => o.id === id);
+            if (found) ordered.push(found);
+          }
+          for (const o of poll.options) {
+            if (!ordered.some((x) => x.id === o.id)) ordered.push(o);
+          }
+          setRankedOptions(ordered);
+        } else if (rankedOptions.length === 0) {
+          setRankedOptions([...poll.options]);
         }
-        for (const o of poll.options) {
-          if (!ordered.some((x) => x.id === o.id)) ordered.push(o);
-        }
-        setRankedOptions(ordered);
-      } else {
-        setRankedOptions([...poll.options]);
+        rankedInitializedRef.current = true;
       }
     }
-  }, [poll]);
-
+  }, [poll, isEditingVote]);
 
   useEffect(() => {
-
     showAdminModalRef.current = showAdminModal;
   }, [showAdminModal]);
+
 
   function openManageModal() {
     if (poll) {
