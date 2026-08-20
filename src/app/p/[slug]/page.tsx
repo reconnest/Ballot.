@@ -187,8 +187,14 @@ function PollContent() {
     setTimeout(() => setToast(""), 3000);
   }
 
+  function getShareUrl() {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://ballot-poll.vercel.app";
+    const path = typeof window !== "undefined" ? window.location.pathname : `/p/${slug}`;
+    return `${origin}${path}?v=1`;
+  }
+
   function getFormattedShareMessage() {
-    const url = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const url = getShareUrl();
     const q = poll?.question ? `"${poll.question}"` : "this poll";
     return `🗳️ Cast your vote on Ballot:\n${q}\n\n👉 Tap to vote (100% free, no signup needed):\n${url}`;
   }
@@ -202,7 +208,7 @@ function PollContent() {
   }
 
   async function handleShare() {
-    const url = typeof window !== "undefined" ? window.location.origin + window.location.pathname : "";
+    const url = getShareUrl();
     const q = poll?.question || "Ballot Poll";
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
@@ -216,6 +222,7 @@ function PollContent() {
     }
     copyPollingLink();
   }
+
 
 
   function handleSelect(id: string) {
@@ -671,7 +678,7 @@ function PollContent() {
               <div>
                 <h2 style={{ fontSize: 18, fontWeight: 700 }}>Live Results</h2>
                 <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                  {poll.totalVotes || 0} {poll.totalVotes === 1 ? "ballot" : "ballots"} cast
+                  {poll.totalVotes || 0} {poll.totalVotes === 1 ? "vote recorded" : "total votes recorded"}
                 </div>
               </div>
 
@@ -710,38 +717,121 @@ function PollContent() {
               </div>
             </div>
 
-            {/* Result Bars */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {poll.options.map((opt, i) => {
-                const count = opt.votes ?? 0;
-                const total = poll.totalVotes || 1;
-                const pct = Math.round((count / total) * 100);
-                const isMyPick = poll.myVotes.includes(opt.id);
+            {/* 1. Horizontal Bars View */}
+            {chartType === "ledger" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {poll.options.map((opt, i) => {
+                  const count = opt.votes ?? 0;
+                  const total = poll.totalVotes || 1;
+                  const pct = Math.round((count / total) * 100);
+                  const isMyPick = poll.myVotes.includes(opt.id);
 
-                return (
-                  <div key={opt.id}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
-                      <span style={{ fontWeight: isMyPick ? 700 : 500, color: isMyPick ? "var(--accent-ink)" : "var(--ink)" }}>
-                        {opt.label} {isMyPick && "✓ (your pick)"}
-                      </span>
-                      <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>
-                        {pct}% ({count})
-                      </span>
+                  return (
+                    <div key={opt.id}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
+                        <span style={{ fontWeight: isMyPick ? 700 : 500, color: isMyPick ? "var(--accent-ink)" : "var(--ink)" }}>
+                          {opt.label} {isMyPick && "✓ (your pick)"}
+                        </span>
+                        <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>
+                          {pct}% ({count})
+                        </span>
+                      </div>
+                      <div className="ledger-track" style={{ height: 10, borderRadius: 5 }}>
+                        <div
+                          className="ledger-fill"
+                          style={{
+                            width: `${pct}%`,
+                            background: isMyPick ? "var(--accent)" : CHART_COLORS[i % CHART_COLORS.length],
+                            borderRadius: 5,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="ledger-track" style={{ height: 10, borderRadius: 5 }}>
-                      <div
-                        className="ledger-fill"
-                        style={{
-                          width: `${pct}%`,
-                          background: isMyPick ? "var(--accent)" : CHART_COLORS[i % CHART_COLORS.length],
-                          borderRadius: 5,
-                        }}
-                      />
+                  );
+                })}
+              </div>
+            ) : (
+              /* 2. Interactive SVG Donut Chart View */
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, padding: "10px 0" }}>
+                <div style={{ position: "relative", width: 220, height: 220 }}>
+                  <svg width="220" height="220" viewBox="0 0 240 240">
+                    {calculateSlices(
+                      poll.options.map((o) => ({ id: o.id, label: o.label, votes: o.votes || 0 })),
+                      poll.totalVotes || 0,
+                      95,
+                      60
+                    ).map((slice, i) => (
+                      slice.path ? (
+                        <path
+                          key={slice.id || i}
+                          d={slice.path}
+                          fill={slice.color}
+                          stroke="var(--surface)"
+                          strokeWidth="2"
+                          style={{ transition: "opacity 0.2s ease", cursor: "pointer" }}
+                        >
+                          <title>{`${slice.label}: ${slice.votes} votes (${slice.pct}%)`}</title>
+                        </path>
+                      ) : null
+                    ))}
+                  </svg>
+                  {/* Donut Center Count */}
+                  <div style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    textAlign: "center",
+                    pointerEvents: "none"
+                  }}>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: "var(--ink)", lineHeight: 1 }}>
+                      {poll.totalVotes || 0}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 2 }}>
+                      Votes
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+
+                {/* Donut Legend */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, width: "100%" }}>
+                  {poll.options.map((opt, i) => {
+                    const count = opt.votes ?? 0;
+                    const total = poll.totalVotes || 1;
+                    const pct = Math.round((count / total) * 100);
+                    const color = CHART_COLORS[i % CHART_COLORS.length];
+                    const isMyPick = poll.myVotes.includes(opt.id);
+
+                    return (
+                      <div
+                        key={opt.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          fontSize: 12,
+                          padding: "6px 10px",
+                          background: "var(--paper)",
+                          borderRadius: 6,
+                          border: isMyPick ? "1px solid var(--accent)" : "1px solid var(--line)"
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
+                          <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                          <span style={{ fontWeight: isMyPick ? 700 : 500, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {opt.label}
+                          </span>
+                        </div>
+                        <span style={{ fontFamily: "monospace", color: "var(--muted)", marginLeft: 6 }}>
+                          {pct}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
 
             {/* Voter Action: Change Vote Button */}
             {poll.hasVoted && !poll.isInactive && poll.allowVoteEdit && (
