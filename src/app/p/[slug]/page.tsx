@@ -65,9 +65,23 @@ function PollContent() {
   const [isEditingVote, setIsEditingVote] = useState(false);
   const [toast, setToast] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Ranked Choice Interactive Order & Drag State
+  const [rankedOptions, setRankedOptions] = useState<OptionData[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  function moveRankedOption(fromIndex: number, toIndex: number) {
+    if (toIndex < 0 || toIndex >= rankedOptions.length) return;
+    setRankedOptions((prev) => {
+      const copy = [...prev];
+      const [moved] = copy.splice(fromIndex, 1);
+      copy.splice(toIndex, 0, moved);
+      return copy;
+    });
+  }
   
   // Modals
-
   const [showQR, setShowQR] = useState(false);
   const [showEmbedModal, setShowEmbedModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
@@ -86,11 +100,28 @@ function PollContent() {
   const [editAllowVoteEdit, setEditAllowVoteEdit] = useState(true);
   const [adminLoading, setAdminLoading] = useState(false);
 
-
-
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const showAdminModalRef = useRef(false);
   const submitBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (poll?.options) {
+      if (poll.myVotes && poll.myVotes.length > 0) {
+        const ordered: OptionData[] = [];
+        for (const id of poll.myVotes) {
+          const found = poll.options.find((o) => o.id === id);
+          if (found) ordered.push(found);
+        }
+        for (const o of poll.options) {
+          if (!ordered.some((x) => x.id === o.id)) ordered.push(o);
+        }
+        setRankedOptions(ordered);
+      } else {
+        setRankedOptions([...poll.options]);
+      }
+    }
+  }, [poll]);
+
 
   useEffect(() => {
 
@@ -255,7 +286,11 @@ function PollContent() {
       return;
     }
 
-    if (selectedIds.length === 0) {
+    const idsToSubmit = poll.pollType === "ranked_choice"
+      ? rankedOptions.map((o) => o.id)
+      : selectedIds;
+
+    if (idsToSubmit.length === 0) {
       showToast("Please select an option.");
       return;
     }
@@ -281,10 +316,11 @@ function PollContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          optionIds: selectedIds,
+          optionIds: idsToSubmit,
           voterName: voterName.trim() || undefined,
         }),
       });
+
 
       const data = await res.json();
       if (!res.ok) {
@@ -584,44 +620,197 @@ function PollContent() {
               </div>
             )}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-              {poll.options.map((opt, i) => {
-                const isSelected = selectedIds.includes(opt.id);
-                const rankIndex = selectedIds.indexOf(opt.id);
+            {poll.pollType === "ranked_choice" ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                <div style={{
+                  fontSize: 12,
+                  color: "var(--muted)",
+                  marginBottom: 6,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6
+                }}>
+                  <span>💡 Drag</span>
+                  <span style={{ fontFamily: "monospace", fontWeight: 700 }}>⋮⋮</span>
+                  <span>or tap ▲ / ▼ to order from Most Preferred (Top) to Least (Bottom).</span>
+                </div>
 
-                return (
-                  <div
-                    key={opt.id}
-                    onClick={() => handleSelect(opt.id)}
-                    style={{
-                      border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
-                      background: isSelected ? "var(--accent-soft)" : "var(--paper)",
-                      borderRadius: 8,
-                      padding: "14px 16px",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      transition: "all 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      {poll.pollType === "ranked_choice" ? (
+                {rankedOptions.map((opt, i) => {
+                  const isTop = i === 0;
+                  const isDragging = draggedIndex === i;
+                  const isDragOver = dragOverIndex === i;
+
+                  return (
+                    <div
+                      key={opt.id}
+                      draggable={true}
+                      onDragStart={() => setDraggedIndex(i)}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setDragOverIndex(i);
+                      }}
+                      onDragEnd={() => {
+                        if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+                          moveRankedOption(draggedIndex, dragOverIndex);
+                        }
+                        setDraggedIndex(null);
+                        setDragOverIndex(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedIndex !== null && draggedIndex !== i) {
+                          moveRankedOption(draggedIndex, i);
+                        }
+                        setDraggedIndex(null);
+                        setDragOverIndex(null);
+                      }}
+                      style={{
+                        border: isTop
+                          ? "2px solid var(--accent)"
+                          : isDragOver
+                          ? "2px dashed var(--accent)"
+                          : "1px solid var(--line)",
+                        background: isTop
+                          ? "var(--accent-soft)"
+                          : isDragOver
+                          ? "var(--paper)"
+                          : "var(--surface)",
+                        borderRadius: 8,
+                        padding: "12px 14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        transition: "all 0.15s ease",
+                        opacity: isDragging ? 0.4 : 1,
+                        boxShadow: isTop ? "0 2px 8px rgba(15, 118, 110, 0.08)" : "none",
+                      }}
+                    >
+                      {/* Left: 6-dot Drag Handle + Rank Pill + Label */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                        {/* 6-dot Drag Handle */}
+                        <div
+                          title="Drag to reorder preference"
+                          style={{
+                            cursor: "grab",
+                            display: "flex",
+                            alignItems: "center",
+                            color: "var(--muted)",
+                            padding: "2px 4px",
+                            userSelect: "none"
+                          }}
+                        >
+                          <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
+                            <circle cx="3" cy="2.5" r="1.5" />
+                            <circle cx="9" cy="2.5" r="1.5" />
+                            <circle cx="3" cy="8" r="1.5" />
+                            <circle cx="9" cy="8" r="1.5" />
+                            <circle cx="3" cy="13.5" r="1.5" />
+                            <circle cx="9" cy="13.5" r="1.5" />
+                          </svg>
+                        </div>
+
+                        {/* Rank Badge */}
                         <div style={{
-                          width: 26,
+                          minWidth: 28,
                           height: 26,
-                          borderRadius: "50%",
-                          background: isSelected ? "var(--accent)" : "var(--line)",
-                          color: isSelected ? "#FFFFFF" : "var(--muted)",
+                          padding: "0 6px",
+                          borderRadius: 13,
+                          background: isTop ? "var(--accent)" : "var(--line)",
+                          color: isTop ? "#FFFFFF" : "var(--ink)",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           fontSize: 12,
-                          fontWeight: 700
+                          fontWeight: 700,
+                          fontFamily: "monospace",
                         }}>
-                          {isSelected ? rankIndex + 1 : ""}
+                          #{i + 1}
                         </div>
-                      ) : (
+
+                        {/* Option Label */}
+                        <span style={{
+                          fontSize: 15,
+                          fontWeight: isTop ? 700 : 500,
+                          color: isTop ? "var(--accent-ink)" : "var(--ink)"
+                        }}>
+                          {opt.label} {isTop && <span style={{ fontSize: 11, color: "var(--accent-ink)", fontWeight: 600 }}>(1st Pick)</span>}
+                        </span>
+                      </div>
+
+                      {/* Right: Optional Image + ▲ / ▼ Controls */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        {opt.imageUrl && (
+                          <img src={opt.imageUrl} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: "cover" }} />
+                        )}
+
+                        {/* Up / Down Move Buttons */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          <button
+                            type="button"
+                            disabled={i === 0}
+                            onClick={() => moveRankedOption(i, i - 1)}
+                            style={{
+                              border: "1px solid var(--line)",
+                              background: "var(--paper)",
+                              borderRadius: 4,
+                              padding: "2px 6px",
+                              fontSize: 10,
+                              cursor: i === 0 ? "not-allowed" : "pointer",
+                              opacity: i === 0 ? 0.25 : 1,
+                              color: "var(--ink)",
+                              lineHeight: 1
+                            }}
+                            title="Move priority up"
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            disabled={i === rankedOptions.length - 1}
+                            onClick={() => moveRankedOption(i, i + 1)}
+                            style={{
+                              border: "1px solid var(--line)",
+                              background: "var(--paper)",
+                              borderRadius: 4,
+                              padding: "2px 6px",
+                              fontSize: 10,
+                              cursor: i === rankedOptions.length - 1 ? "not-allowed" : "pointer",
+                              opacity: i === rankedOptions.length - 1 ? 0.25 : 1,
+                              color: "var(--ink)",
+                              lineHeight: 1
+                            }}
+                            title="Move priority down"
+                          >
+                            ▼
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Standard / Multi-Choice Voting UI */
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                {poll.options.map((opt, i) => {
+                  const isSelected = selectedIds.includes(opt.id);
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => handleSelect(opt.id)}
+                      style={{
+                        border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
+                        background: isSelected ? "var(--accent-soft)" : "var(--paper)",
+                        borderRadius: 8,
+                        padding: "14px 16px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                         <div style={{
                           width: 18,
                           height: 18,
@@ -629,19 +818,19 @@ function PollContent() {
                           border: isSelected ? "5px solid var(--accent)" : "2px solid var(--muted)",
                           background: "#FFFFFF",
                         }} />
-                      )}
-                      <span style={{ fontSize: 15, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)" }}>
-                        {opt.label}
-                      </span>
-                    </div>
+                        <span style={{ fontSize: 15, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)" }}>
+                          {opt.label}
+                        </span>
+                      </div>
 
-                    {opt.imageUrl && (
-                      <img src={opt.imageUrl} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: "cover" }} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                      {opt.imageUrl && (
+                        <img src={opt.imageUrl} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: "cover" }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Voter Name Field */}
             {poll.requireName && !poll.hasVoted && (
@@ -663,12 +852,13 @@ function PollContent() {
             <button
               ref={submitBtnRef}
               type="submit"
-              disabled={voting || selectedIds.length === 0}
+              disabled={voting || (poll.pollType === "ranked_choice" ? rankedOptions.length === 0 : selectedIds.length === 0)}
               className="btn-primary"
               style={{ width: "100%", padding: "14px", fontSize: 15 }}
             >
               {voting ? "Submitting..." : isEditingVote ? "Update My Vote →" : "Submit Vote →"}
             </button>
+
 
           </form>
         ) : (
