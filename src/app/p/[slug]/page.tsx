@@ -243,6 +243,17 @@ function PollContent() {
       return;
     }
 
+    // Capture button position for localized burst origin
+    const form = e.currentTarget as HTMLFormElement;
+    const submitBtn = form?.querySelector('button[type="submit"]') as HTMLElement | null;
+    let originX: number | undefined;
+    let originY: number | undefined;
+    if (submitBtn) {
+      const rect = submitBtn.getBoundingClientRect();
+      originX = rect.left + rect.width / 2;
+      originY = rect.top + rect.height / 2;
+    }
+
     setVoting(true);
     try {
       const res = await fetch(`/api/polls/${slug}/vote`, {
@@ -258,7 +269,7 @@ function PollContent() {
       if (!res.ok) {
         showToast(data.error || "Could not submit vote.");
       } else {
-        fireMotionSafeConfetti();
+        fireMotionSafeConfetti(originX, originY);
         showToast(data.isEdit ? "✓ Vote updated successfully!" : "✓ Vote recorded!");
         setIsEditingVote(false);
         fetchPoll();
@@ -268,6 +279,7 @@ function PollContent() {
     }
     setVoting(false);
   }
+
 
   // Pre-vote option editors
   function updateEditOption(i: number, val: string) {

@@ -1,8 +1,9 @@
 /**
  * Lightweight motion-safe confetti burst.
  * Bypassed entirely when prefers-reduced-motion is active.
+ * Launches directly from the submit button's screen coordinates.
  */
-export function fireMotionSafeConfetti() {
+export function fireMotionSafeConfetti(originX?: number, originY?: number) {
   if (typeof window === "undefined") return;
 
   // Strict check for prefers-reduced-motion
@@ -13,6 +14,13 @@ export function fireMotionSafeConfetti() {
   canvas.className = "confetti-canvas";
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  canvas.style.position = "fixed";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.width = "100vw";
+  canvas.style.height = "100vh";
+  canvas.style.pointerEvents = "none";
+  canvas.style.zIndex = "99999";
   document.body.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
@@ -34,20 +42,24 @@ export function fireMotionSafeConfetti() {
     alpha: number;
   }[] = [];
 
-  const count = 45;
+  const startX = typeof originX === "number" ? originX : window.innerWidth / 2;
+  const startY = typeof originY === "number" ? originY : window.innerHeight * 0.7;
+
+  const count = 55;
   for (let i = 0; i < count; i++) {
     particles.push({
-      x: window.innerWidth / 2 + (Math.random() - 0.5) * 80,
-      y: window.innerHeight * 0.6,
+      x: startX + (Math.random() - 0.5) * 60,
+      y: startY,
       size: Math.random() * 6 + 4,
       color: colors[Math.floor(Math.random() * colors.length)],
-      vx: (Math.random() - 0.5) * 12,
-      vy: -(Math.random() * 10 + 6),
+      vx: (Math.random() - 0.5) * 16,
+      vy: -(Math.random() * 14 + 8),
       rotation: Math.random() * 360,
-      rotSpeed: (Math.random() - 0.5) * 10,
+      rotSpeed: (Math.random() - 0.5) * 12,
       alpha: 1,
     });
   }
+
 
   let animationFrame: number;
   const startTime = Date.now();
