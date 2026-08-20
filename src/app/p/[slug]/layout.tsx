@@ -8,6 +8,9 @@ type Props = {
   children: React.ReactNode;
 };
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   try {
     const [poll] = await db.select().from(polls).where(eq(polls.slug, params.slug)).limit(1);
@@ -23,7 +26,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     const description = poll.description
       ? `${poll.description.slice(0, 120)} · Cast your vote on Ballot (no signup required)`
       : "Cast your vote on Ballot · 100% free, real-time results, zero signup required.";
-    const ogImageUrl = `/api/og/${params.slug}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ballot-poll.vercel.app";
+    const ogImageUrl = `${baseUrl}/api/og/${params.slug}`;
 
     return {
       title,
@@ -33,6 +37,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
         description,
         type: "website",
         siteName: "Ballot",
+        url: `${baseUrl}/p/${params.slug}`,
         images: [
           {
             url: ogImageUrl,
@@ -56,6 +61,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     };
   }
 }
+
 
 export default function PollLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;

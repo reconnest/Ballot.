@@ -4,7 +4,11 @@ import { db } from "@/db";
 import { polls, options, votes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
+
 
   try {
     const [poll] = await db.select().from(polls).where(eq(polls.slug, params.slug)).limit(1);

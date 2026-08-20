@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ballot-poll.vercel.app"),
   title: "Ballot — Modern, Ad-Free Polling",
   description: "Create, share and vote on modern polls with ranked choice voting, live results, analytics and powerful vote protection.",
   openGraph: {
     title: "Ballot — Modern, Ad-Free Polling",
     description: "Create, share and vote on modern polls with ranked choice voting, live results, analytics and powerful vote protection.",
-    url: "https://ballot-phi.vercel.app",
+    url: "https://ballot-poll.vercel.app",
     siteName: "Ballot",
     type: "website",
   },
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
     description: "Create, share and vote on modern polls with ranked choice voting, live results, analytics and powerful vote protection.",
   },
 };
+
 
 
 
