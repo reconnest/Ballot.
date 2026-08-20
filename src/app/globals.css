@@ -988,16 +988,17 @@ textarea:focus {
 /* Typeform-Style Action Bar */
 .typeform-action-bar {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin: 28px auto 0;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  padding: 6px 14px;
+  padding: 6px 12px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 9999px;
   width: fit-content;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .action-text-btn {
@@ -1009,9 +1010,9 @@ textarea:focus {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 6px;
+  gap: 7px;
+  padding: 5px 9px;
+  border-radius: 8px;
   transition: all 0.15s ease;
   text-decoration: none;
 }
@@ -1021,15 +1022,28 @@ textarea:focus {
   color: var(--accent-ink);
 }
 
-.action-text-btn .action-bracket {
-  font-family: monospace;
-  font-size: 11px;
+.action-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--line);
   color: var(--muted);
-  transition: color 0.15s ease;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
-.action-text-btn:hover .action-bracket {
-  color: var(--accent);
+.action-text-btn:hover .action-tile {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  transform: translateY(-1px);
+}
+
+.action-tile.copied {
+  background: var(--accent) !important;
+  color: #FFFFFF !important;
 }
 
 .action-manage-btn {
@@ -1041,7 +1055,7 @@ textarea:focus {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
   padding: 5px 12px;
   border-radius: 9999px;
   transition: all 0.15s ease;
@@ -1049,5 +1063,12 @@ textarea:focus {
 
 .action-manage-btn:hover {
   opacity: 0.85;
+  transform: translateY(-1px);
 }
+
+.action-manage-btn .action-tile {
+  background: var(--accent);
+  color: #FFFFFF;
+}
+
 
