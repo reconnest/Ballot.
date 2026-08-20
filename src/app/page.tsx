@@ -163,10 +163,11 @@ export default function HomePage() {
             {/* Left Column: Value Proposition & CTAs */}
             <div>
               <div className="hero-badge-row">
-                <span className="hero-pill">🏆 Ranked Choice IRV</span>
+                <span className="hero-pill">🏆 Ranked Choice (Points)</span>
                 <span className="hero-pill">🛡️ Anti-Fraud Defense</span>
                 <span className="hero-pill">📊 Live Analytics</span>
               </div>
+
 
               <h1 id="hero-heading" className="hero-title">
                 Create<span style={{ color: "var(--accent)" }}>.</span> Share<span style={{ color: "var(--accent)" }}>.</span> Decide<span style={{ color: "var(--accent)" }}>.</span>
@@ -229,12 +230,12 @@ export default function HomePage() {
                 <div className="sandbox-header">
                   <span className="sandbox-tag">
                     {sandboxFormat === "standard" && "Standard Demo"}
-                    {sandboxFormat === "ranked" && "Ranked Choice (IRV)"}
+                    {sandboxFormat === "ranked" && "Ranked Choice (Points)"}
                     {sandboxFormat === "image" && "Image Grid Demo"}
                   </span>
                   <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
                     {sandboxFormat === "standard" && (standardVote !== null ? `${standardTotal} test votes` : "Try voting:")}
-                    {sandboxFormat === "ranked" && (rankedSubmitted ? "Consensus calculated ✓" : "Rank your top picks:")}
+                    {sandboxFormat === "ranked" && (rankedSubmitted ? "Leaderboard calculated ✓" : "Rank your top picks:")}
                     {sandboxFormat === "image" && (imageVote !== null ? `${imageTotal} test votes` : "Pick your favorite:")}
                   </span>
                 </div>
@@ -288,7 +289,7 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {/* 2. Ranked Choice (IRV) Format Interactive Body */}
+                {/* 2. Ranked Choice (Points) Format Interactive Body */}
                 {sandboxFormat === "ranked" && (
                   <div>
                     <div className="sandbox-title">Rank your team's top priorities for Q3:</div>
@@ -296,7 +297,7 @@ export default function HomePage() {
                     {!rankedSubmitted ? (
                       <div>
                         <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
-                          Use arrows to rank preferences from 1st to 4th Choice:
+                          Use arrows to rank preferences from 1st to 4th Choice (1st gets 4 pts):
                         </div>
                         {rankedOrder.map((item, idx) => (
                           <div
@@ -354,19 +355,20 @@ export default function HomePage() {
                       <div aria-live="polite">
                         <div style={{ background: "var(--accent-soft)", padding: 12, borderRadius: 6, marginBottom: 10, border: "1px solid var(--accent)" }}>
                           <div style={{ fontWeight: 700, fontSize: 13, color: "var(--accent-ink)", marginBottom: 4 }}>
-                            🏆 IRV Consensus Winner: {rankedOrder[0]}
+                            🏆 Highest Score Winner: {rankedOrder[0]}
                           </div>
                           <div style={{ fontSize: 11, color: "var(--muted)" }}>
-                            Instant Runoff eliminated lowest options across 3 rounds until reaching 64% majority.
+                            Ranked Points scoring (#1=4pts, #2=3pts, #3=2pts, #4=1pt) across all ballots.
                           </div>
                         </div>
                         <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center" }}>
-                          ✨ Zero spoiler effect · Real preferences calculated
+                          ✨ Weighted point allocation · Highest consensus winner
                         </div>
                       </div>
                     )}
                   </div>
                 )}
+
 
                 {/* 3. Image Poll Format Interactive Body */}
                 {sandboxFormat === "image" && (
@@ -599,9 +601,8 @@ export default function HomePage() {
                   </div>
                   <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Create in Seconds</h3>
                   <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
-                    Set up your question with single choice, multi-selection, ranked voting (IRV), or visual image choices:
+                    Set up your question with single choice, multi-selection, ranked points, or visual image choices:
                   </p>
-
 
                   <div className="stepper-rows">
                     <div className="stepper-row-card">
@@ -625,15 +626,15 @@ export default function HomePage() {
                         <span className="stepper-row-icon">🏆</span>
                         <div>
                           <div>
-                            <span className="stepper-row-badge">Ranked Choice (IRV)</span>
-                            <span className="stepper-row-title">Instant Runoff Voting</span>
+                            <span className="stepper-row-badge">Ranked Choice (Points)</span>
+                            <span className="stepper-row-title">Weighted Points Scoring</span>
                           </div>
                           <div className="stepper-row-desc">
-                            Let voters rank their preferences and find the strongest overall choice without vote splitting or spoilers.
+                            Let voters rank their preferences. 1st choice earns maximum points to find the highest-scoring winner.
                           </div>
                         </div>
                       </div>
-                      <span className="stepper-row-tag">→ Elections & group consensus</span>
+                      <span className="stepper-row-tag">→ Elections & team rankings</span>
                     </div>
 
                     <div className="stepper-row-card">
@@ -673,7 +674,6 @@ export default function HomePage() {
                   <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
                     Distribute your poll in seconds through direct links, downloadable QR codes, or embedded widgets:
                   </p>
-
 
                   <div className="stepper-rows">
                     <div className="stepper-row-card">
@@ -757,7 +757,7 @@ export default function HomePage() {
                             <span className="stepper-row-title">Cast with Absolute Clarity</span>
                           </div>
                           <div className="stepper-row-desc">
-                            Voters easily express their authentic preferences through single votes, ranked IRV ballots, or visual cards—with zero signup friction.
+                            Voters easily express their authentic preferences through single votes, ranked point ballots, or visual cards—with zero signup friction.
                           </div>
                         </div>
                       </div>
@@ -770,10 +770,10 @@ export default function HomePage() {
                         <div>
                           <div>
                             <span className="stepper-row-badge">Group Consensus</span>
-                            <span className="stepper-row-title">Automated Majority Winner</span>
+                            <span className="stepper-row-title">Ranked Points Winner</span>
                           </div>
                           <div className="stepper-row-desc">
-                            Live real-time SSE streams and automated IRV elimination algorithms reveal the genuine majority consensus without endless debate.
+                            Live real-time SSE streams and automated weighted ranking algorithms reveal the highest-scoring winner without endless debate.
                           </div>
                         </div>
                       </div>
@@ -852,12 +852,12 @@ export default function HomePage() {
               <div className="pillar-card">
                 <div>
                   <div className="pillar-icon">🏆</div>
-                  <div className="pillar-title">Ranked Choice (IRV)</div>
+                  <div className="pillar-title">Ranked Choice (Points)</div>
                   <div className="pillar-desc">
-                    Built-in Instant Runoff Voting ballots that eliminate spoiler effects without requiring enterprise add-ons.
+                    Built-in weighted point ballots (#1 gets max points) that find the highest-consensus choice without requiring enterprise add-ons.
                   </div>
                 </div>
-                <div className="pillar-tag">→ True Majority Winner</div>
+                <div className="pillar-tag">→ Highest Scoring Winner</div>
               </div>
 
               {/* 50% Center Hero Feature */}
@@ -866,11 +866,12 @@ export default function HomePage() {
                   <div className="pillar-icon">📊</div>
                   <div className="pillar-title">Interactive SVG Charts & Data Exports</div>
                   <div className="pillar-desc">
-                    Inspect vote share with real-time Donut, Pie, and IRV Ledger charts. Download raw CSV and JSON records instantly for transparent auditing or your own custom reporting pipeline.
+                    Inspect vote share with real-time Donut, Pie, and Ranked Points charts. Download raw CSV and JSON records instantly for transparent auditing or your own custom reporting pipeline.
                   </div>
                 </div>
                 <div className="pillar-tag">→ Complete Data Transparency & Analytics</div>
               </div>
+
 
               {/* 25% Feature */}
               <div className="pillar-card">

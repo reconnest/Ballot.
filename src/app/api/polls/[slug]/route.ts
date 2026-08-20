@@ -6,11 +6,12 @@ import { readVoterTokenFromRequest } from "@/lib/voter-token";
 import { createHash } from "crypto";
 import { getSessionUser } from "@/lib/auth";
 
-import { calculateIRV } from "@/lib/irv";
+import { calculateRankedPoints } from "@/lib/ranking";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
+
 
 
 export async function GET(req: NextRequest, { params }: { params: { slug: string } }) {
@@ -113,9 +114,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
 
     const voterList = Object.values(voterMap);
 
-    // Calculate IRV Instant Runoff Consensus if ranked choice
-
-    let irvResult = null;
+    // Calculate Ranked Points Consensus if ranked choice
+    let rankedPointsResult = null;
     if (poll.pollType === "ranked_choice" && canViewResults) {
       const ballotGroups = new Map<string, { optionId: string; rankPosition: number | null }[]>();
       for (const v of pollVotes) {
@@ -135,8 +135,9 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
         ballots.push(items.map((i) => i.optionId));
       }
 
-      irvResult = calculateIRV(pollOptions, ballots);
+      rankedPointsResult = calculateRankedPoints(pollOptions, ballots);
     }
+
 
     return NextResponse.json({
       id: poll.id,
@@ -166,7 +167,9 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
         imageUrl: o.imageUrl,
         votes: canViewResults ? (counts[o.id] ?? 0) : null,
       })),
-      irvResult,
+      rankedPointsResult,
+      irvResult: rankedPointsResult,
+
       totalVotes: canViewResults ? uniqueVoters : null,
       totalSelections: canViewResults ? pollVotes.length : null,
       myVote,

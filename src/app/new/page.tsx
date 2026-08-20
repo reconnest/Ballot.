@@ -45,9 +45,10 @@ const SECURITY_MODES = [
 
 const POLL_TYPES = [
   { value: "standard", label: "Standard Poll", hint: "Single choice or multiple selections" },
-  { value: "ranked_choice", label: "Ranked Choice (IRV)", hint: "Voters rank choices in order of preference" },
+  { value: "ranked_choice", label: "Ranked Choice (Points)", hint: "Voters rank choices in order of preference (1st gets max points)" },
   { value: "image", label: "Image Poll", hint: "Include image previews with each choice" },
 ];
+
 
 const PRESET_CATEGORIES = [
   { value: "general", label: "General" },
