@@ -54,13 +54,17 @@ export async function POST(req: NextRequest) {
     // Dispatch email to user's inbox
     const mailResult = await sendOtpEmail(email, code);
     if (!mailResult.success) {
-      console.warn("Could not dispatch via Resend, falling back to console log:", mailResult.error);
+      console.warn("Could not dispatch via Resend:", mailResult.error);
+      return NextResponse.json({
+        error: mailResult.error || "Could not send verification email."
+      }, { status: 500 });
     }
 
     return NextResponse.json({
       ok: true,
       message: "Verification code sent to your email.",
     });
+
   } catch (err) {
     console.error("send-code error:", err);
     return NextResponse.json({ error: "Could not send verification code." }, { status: 500 });
