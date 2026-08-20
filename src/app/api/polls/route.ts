@@ -4,8 +4,9 @@ import { polls, options } from "@/db/schema";
 import { nanoid, customAlphabet } from "nanoid";
 import { randomBytes, createHash } from "crypto";
 import { getClientIp, generateIpSalt, checkPollCreationRateLimit } from "@/lib/security";
+import { getSessionUser } from "@/lib/auth";
 
-const slugId = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 8);
+const scopedCode = customAlphabet("23456789ABCDEFGHJKLMNPQRSTUVWXYZ", 6);
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,12 +19,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const sessionUser = await getSessionUser(req);
     const body = await req.json();
+    const isPublic = body.isPublic !== undefined ? (body.isPublic ? 1 : 0) : 1;
+
+    // Strict Policy: Public Community Polls (BPC) REQUIRE a logged-in creator account
+    if (isPublic === 1 && !sessionUser) {
+      return NextResponse.json(
+        {
+          error: "A creator account is required to publish public community polls. Please log in or sign up.",
+          requiresAuth: true,
+        },
+        { status: 401 }
+      );
+    }
+
     const question = (body.question ?? "").toString().trim().slice(0, 140);
     const description = body.description ? body.description.toString().trim().slice(0, 1000) : null;
     const pollType = ["standard", "ranked_choice", "image", "availability"].includes(body.pollType) ? body.pollType : "standard";
     const category = (body.category ?? "general").toString().trim().slice(0, 30);
-    const isPublic = body.isPublic !== undefined ? (body.isPublic ? 1 : 0) : 1;
+
+    // Generate Scoped ID Prefix: BPC-xxxx (Community) vs BPP-xxxx (Private)
+    const prefix = isPublic === 1 ? "BPC" : "BPP";
+    const slug = `${prefix}-${scopedCode()}`;
 
     // Support both string[] and { label: string, imageUrl?: string }[]
     const rawOptions: unknown[] = Array.isArray(body.options) ? body.options : [];
@@ -43,7 +61,6 @@ export async function POST(req: NextRequest) {
       .filter((o) => o.label.length > 0)
       .slice(0, 30);
 
-
     const expiresInMs: number | null = typeof body.expiresInMs === "number" ? body.expiresInMs : null;
     const requireName: boolean = !!body.requireName;
     const allowMultiple: boolean = !!body.allowMultiple;
@@ -55,6 +72,7 @@ export async function POST(req: NextRequest) {
 
     const validSecurity = ["relaxed", "standard", "strict"];
     const securityMode = validSecurity.includes(body.securityMode) ? body.securityMode : "standard";
+    const allowVoteEdit = body.allowVoteEdit !== undefined ? (body.allowVoteEdit ? 1 : 0) : 1;
 
     if (!question) {
       return NextResponse.json({ error: "Question is required." }, { status: 400 });
@@ -65,7 +83,6 @@ export async function POST(req: NextRequest) {
 
     const now = Date.now();
     const pollId = nanoid();
-    const slug = slugId();
 
     // Generate secure admin key and per-poll IP salt
     const adminKey = randomBytes(24).toString("hex");
@@ -86,8 +103,12 @@ export async function POST(req: NextRequest) {
       resultsVisibility,
       requireName: requireName ? 1 : 0,
       securityMode,
+      status: "live",
+      allowVoteEdit,
+      repolledFrom: null,
       ipSalt,
       adminKeyHash,
+      creatorUserId: sessionUser ? sessionUser.id : null,
       createdAt: now,
       expiresAt: expiresInMs ? now + expiresInMs : null,
     });
@@ -102,12 +123,12 @@ export async function POST(req: NextRequest) {
       }))
     );
 
-
-    return NextResponse.json({ slug, adminKey });
+    return NextResponse.json({ slug, adminKey, isPublic: isPublic === 1 });
   } catch (e) {
     console.error("create poll failed", e);
     return NextResponse.json({ error: "Could not create poll." }, { status: 500 });
   }
 }
+
 
 

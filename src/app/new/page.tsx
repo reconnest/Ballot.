@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BallotLogo } from "@/components/BallotLogo";
-
+import { AuthModal } from "@/components/AuthModal";
 
 const EXPIRY_CHOICES = [
   { label: "No limit", ms: null },
@@ -43,8 +43,19 @@ const PRESET_CATEGORIES = [
   { value: "food", label: "Food" },
 ];
 
+type SessionUser = {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string;
+};
+
 export default function NewPollPage() {
   const router = useRouter();
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMsg, setAuthModalMsg] = useState("");
+
   const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
   const [showDesc, setShowDesc] = useState(false);
@@ -52,7 +63,7 @@ export default function NewPollPage() {
   const [category, setCategory] = useState("general");
   const [customCategory, setCustomCategory] = useState("");
   const [isAddingCustom, setIsAddingCustom] = useState(false);
-  const [isPublic, setIsPublic] = useState(true);
+  const [isPublic, setIsPublic] = useState(false); // Default to Private (BPP) for zero friction
   const [opts, setOpts] = useState<{ label: string; imageUrl: string }[]>([
     { label: "", imageUrl: "" },
     { label: "", imageUrl: "" },
@@ -61,7 +72,8 @@ export default function NewPollPage() {
   const [minChoices, setMinChoices] = useState(1);
   const [maxChoices, setMaxChoices] = useState<number | "">("");
   const [resultsVisibility, setResultsVisibility] = useState("always_public");
-  const [securityMode, setSecurityMode] = useState("standard");
+  const [securityMode, setSecurityMode] = useState("relaxed");
+  const [allowVoteEdit, setAllowVoteEdit] = useState(true); // Locked spec: Default ON
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -69,6 +81,31 @@ export default function NewPollPage() {
   const [requireName, setRequireName] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user) {
+            setSessionUser(data.user);
+            setIsPublic(true); // If already logged in, default to Community
+          }
+        }
+      } catch {}
+    }
+    checkAuth();
+  }, []);
+
+  function handleSelectCommunity() {
+    if (!sessionUser) {
+      setAuthModalMsg("A creator account is required to publish public community polls.");
+      setShowAuthModal(true);
+    } else {
+      setIsPublic(true);
+    }
+  }
 
   function handleApplyBulkPaste() {
     const lines = bulkText
@@ -98,53 +135,44 @@ export default function NewPollPage() {
     }
   }
   function removeOpt(i: number) {
-    setOpts((prev) => prev.filter((_, idx) => idx !== i));
-  }
-  function moveOpt(i: number, dir: "up" | "down") {
-    const target = dir === "up" ? i - 1 : i + 1;
-    if (target < 0 || target >= opts.length) return;
-    setOpts((prev) => {
-      const copy = [...prev];
-      const temp = copy[i];
-      copy[i] = copy[target];
-      copy[target] = temp;
-      return copy;
-    });
+    if (opts.length > 2) {
+      setOpts((prev) => prev.filter((_, idx) => idx !== i));
+    }
   }
 
-  async function handleCreate() {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    // Verification check for Public Community Polls
+    if (isPublic && !sessionUser) {
+      setAuthModalMsg("Please log in to publish this community poll.");
+      setShowAuthModal(true);
+      return;
+    }
+
     const q = question.trim();
+    if (!q) {
+      setError("Please enter a question.");
+      return;
+    }
+
     const cleanOpts = opts
-      .map((o) => ({ label: o.label.trim(), imageUrl: o.imageUrl.trim() || undefined }))
+      .map((o) => ({
+        label: o.label.trim(),
+        imageUrl: o.imageUrl.trim() || undefined,
+      }))
       .filter((o) => o.label.length > 0);
 
-    if (!q) {
-      setError("Please add a question.");
-      return;
-    }
     if (cleanOpts.length < 2) {
-      setError("Please add at least two options.");
+      setError("Please provide at least 2 non-empty options.");
       return;
-    }
-    if (pollType === "standard" && allowMultiple) {
-      const parsedMin = Math.max(1, minChoices);
-      const parsedMax = typeof maxChoices === "number" ? maxChoices : null;
-      if (parsedMax && parsedMax < parsedMin) {
-        setError("Maximum choices cannot be less than minimum choices.");
-        return;
-      }
-      if (parsedMax && parsedMax > cleanOpts.length) {
-        setError(`Maximum choices cannot exceed total options (${cleanOpts.length}).`);
-        return;
-      }
     }
 
-    // Determine final category tag
     const finalCategory = isPublic
-      ? (isAddingCustom && customCategory.trim() ? customCategory.trim().toLowerCase().slice(0, 30) : category)
+      ? (isAddingCustom ? customCategory.trim() : category) || "general"
       : "general";
 
-    setError("");
     setSubmitting(true);
 
     try {
@@ -163,6 +191,7 @@ export default function NewPollPage() {
           maxChoices: allowMultiple && typeof maxChoices === "number" ? maxChoices : null,
           resultsVisibility,
           securityMode,
+          allowVoteEdit,
           expiresInMs: expiryMs,
           requireName,
         }),
@@ -170,7 +199,11 @@ export default function NewPollPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not create poll.");
+        if (data.requiresAuth) {
+          setShowAuthModal(true);
+        } else {
+          setError(data.error ?? "Could not create poll.");
+        }
         setSubmitting(false);
         return;
       }
@@ -214,9 +247,37 @@ export default function NewPollPage() {
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
           <ThemeToggle />
+          {sessionUser ? (
+            <Link
+              href={`/u/${sessionUser.username}`}
+              className="btn-ghost"
+              style={{ fontSize: 12, fontFamily: "monospace", display: "flex", alignItems: "center", gap: 6 }}
+            >
+              <span>👤</span> @{sessionUser.username}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setAuthModalMsg("Sign in to manage your creator profile."); setShowAuthModal(true); }}
+              className="btn-ghost"
+              style={{ fontSize: 13 }}
+            >
+              Sign in
+            </button>
+          )}
         </div>
       </header>
 
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        initialMessage={authModalMsg}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={(user) => {
+          setSessionUser(user);
+          setIsPublic(true);
+        }}
+      />
 
       <main>
         <div className="section-label">Create new poll</div>
@@ -252,131 +313,107 @@ export default function NewPollPage() {
                 id="q"
                 type="text"
                 maxLength={140}
-                placeholder={
-                  pollType === "ranked_choice"
-                    ? "Rank your favorite choices in order…"
-                    : "What should we get for lunch?"
-                }
+                placeholder="What would you like to decide?"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 autoFocus
+                className="input-text"
               />
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                {!showDesc && (
+                  <button
+                    type="button"
+                    className="btn-link"
+                    style={{ fontSize: 12 }}
+                    onClick={() => setShowDesc(true)}
+                  >
+                    + Add description / context notes
+                  </button>
+                )}
+                <span className="char-count" style={{ marginLeft: "auto" }}>{question.length}/140</span>
+              </div>
             </div>
 
-            <div className="block">
-              {!showDesc ? (
-                <button
-                  type="button"
-                  className="btn-link"
-                  onClick={() => setShowDesc(true)}
-                  style={{ fontSize: 13 }}
-                >
-                  + Add description / context (optional)
-                </button>
-              ) : (
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <label className="field-label" htmlFor="desc">Description (optional)</label>
-                    <button
-                      type="button"
-                      className="btn-link"
-                      onClick={() => { setShowDesc(false); setDescription(""); }}
-                      style={{ fontSize: 12, color: "var(--muted)" }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <textarea
-                    id="desc"
-                    className="input-textarea"
-                    rows={3}
-                    maxLength={1000}
-                    placeholder="Add rules, links, or context for voters..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
+            {/* Optional Description */}
+            {showDesc && (
+              <div className="block">
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <label className="field-label" htmlFor="desc" style={{ marginBottom: 0 }}>
+                    Description / Context (Optional)
+                  </label>
+                  <button
+                    type="button"
+                    className="btn-link"
+                    style={{ fontSize: 11, color: "var(--muted)" }}
+                    onClick={() => { setShowDesc(false); setDescription(""); }}
+                  >
+                    Remove
+                  </button>
                 </div>
-              )}
-            </div>
+                <textarea
+                  id="desc"
+                  rows={2}
+                  maxLength={1000}
+                  placeholder="Provide additional context, guidelines, or decision background..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+                <span className="char-count">{description.length}/1000</span>
+              </div>
+            )}
 
-            {/* Options List */}
+            {/* Options */}
             <div className="block">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <label className="field-label" style={{ marginBottom: 0 }}>
                   Options <span style={{ color: "var(--accent)" }}>*</span>
                 </label>
                 <button
                   type="button"
-                  className="btn-link"
+                  className="btn-ghost"
+                  style={{ fontSize: 12, padding: "3px 8px" }}
                   onClick={() => setShowBulkModal(true)}
-                  style={{ fontSize: 12 }}
                 >
-                  📋 Paste multiple lines
+                  ⚡ Bulk paste
                 </button>
               </div>
 
-              <div role="list" aria-label="Poll options">
-                {opts.map((o, i) => (
-                  <div className="option-row-wrap" key={i} role="listitem" style={{ marginBottom: 12, borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
-                    <div className="option-row" style={{ borderBottom: "none" }}>
-                      <span className="option-num" aria-hidden="true">{i + 1}</span>
+              <div className="options-stack">
+                {opts.map((opt, i) => (
+                  <div key={i} className="option-row">
+                    <span className="drag-handle">{i + 1}</span>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6 }}>
                       <input
                         type="text"
                         maxLength={100}
                         placeholder={`Option ${i + 1}`}
-                        value={o.label}
-                        aria-label={`Option ${i + 1}`}
+                        value={opt.label}
                         onChange={(e) => updateOptLabel(i, e.target.value)}
+                        className="input-text"
                       />
-                      <div className="option-row-actions">
-                        <button
-                          type="button"
-                          className="reorder-btn"
-                          disabled={i === 0}
-                          aria-label={`Move option ${i + 1} up`}
-                          onClick={() => moveOpt(i, "up")}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          className="reorder-btn"
-                          disabled={i === opts.length - 1}
-                          aria-label={`Move option ${i + 1} down`}
-                          onClick={() => moveOpt(i, "down")}
-                        >
-                          ▼
-                        </button>
-                        {opts.length > 2 && (
-                          <button
-                            type="button"
-                            className="remove-opt"
-                            aria-label={`Remove option ${i + 1}`}
-                            onClick={() => removeOpt(i)}
-                          >
-                            &times;
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Optional Image URL for Image Polls */}
-                    {pollType === "image" && (
-                      <div style={{ paddingLeft: 30, marginTop: 4 }}>
+                      {pollType === "image" && (
                         <input
                           type="url"
-                          placeholder="Image URL (https://…)"
-                          value={o.imageUrl}
+                          placeholder="Image URL (https://...)"
+                          value={opt.imageUrl}
                           onChange={(e) => updateOptImage(i, e.target.value)}
-                          style={{ fontSize: 12, color: "var(--muted)", width: "100%" }}
+                          style={{ fontSize: 12, padding: "6px 10px" }}
                         />
-                      </div>
+                      )}
+                    </div>
+                    {opts.length > 2 && (
+                      <button
+                        type="button"
+                        className="remove-opt-btn"
+                        onClick={() => removeOpt(i)}
+                        title="Remove option"
+                      >
+                        ✕
+                      </button>
                     )}
                   </div>
                 ))}
-              </div>
 
-              <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 8 }}>
                 {opts.length < 30 && (
                   <button type="button" className="add-opt" onClick={addOpt}>
                     + Add option ({opts.length}/30)
@@ -388,32 +425,52 @@ export default function NewPollPage() {
 
           {/* Right Column: Visibility, Category, Mode & Advanced Settings */}
           <div>
-            {/* Top Requirement: Discovery & Directory (Public vs Unlisted) */}
+            {/* Top Requirement: Discovery & Directory (BPC Community vs BPP Private) */}
             <div className="block">
-              <label className="field-label">Discovery & Directory</label>
-              <div className="expiry-row">
+              <label className="field-label">Poll Type & Visibility</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {/* Community BPC */}
                 <button
                   type="button"
-                  className={`expiry-chip ${isPublic ? "active" : ""}`}
-                  onClick={() => setIsPublic(true)}
+                  className={`visibility-card ${isPublic ? "active" : ""}`}
+                  onClick={handleSelectCommunity}
+                  style={{ padding: "14px 16px", textAlign: "left" }}
                 >
-                  Public (Listed in Explore)
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, fontSize: 13 }}>🌐 Community (BPC)</span>
+                    <span style={{ fontSize: 10, background: "var(--accent-soft)", color: "var(--accent-ink)", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>
+                      EXPLORE
+                    </span>
+                  </div>
+                  <div className="vis-hint" style={{ fontSize: 12 }}>
+                    Public & listed in Explore feed. Requires creator account.
+                  </div>
                 </button>
+
+                {/* Private BPP */}
                 <button
                   type="button"
-                  className={`expiry-chip ${!isPublic ? "active" : ""}`}
+                  className={`visibility-card ${!isPublic ? "active" : ""}`}
                   onClick={() => setIsPublic(false)}
+                  style={{ padding: "14px 16px", textAlign: "left" }}
                 >
-                  Private (Link only)
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, fontSize: 13 }}>🔒 Private (BPP)</span>
+                    <span style={{ fontSize: 10, background: "var(--line)", color: "var(--muted)", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>
+                      UNLISTED
+                    </span>
+                  </div>
+                  <div className="vis-hint" style={{ fontSize: 12 }}>
+                    Secret link only. No account required.
+                  </div>
                 </button>
               </div>
-
             </div>
 
-            {/* Requirement: Category only visible when Public, plus Custom Category */}
+            {/* Category: Only for Community Polls */}
             {isPublic && (
               <div className="block">
-                <label className="field-label">Category</label>
+                <label className="field-label">Community Category</label>
                 <div className="expiry-row" style={{ marginBottom: 10 }}>
                   {PRESET_CATEGORIES.map((c) => (
                     <button
@@ -467,34 +524,33 @@ export default function NewPollPage() {
                     className={`expiry-chip ${allowMultiple ? "active" : ""}`}
                     onClick={() => setAllowMultiple(true)}
                   >
-                    Multiple choices
+                    Multiple selections
                   </button>
                 </div>
+
                 {allowMultiple && (
-                  <div className="multi-choice-config">
-                    <div className="config-item">
-                      <label htmlFor="minChoices" className="sub-field-label">Min choices</label>
+                  <div style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center" }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 11, color: "var(--muted)", display: "block", marginBottom: 3 }}>Min Choices</label>
                       <input
-                        id="minChoices"
                         type="number"
                         min={1}
                         max={opts.length}
                         value={minChoices}
                         onChange={(e) => setMinChoices(parseInt(e.target.value) || 1)}
-                        style={{ width: 80 }}
+                        style={{ padding: "6px 8px", fontSize: 13 }}
                       />
                     </div>
-                    <div className="config-item">
-                      <label htmlFor="maxChoices" className="sub-field-label">Max choices (optional)</label>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: 11, color: "var(--muted)", display: "block", marginBottom: 3 }}>Max Choices (Optional)</label>
                       <input
-                        id="maxChoices"
                         type="number"
                         min={minChoices}
                         max={opts.length}
-                        placeholder="No max"
+                        placeholder="No limit"
                         value={maxChoices}
-                        onChange={(e) => setMaxChoices(e.target.value === "" ? "" : parseInt(e.target.value) || "")}
-                        style={{ width: 100 }}
+                        onChange={(e) => setMaxChoices(e.target.value ? parseInt(e.target.value) : "")}
+                        style={{ padding: "6px 8px", fontSize: 13 }}
                       />
                     </div>
                   </div>
@@ -502,146 +558,190 @@ export default function NewPollPage() {
               </div>
             )}
 
-            {/* Collapsible Advanced Settings Accordion */}
-            <div style={{ marginTop: 12, marginBottom: 20 }}>
+            {/* Voter Vote Editing Toggle (Locked Spec) */}
+            <div className="block">
+              <label className="field-label">Voter Editing</label>
+              <div
+                onClick={() => setAllowVoteEdit(!allowVoteEdit)}
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--line)",
+                  borderRadius: 8,
+                  padding: "12px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: "pointer"
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+                    Allow voters to change their vote
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                    Voters can update their selection while the poll is live.
+                  </div>
+                </div>
+                <div style={{
+                  width: 36,
+                  height: 20,
+                  borderRadius: 12,
+                  background: allowVoteEdit ? "var(--accent)" : "var(--line)",
+                  position: "relative",
+                  transition: "background 0.15s ease"
+                }}>
+                  <div style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: "50%",
+                    background: "#FFFFFF",
+                    position: "absolute",
+                    top: 2,
+                    left: allowVoteEdit ? 18 : 2,
+                    transition: "left 0.15s ease"
+                  }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Settings Drawer */}
+            <div className="block">
               <button
                 type="button"
                 className="btn-ghost"
+                style={{ width: "100%", justifyContent: "space-between", display: "flex", fontSize: 13 }}
                 onClick={() => setShowAdvanced(!showAdvanced)}
-                style={{ width: "100%", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px" }}
               >
-                <span style={{ fontWeight: 600, fontSize: 13 }}>⚙️ Advanced Settings (Privacy & Fraud)</span>
-                <span style={{ fontSize: 11, fontFamily: "monospace" }}>{showAdvanced ? "▲ Hide" : "▼ Expand"}</span>
+                <span>⚙️ More Settings (Deadline, Results Visibility)</span>
+                <span>{showAdvanced ? "▲" : "▼"}</span>
               </button>
 
               {showAdvanced && (
-                <div style={{ marginTop: 14, borderLeft: "2px solid var(--line)", paddingLeft: 12 }}>
+                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Expiration */}
+                  <div>
+                    <label className="field-label">Poll Deadline</label>
+                    <div className="expiry-row">
+                      {EXPIRY_CHOICES.map((choice) => (
+                        <button
+                          type="button"
+                          key={choice.label}
+                          className={`expiry-chip ${expiryMs === choice.ms ? "active" : ""}`}
+                          onClick={() => setExpiryMs(choice.ms)}
+                        >
+                          {choice.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Results Visibility */}
-                  <div className="block">
+                  <div>
                     <label className="field-label">Results Visibility</label>
-                    <div className="visibility-grid">
+                    <div className="expiry-row">
                       {VISIBILITY_CHOICES.map((vc) => (
                         <button
                           type="button"
                           key={vc.value}
-                          className={`visibility-card ${resultsVisibility === vc.value ? "active" : ""}`}
+                          className={`expiry-chip ${resultsVisibility === vc.value ? "active" : ""}`}
                           onClick={() => setResultsVisibility(vc.value)}
                         >
-                          <div className="vis-title">{vc.label}</div>
-                          <div className="vis-hint">{vc.hint}</div>
+                          {vc.label}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Duplicate & Fraud Protection */}
-                  <div className="block">
-                    <label className="field-label">Duplicate Vote Protection</label>
-                    <div className="visibility-grid">
+                  {/* Security Mode */}
+                  <div>
+                    <label className="field-label">Security & Anti-Abuse</label>
+                    <div className="expiry-row">
                       {SECURITY_CHOICES.map((sc) => (
                         <button
                           type="button"
                           key={sc.value}
-                          className={`visibility-card ${securityMode === sc.value ? "active" : ""}`}
+                          className={`expiry-chip ${securityMode === sc.value ? "active" : ""}`}
                           onClick={() => setSecurityMode(sc.value)}
                         >
-                          <div className="vis-title">{sc.label}</div>
-                          <div className="vis-hint">{sc.hint}</div>
+                          {sc.label}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Voter Identity */}
-                  <div className="block">
-                    <label className="field-label">Voter Identity</label>
-                    <div className="expiry-row">
-                      <button
-                        type="button"
-                        className={`expiry-chip ${!requireName ? "active" : ""}`}
-                        onClick={() => setRequireName(false)}
-                      >
-                        Anonymous
-                      </button>
-                      <button
-                        type="button"
-                        className={`expiry-chip ${requireName ? "active" : ""}`}
-                        onClick={() => setRequireName(true)}
-                      >
-                        Ask for name
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Poll Expiry */}
-                  <div className="block">
-                    <label className="field-label">Poll Deadline</label>
-                    <div className="expiry-row">
-                      {EXPIRY_CHOICES.map((c) => (
-                        <button
-                          type="button"
-                          key={c.label}
-                          className={`expiry-chip ${expiryMs === c.ms ? "active" : ""}`}
-                          onClick={() => setExpiryMs(c.ms)}
-                        >
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Require Name */}
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={requireName}
+                      onChange={(e) => setRequireName(e.target.checked)}
+                    />
+                    <span>Require voter name before submitting</span>
+                  </label>
                 </div>
               )}
             </div>
 
-            {error && <div className="err" role="alert" style={{ marginBottom: 12 }}>{error}</div>}
+            {/* Error Message */}
+            {error && <div className="error-box">{error}</div>}
 
-            <div className="poll-actions" style={{ justifyContent: "flex-start", gap: 14, marginTop: 16 }}>
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={submitting}
-                onClick={handleCreate}
-                style={{ padding: "12px 24px", fontSize: 15 }}
-              >
-                {submitting ? "Creating poll…" : "Create poll →"}
-              </button>
-              <Link href="/" className="btn-ghost">Cancel</Link>
-            </div>
+            {/* Create Button */}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="btn-primary"
+              style={{ width: "100%", padding: "14px 24px", fontSize: 16, marginTop: 8 }}
+            >
+              {submitting ? "Creating poll..." : isPublic ? "Publish Community Poll (BPC) →" : "Create Private Poll (BPP) →"}
+            </button>
           </div>
         </div>
 
-        <div className="privacy-disclosure" style={{ marginTop: 40, fontSize: 11, color: "var(--faint)", lineHeight: 1.5, borderTop: "1px solid var(--line)", paddingTop: 16 }}>
-          🔒 <strong>Privacy & Fraud Notice:</strong> Ballot uses private session cookies and one-way salted IP digests solely to deter duplicate votes. No personal browsing activity is tracked, profiled, or sold.
-        </div>
+        {/* Bulk Paste Modal */}
+        {showBulkModal && (
+          <div className="modal-backdrop">
+            <div className="modal-box">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 700 }}>Paste Multiple Options</h2>
+                <button
+                  type="button"
+                  className="btn-link"
+                  onClick={() => setShowBulkModal(false)}
+                >
+                  ✕
+                </button>
+              </div>
+              <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
+                Paste one option per line. Leading numbers and bullet points will be removed automatically:
+              </p>
+              <textarea
+                rows={8}
+                value={bulkText}
+                onChange={(e) => setBulkText(e.target.value)}
+                placeholder={"Option 1\nOption 2\nOption 3\nOption 4"}
+                style={{ fontFamily: "monospace", fontSize: 13, marginBottom: 16 }}
+              />
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowBulkModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={handleApplyBulkPaste}
+                >
+                  Apply Options
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
-
-      {/* Bulk Paste Modal */}
-      {showBulkModal && (
-        <div className="modal-backdrop" onClick={() => setShowBulkModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-head">
-              <h3>Paste Multiple Options</h3>
-              <button type="button" className="close-btn" onClick={() => setShowBulkModal(false)}>&times;</button>
-            </div>
-            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
-              Paste a list of options from Slack, ChatGPT, or your notes. Each line will become a separate option:
-            </p>
-            <textarea
-              className="input-textarea"
-              rows={6}
-              placeholder="Option 1&#10;Option 2&#10;Option 3&#10;Option 4"
-              value={bulkText}
-              onChange={(e) => setBulkText(e.target.value)}
-              autoFocus
-              style={{ width: "100%", marginBottom: 16 }}
-            />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button type="button" className="btn-ghost" onClick={() => setShowBulkModal(false)}>Cancel</button>
-              <button type="button" className="btn-primary" onClick={handleApplyBulkPaste}>Apply Options</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

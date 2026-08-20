@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { polls, votes, options } from "@/db/schema";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { polls, votes, options, users } from "@/db/schema";
+import { eq, desc, sql, and, ne } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const fetchCache = "force-no-store";
-
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +14,7 @@ export async function GET(req: NextRequest) {
     const query = searchParams.get("q")?.toLowerCase() || "";
     const filter = searchParams.get("filter") || "trending"; // 'trending' | 'recent' | 'active'
 
-    // Fetch public polls
+    // Fetch public community polls excluding deleted ones
     const publicPolls = await db
       .select({
         id: polls.id,
@@ -25,13 +24,26 @@ export async function GET(req: NextRequest) {
         pollType: polls.pollType,
         category: polls.category,
         allowMultiple: polls.allowMultiple,
+        status: polls.status,
+        repolledFrom: polls.repolledFrom,
         createdAt: polls.createdAt,
         expiresAt: polls.expiresAt,
+        creatorUserId: polls.creatorUserId,
       })
       .from(polls)
-      .where(and(eq(polls.isPublic, 1), eq(polls.resultsVisibility, "always_public")))
+      .where(
+        and(
+          eq(polls.isPublic, 1),
+          eq(polls.resultsVisibility, "always_public"),
+          ne(polls.status, "deleted")
+        )
+      )
       .orderBy(desc(polls.createdAt))
       .limit(60);
+
+    // Fetch all creators for enrichment
+    const allUsers = await db.select({ id: users.id, username: users.username, displayName: users.displayName, avatarUrl: users.avatarUrl }).from(users);
+    const userById = new Map(allUsers.map((u) => [u.id, u]));
 
     // Compute vote counts for each poll
     const allVotes = await db.select({ pollId: votes.pollId, voterToken: votes.voterToken }).from(votes);
@@ -52,12 +64,18 @@ export async function GET(req: NextRequest) {
     let items = publicPolls.map((p) => {
       const voteCount = voteCountByPoll[p.id] || 0;
       const isExpired = p.expiresAt ? now > p.expiresAt : false;
+      const isInactive = p.status === "inactive" || isExpired;
+      const creator = p.creatorUserId ? userById.get(p.creatorUserId) || null : null;
+
       return {
         ...p,
         voteCount,
         isExpired,
+        isInactive,
+        creator,
       };
     });
+
 
     // Apply text search
     if (query) {

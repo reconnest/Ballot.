@@ -2,32 +2,44 @@
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
 import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/chart-utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BallotLogo } from "@/components/BallotLogo";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
 
-
-
 type OptionData = { id: string; label: string; imageUrl?: string | null; votes: number | null };
 type VoterEntry = { name: string; choices: string[] };
 
+type CreatorProfile = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl?: string | null;
+};
+
 type PollData = {
+  slug: string;
   question: string;
   description: string | null;
   pollType: string;
   category: string;
   isPublic: boolean;
+  status: string;
+  allowVoteEdit: boolean;
+  repolledFrom: string | null;
   createdAt: number;
   expiresAt: number | null;
   isExpired: boolean;
+  isInactive: boolean;
   requireName: boolean;
   allowMultiple: boolean;
   minChoices: number;
   maxChoices: number | null;
   resultsVisibility: "always_public" | "after_vote" | "after_deadline" | "creator_only";
+  securityMode: string;
+  creator?: CreatorProfile | null;
   options: OptionData[];
   totalVotes: number | null;
   totalSelections: number | null;
@@ -39,8 +51,8 @@ type PollData = {
   voters: VoterEntry[];
 };
 
-
 function PollContent() {
+  const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
@@ -50,16 +62,22 @@ function PollContent() {
   const [voting, setVoting] = useState(false);
   const [voterName, setVoterName] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isEditingVote, setIsEditingVote] = useState(false);
   const [toast, setToast] = useState("");
   const [showQR, setShowQR] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showEmbedModal, setShowEmbedModal] = useState(false);
   const [adminKey, setAdminKey] = useState<string | null>(null);
-  const [botVerified, setBotVerified] = useState(false);
   const [chartType, setChartType] = useState<"ledger" | "donut" | "pie">("ledger");
 
   const [activeViewers, setActiveViewers] = useState<number>(1);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
+
+  // Admin Settings Form States
+  const [editDesc, setEditDesc] = useState("");
+  const [editVisibility, setEditVisibility] = useState("always_public");
+  const [editAllowVoteEdit, setEditAllowVoteEdit] = useState(true);
+  const [adminLoading, setAdminLoading] = useState(false);
 
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -94,12 +112,15 @@ function PollContent() {
       }
       const data: PollData = await res.json();
       setPoll(data);
+      setEditDesc(data.description || "");
+      setEditVisibility(data.resultsVisibility || "always_public");
+      setEditAllowVoteEdit(data.allowVoteEdit ?? true);
     } catch {
       // transient network error
     }
   }
 
-  // Real-time EventSource (SSE) stream listener + fallback poll timer
+  // Real-time EventSource (SSE) stream listener
   useEffect(() => {
     fetchPoll();
 
@@ -119,635 +140,642 @@ function PollContent() {
           }
         } catch {}
       };
-      eventSource.onerror = () => {
-        setIsLiveConnected(false);
-      };
-    } catch {
-      setIsLiveConnected(false);
-    }
+    } catch {}
 
-    // Gentle fallback poll (every 5s if disconnected, every 12s if connected as sanity heartbeat)
-    pollTimer.current = setInterval(() => fetchPoll(), 5000);
+    // Fallback polling every 5s if disconnected
+    pollTimer.current = setInterval(() => {
+      fetchPoll();
+    }, 5000);
 
     return () => {
       if (eventSource) eventSource.close();
       if (pollTimer.current) clearInterval(pollTimer.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, adminKey]);
 
+  function copyLink() {
+    const url = window.location.origin + window.location.pathname;
+    navigator.clipboard.writeText(url);
+    showToast("✓ Voter link copied to clipboard");
+  }
 
   function showToast(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast(""), 2500);
+    setTimeout(() => setToast(""), 3000);
   }
 
-  function toggleOption(id: string) {
+  function handleSelect(id: string) {
     if (!poll) return;
-    if (poll.allowMultiple) {
-      setSelectedIds((prev) => {
-        if (prev.includes(id)) {
-          return prev.filter((item) => item !== id);
-        } else {
-          if (poll.maxChoices && prev.length >= poll.maxChoices) {
-            showToast(`Maximum ${poll.maxChoices} choices allowed`);
-            return prev;
-          }
-          return [...prev, id];
+
+    if (poll.pollType === "ranked_choice") {
+      // Ranked Choice ordering
+      if (selectedIds.includes(id)) {
+        setSelectedIds(selectedIds.filter((item) => item !== id));
+      } else {
+        setSelectedIds([...selectedIds, id]);
+      }
+    } else if (poll.allowMultiple) {
+      if (selectedIds.includes(id)) {
+        setSelectedIds(selectedIds.filter((item) => item !== id));
+      } else {
+        if (!poll.maxChoices || selectedIds.length < poll.maxChoices) {
+          setSelectedIds([...selectedIds, id]);
         }
-      });
+      }
     } else {
       setSelectedIds([id]);
     }
   }
 
-  const [rankedOrder, setRankedOrder] = useState<string[]>([]);
+  async function handleVoteSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!poll) return;
 
-  // Initialize ranked choices order
-  useEffect(() => {
-    if (poll && poll.pollType === "ranked_choice" && rankedOrder.length === 0) {
-      setRankedOrder(poll.options.map((o) => o.id));
-    }
-  }, [poll, rankedOrder.length]);
-
-  function moveRank(index: number, direction: "up" | "down") {
-    const target = direction === "up" ? index - 1 : index + 1;
-    if (target < 0 || target >= rankedOrder.length) return;
-    setRankedOrder((prev) => {
-      const copy = [...prev];
-      const temp = copy[index];
-      copy[index] = copy[target];
-      copy[target] = temp;
-      return copy;
-    });
-  }
-
-  async function castVote(directId?: string) {
-    let finalSelection: string[] = [];
-    if (poll?.pollType === "ranked_choice") {
-      finalSelection = rankedOrder;
-    } else {
-      finalSelection = directId ? [directId] : selectedIds;
-    }
-
-    if (finalSelection.length === 0) {
-      showToast("Please choose an option first.");
+    if (poll.isInactive) {
+      showToast("❌ This poll is inactive/closed.");
       return;
     }
-    if (poll?.pollType === "standard" && poll.allowMultiple && finalSelection.length < poll.minChoices) {
-      showToast(`Please choose at least ${poll.minChoices} option${poll.minChoices === 1 ? "" : "s"}.`);
+
+    if (selectedIds.length === 0) {
+      showToast("Please select an option.");
       return;
     }
-    if (poll?.requireName && !voterName.trim()) {
-      showToast("Please enter your name.");
+
+    if (poll.requireName && !voterName.trim() && !poll.hasVoted) {
+      showToast("Please enter your name to cast your vote.");
       return;
     }
 
     setVoting(true);
+
     try {
       const res = await fetch(`/api/polls/${slug}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          optionIds: finalSelection,
+          optionIds: selectedIds,
           voterName: voterName.trim() || undefined,
-          turnstileToken: botVerified ? "cf_token_passed" : undefined,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        if (data.requiresTurnstile) {
-          showToast("Security verification required. Please verify below.");
-          setBotVerified(true);
-          return;
-        }
-        showToast(data.error ?? "Could not record vote.");
-        return;
-      }
-      setSelectedIds([]);
-      await fetchPoll();
-      showToast("Vote submitted!");
-      try {
+        showToast(data.error || "Could not submit vote.");
+      } else {
         fireMotionSafeConfetti();
-      } catch {}
-    } catch (e) {
-      console.error("vote request failed", e);
-      showToast("Could not submit vote — check your connection.");
-    } finally {
-      setVoting(false);
+        showToast(data.isEdit ? "✓ Vote updated successfully!" : "✓ Vote recorded!");
+        setIsEditingVote(false);
+        fetchPoll();
+      }
+    } catch {
+      showToast("Network error. Please try again.");
     }
+    setVoting(false);
   }
 
-
-
-  async function handleClosePoll() {
-    if (!adminKey) return;
+  // Admin Actions
+  async function handleToggleStatus() {
+    if (!adminKey && !poll?.isAdmin) return;
+    setAdminLoading(true);
     try {
       const res = await fetch(`/api/polls/${slug}/admin`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ adminKey, action: "close_now" }),
+        body: JSON.stringify({ adminKey, action: "toggle_status" }),
       });
       if (res.ok) {
-        showToast("Poll closed.");
+        showToast("✓ Poll status updated");
         fetchPoll();
-        setShowAdminModal(false);
-      } else {
-        showToast("Could not close poll.");
       }
-    } catch {
-      showToast("Error updating poll.");
-    }
+    } catch {}
+    setAdminLoading(false);
   }
 
-  function copyLink() {
-    const url = typeof window !== "undefined" ? window.location.origin + `/p/${slug}` : "";
-    navigator.clipboard?.writeText(url).then(
-      () => showToast("Share link copied!"),
-      () => showToast(url)
-    );
+  async function handleRepoll() {
+    if (!confirm("Start a new round (Repoll)? The current round results will be finalized.")) return;
+    setAdminLoading(true);
+    try {
+      const res = await fetch(`/api/polls/${slug}/admin`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminKey, action: "repoll" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.newSlug) {
+        showToast(`✓ Started Round 2 as ${data.newSlug}`);
+        router.push(`/p/${data.newSlug}?key=${data.adminKey}&created=1`);
+      }
+    } catch {}
+    setAdminLoading(false);
   }
 
-  function copyAdminLink() {
-    if (!adminKey) return;
-    const url = typeof window !== "undefined" ? `${window.location.origin}/p/${slug}?key=${adminKey}` : "";
-    navigator.clipboard?.writeText(url).then(
-      () => showToast("Admin link copied to clipboard!"),
-      () => showToast(url)
-    );
+  async function handleSaveSettings() {
+    setAdminLoading(true);
+    try {
+      const res = await fetch(`/api/polls/${slug}/admin`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminKey,
+          description: editDesc,
+          resultsVisibility: editVisibility,
+          allowVoteEdit: editAllowVoteEdit,
+        }),
+      });
+      if (res.ok) {
+        showToast("✓ Settings updated");
+        setShowAdminModal(false);
+        fetchPoll();
+      }
+    } catch {}
+    setAdminLoading(false);
+  }
+
+  async function handleDeletePoll() {
+    if (!confirm("Are you sure you want to delete this poll? It will no longer be accessible.")) return;
+    setAdminLoading(true);
+    try {
+      const res = await fetch(`/api/polls/${slug}/admin`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey || "" },
+      });
+      if (res.ok) {
+        alert("Poll deleted successfully.");
+        router.push("/explore");
+      }
+    } catch {}
+    setAdminLoading(false);
   }
 
   if (notFound) {
     return (
-      <div className="wrap">
-        <header className="top">
-          <Link href="/" className="brand">Ballot<span>.</span></Link>
-        </header>
-        <div className="empty">
-          Poll not found.
-          <br /><br />
-          <Link href="/" className="btn-ghost">← Back to polls</Link>
-        </div>
+      <div className="wrap" style={{ textAlign: "center", padding: "100px 0" }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>🗳️</div>
+        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Poll Not Found</h1>
+        <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
+          This poll does not exist or has been removed by its creator.
+        </p>
+        <Link href="/explore" className="btn-primary">
+          Explore Public Polls →
+        </Link>
       </div>
     );
   }
 
   if (!poll) {
     return (
-      <div className="wrap">
-        <header className="top">
-          <Link href="/" className="brand">Ballot<span>.</span></Link>
-        </header>
-        <div className="loading" role="status" aria-live="polite">Loading poll…</div>
+      <div className="wrap" style={{ textAlign: "center", padding: "100px 0", color: "var(--muted)", fontFamily: "monospace" }}>
+        Loading poll...
       </div>
     );
   }
 
-  const showResults = poll.canViewResults;
-  const isMulti = poll.allowMultiple;
-  const pageUrl = typeof window !== "undefined" ? `${window.location.origin}/p/${slug}` : "";
-  const embedCode = typeof window !== "undefined"
-    ? `<iframe src="${window.location.origin}/embed/${slug}" width="100%" height="450" frameborder="0" style="border-radius: 8px; border: 1px solid #E4E1D9;"></iframe>`
-    : "";
-
-  const chartData = poll.options.map((o) => ({
-    id: o.id,
-    label: o.label,
-    votes: o.votes ?? 0,
-  }));
-
-  const totalChartVotes = poll.totalVotes && poll.totalVotes > 0
-    ? poll.totalVotes
-    : chartData.reduce((acc, curr) => acc + curr.votes, 0);
-
-  const slices = calculateSlices(
-    chartData,
-    totalChartVotes,
-    chartType === "donut" ? 95 : 95,
-    chartType === "donut" ? 55 : 0
-  );
-
-  // Server-guarded winner computation (only active when results are unmasked)
-  const maxVotes = showResults ? Math.max(...poll.options.map((o) => o.votes ?? 0), 0) : 0;
-  const topOptions = showResults && maxVotes > 0 ? poll.options.filter((o) => (o.votes ?? 0) === maxVotes) : [];
-  const isTie = topOptions.length > 1;
-  const isLeader = (optId: string) => showResults && maxVotes > 0 && !isTie && topOptions[0]?.id === optId;
-  const isTiedLeader = (optId: string) => showResults && maxVotes > 0 && isTie && topOptions.some((o) => o.id === optId);
+  const showVotingUI = (!poll.hasVoted || isEditingVote) && !poll.isInactive;
+  const isBPC = poll.slug.startsWith("BPC-");
 
   return (
     <div className="wrap">
+      {/* Top Header */}
       <header className="top">
         <Link href="/" style={{ textDecoration: "none" }}>
           <BallotLogo size={32} />
         </Link>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-
-          {poll.isAdmin && (
-            <button
-              type="button"
-              className="badge-creator"
-              onClick={() => setShowAdminModal(true)}
-              aria-label="Creator admin settings"
-            >
-              ⚙ Creator Admin
-            </button>
-          )}
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <Link href="/explore" className="btn-ghost" style={{ fontSize: 13 }}>Explore</Link>
           <ThemeToggle />
-          <Link href="/new" className="btn-primary">New poll</Link>
+          <Link href="/new" className="btn-primary" style={{ fontSize: 13 }}>+ Create poll</Link>
         </div>
       </header>
 
+      {/* Repoll Round Banner (if linked) */}
+      {poll.repolledFrom && (
+        <div style={{
+          background: "var(--accent-soft)",
+          border: "1px solid var(--accent)",
+          borderRadius: 8,
+          padding: "10px 14px",
+          marginBottom: 20,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontSize: 13
+        }}>
+          <span style={{ color: "var(--accent-ink)", fontWeight: 600 }}>
+            🔄 Round 2 Consensus · Linked from {poll.repolledFrom}
+          </span>
+          <Link href={`/p/${poll.repolledFrom}`} style={{ color: "var(--accent-ink)", fontWeight: 700, textDecoration: "underline" }}>
+            View Round 1 Results →
+          </Link>
+        </div>
+      )}
 
-
-      <main>
-        <div className="poll-header">
-          <h1 className="poll-title">{poll.question}</h1>
-          {poll.description && (
-            <div className="poll-desc">{poll.description}</div>
+      {/* Inactive / Finalized Status Banner */}
+      {poll.isInactive && (
+        <div style={{
+          background: "var(--surface)",
+          border: "1px solid var(--line)",
+          borderRadius: 8,
+          padding: "12px 16px",
+          marginBottom: 20,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 16 }}>🔒</span>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink)" }}>
+                Results Finalized
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                This poll is inactive and no longer accepting votes or vote changes.
+              </div>
+            </div>
+          </div>
+          {poll.isAdmin && (
+            <button
+              type="button"
+              onClick={handleToggleStatus}
+              disabled={adminLoading}
+              className="btn-ghost"
+              style={{ fontSize: 12 }}
+            >
+              Reactivate Poll
+            </button>
           )}
         </div>
+      )}
 
-        <div className="poll-sub" aria-live="polite" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            {poll.totalVotes !== null ? `${poll.totalVotes} vote${poll.totalVotes === 1 ? "" : "s"}` : "Voting open"}
-            {poll.isExpired ? " · closed" : poll.hasVoted ? " · you voted" : isMulti ? ` · pick ${poll.minChoices}${poll.maxChoices ? `–${poll.maxChoices}` : "+"}` : " · pick one"}
+      <main style={{ maxWidth: 640, margin: "0 auto", paddingBottom: 60 }}>
+        {/* Poll Metadata Header */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <span className="badge-category">{poll.category || "general"}</span>
+              <span style={{
+                fontSize: 10,
+                fontFamily: "monospace",
+                padding: "2px 6px",
+                borderRadius: 4,
+                background: isBPC ? "var(--accent-soft)" : "var(--line)",
+                color: isBPC ? "var(--accent-ink)" : "var(--muted)",
+                fontWeight: 700
+              }}>
+                {poll.slug}
+              </span>
+              {poll.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+            </div>
+
+            {/* Live Spectator Indicator */}
+            <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: isLiveConnected ? "#10B981" : "#F59E0B", display: "inline-block" }} />
+              <span>{activeViewers} live</span>
+            </div>
           </div>
-          {isLiveConnected && (
-            <div className="live-badge" title="Real-time live updates connected">
-              <span className="live-dot" /> Live {activeViewers > 1 ? `(${activeViewers} viewing)` : ""}
+
+          <h1 style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.3, color: "var(--ink)", marginBottom: 8 }}>
+            {poll.question}
+          </h1>
+
+          {poll.description && (
+            <p style={{ fontSize: 14, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
+              {poll.description}
+            </p>
+          )}
+
+          {/* Creator Attribution */}
+          {poll.creator && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
+              <span>Created by</span>
+              <Link
+                href={`/u/${poll.creator.username}`}
+                style={{ color: "var(--accent)", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}
+              >
+                @{poll.creator.username}
+              </Link>
             </div>
           )}
         </div>
 
+        {/* 1. VOTING FORM */}
+        {showVotingUI ? (
+          <form onSubmit={handleVoteSubmit} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 20 }}>
+            {isEditingVote && (
+              <div style={{
+                background: "var(--accent-soft)",
+                color: "var(--accent-ink)",
+                padding: "8px 12px",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                marginBottom: 16,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}>
+                <span>↺ Editing your vote</span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingVote(false)}
+                  style={{ background: "none", border: "none", color: "var(--accent-ink)", cursor: "pointer", fontSize: 11 }}
+                >
+                  Cancel Edit
+                </button>
+              </div>
+            )}
 
-        {/* Voting Form if voter hasn't voted and poll is active */}
-        {!poll.hasVoted && !poll.isExpired && (
-          <div className="vote-section" role="form" aria-label="Voting choices">
-            {poll.requireName && (
-              <div className="name-input-wrap">
-                <label className="field-label" htmlFor="voterName">
-                  Your name <span style={{ color: "var(--accent)" }}>*</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+              {poll.options.map((opt, i) => {
+                const isSelected = selectedIds.includes(opt.id);
+                const rankIndex = selectedIds.indexOf(opt.id);
+
+                return (
+                  <div
+                    key={opt.id}
+                    onClick={() => handleSelect(opt.id)}
+                    style={{
+                      border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
+                      background: isSelected ? "var(--accent-soft)" : "var(--paper)",
+                      borderRadius: 8,
+                      padding: "14px 16px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      {poll.pollType === "ranked_choice" ? (
+                        <div style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: "50%",
+                          background: isSelected ? "var(--accent)" : "var(--line)",
+                          color: isSelected ? "#FFFFFF" : "var(--muted)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 12,
+                          fontWeight: 700
+                        }}>
+                          {isSelected ? rankIndex + 1 : ""}
+                        </div>
+                      ) : (
+                        <div style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: poll.allowMultiple ? 4 : "50%",
+                          border: isSelected ? "5px solid var(--accent)" : "2px solid var(--muted)",
+                          background: "#FFFFFF",
+                        }} />
+                      )}
+                      <span style={{ fontSize: 15, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)" }}>
+                        {opt.label}
+                      </span>
+                    </div>
+
+                    {opt.imageUrl && (
+                      <img src={opt.imageUrl} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: "cover" }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Voter Name Field (if required) */}
+            {poll.requireName && !poll.hasVoted && (
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+                  Your Name <span style={{ color: "var(--accent)" }}>*</span>
                 </label>
                 <input
-                  id="voterName"
                   type="text"
-                  maxLength={60}
-                  placeholder="e.g. Alex"
+                  placeholder="Enter your name"
                   value={voterName}
                   onChange={(e) => setVoterName(e.target.value)}
+                  className="input-text"
+                  required
                 />
               </div>
             )}
 
-            {/* Mode 1: Ranked Choice IRV Voting */}
-            {poll.pollType === "ranked_choice" ? (
-              <div role="group" aria-label="Ranked choice voting preferences">
-                <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
-                  Rank your preferences from top (1st choice) to bottom. Use ▲ and ▼ to reorder:
-                </div>
-                {rankedOrder.map((id, index) => {
-                  const opt = poll.options.find((o) => o.id === id);
-                  if (!opt) return null;
-                  return (
-                    <div key={id} className="choice-multi checked" style={{ justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <span className="badge-rank" style={{ background: "var(--accent)", color: "#fff", padding: "2px 8px", borderRadius: 12, fontSize: 12, fontWeight: 700 }}>
-                          #{index + 1}
-                        </span>
-                        <span className="choice-label">{opt.label}</span>
-                      </div>
-                      <div className="option-row-actions">
-                        <button
-                          type="button"
-                          className="reorder-btn"
-                          disabled={index === 0}
-                          aria-label={`Move ${opt.label} up`}
-                          onClick={() => moveRank(index, "up")}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          type="button"
-                          className="reorder-btn"
-                          disabled={index === rankedOrder.length - 1}
-                          aria-label={`Move ${opt.label} down`}
-                          onClick={() => moveRank(index, "down")}
-                        >
-                          ▼
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div className="multi-submit-bar" style={{ marginTop: 20 }}>
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={voting}
-                    onClick={() => castVote()}
-                  >
-                    {voting ? "Submitting…" : "Submit Ranked Ballot →"}
-                  </button>
+            <button
+              type="submit"
+              disabled={voting || selectedIds.length === 0}
+              className="btn-primary"
+              style={{ width: "100%", padding: "14px", fontSize: 15 }}
+            >
+              {voting ? "Submitting..." : isEditingVote ? "Update My Vote →" : "Submit Vote →"}
+            </button>
+          </form>
+        ) : (
+          /* 2. RESULTS VIEW */
+          <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div>
+                <h2 style={{ fontSize: 18, fontWeight: 700 }}>Live Results</h2>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                  {poll.totalVotes || 0} {poll.totalVotes === 1 ? "ballot" : "ballots"} cast
                 </div>
               </div>
-            ) : poll.pollType === "image" ? (
-              /* Mode 2: Image Poll Card Grid */
-              <div className="image-poll-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 20 }}>
-                {poll.options.map((o) => {
-                  const isSelected = selectedIds.includes(o.id);
-                  return (
-                    <div
-                      key={o.id}
-                      className={`image-option-card ${isSelected ? "selected" : ""}`}
-                      onClick={() => (poll.allowMultiple ? toggleOption(o.id) : castVote(o.id))}
-                      style={{
-                        border: `2px solid ${isSelected ? "var(--accent)" : "var(--line)"}`,
-                        borderRadius: 8,
-                        overflow: "hidden",
-                        background: "var(--surface)",
-                        cursor: "pointer",
-                        textAlign: "center",
-                      }}
-                    >
-                      {o.imageUrl ? (
-                        <img
-                          src={o.imageUrl}
-                          alt={o.label}
-                          style={{ width: "100%", height: 120, objectFit: "cover", display: "block" }}
-                          onError={(e) => {
-                            // Fallback if broken image URL
-                            (e.target as HTMLElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div style={{ height: 90, background: "var(--paper)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
-                          🖼️
-                        </div>
-                      )}
-                      <div style={{ padding: "10px 8px", fontSize: 14, fontWeight: 600 }}>{o.label}</div>
-                      <div style={{ paddingBottom: 8, fontSize: 12, color: "var(--accent)" }}>
-                        {isSelected ? "Selected ✓" : "Vote →"}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : !isMulti ? (
-              /* Mode 3: Standard Single Click Choice */
-              <div role="radiogroup" aria-label="Single choice voting options">
-                {poll.options.map((o) => (
-                  <button
-                    key={o.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={selectedIds.includes(o.id)}
-                    className={`choice ${selectedIds.includes(o.id) ? "selected" : ""}`}
-                    disabled={voting}
-                    onClick={() => castVote(o.id)}
-                  >
-                    <div className="choice-inner">
-                      <span>{o.label}</span>
-                      <span className="choice-arrow">{voting ? "Voting…" : "vote →"}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              /* Mode 4: Standard Multi-choice Checkboxes */
-              <div role="group" aria-label="Multiple choice voting options">
-                {poll.options.map((o) => {
-                  const isChecked = selectedIds.includes(o.id);
-                  return (
-                    <div
-                      key={o.id}
-                      role="checkbox"
-                      aria-checked={isChecked}
-                      tabIndex={0}
-                      className={`choice-multi ${isChecked ? "checked" : ""}`}
-                      onClick={() => toggleOption(o.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === " " || e.key === "Enter") {
-                          e.preventDefault();
-                          toggleOption(o.id);
-                        }
-                      }}
-                    >
-                      <div className="checkbox-indicator" aria-hidden="true">
-                        {isChecked ? "✓" : ""}
-                      </div>
-                      <span className="choice-label">{o.label}</span>
-                    </div>
-                  );
-                })}
 
-                <div className="multi-submit-bar">
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    disabled={voting || selectedIds.length < poll.minChoices}
-                    onClick={() => castVote()}
-                  >
-                    {voting ? "Submitting…" : `Submit Vote (${selectedIds.length} selected)`}
-                  </button>
-                </div>
-              </div>
-            )}
-
-          </div>
-        )}
-
-        {/* Results Masking Notice */}
-        {!showResults && (poll.hasVoted || poll.isExpired) && (
-          <div className="results-notice" role="status">
-            {poll.resultsVisibility === "after_deadline" && !poll.isExpired && (
-              <div>⏳ Results will be revealed when this poll closes.</div>
-            )}
-            {poll.resultsVisibility === "creator_only" && (
-              <div>🔒 Results for this poll are private to the creator.</div>
-            )}
-          </div>
-        )}
-
-        {/* Visual Analytics / Results Section */}
-        {showResults && (
-          <div className="results-container">
-            {/* View Selector & Export Toolbar */}
-            <div className="chart-toolbar">
-              <div className="chart-type-toggle">
+              {/* Chart Switcher */}
+              <div style={{ display: "flex", gap: 4, background: "var(--paper)", padding: 3, borderRadius: 6, border: "1px solid var(--line)" }}>
                 <button
                   type="button"
-                  className={`chart-btn ${chartType === "ledger" ? "active" : ""}`}
                   onClick={() => setChartType("ledger")}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: 4,
+                    border: "none",
+                    background: chartType === "ledger" ? "var(--surface)" : "none",
+                    fontWeight: chartType === "ledger" ? 700 : 500,
+                    fontSize: 11,
+                    cursor: "pointer",
+                  }}
                 >
                   Bars
                 </button>
                 <button
                   type="button"
-                  className={`chart-btn ${chartType === "donut" ? "active" : ""}`}
                   onClick={() => setChartType("donut")}
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: 4,
+                    border: "none",
+                    background: chartType === "donut" ? "var(--surface)" : "none",
+                    fontWeight: chartType === "donut" ? 700 : 500,
+                    fontSize: 11,
+                    cursor: "pointer",
+                  }}
                 >
                   Donut
                 </button>
-                <button
-                  type="button"
-                  className={`chart-btn ${chartType === "pie" ? "active" : ""}`}
-                  onClick={() => setChartType("pie")}
-                >
-                  Pie
-                </button>
-              </div>
-
-              <div className="export-actions">
-                <button
-                  type="button"
-                  className="btn-ghost-small"
-                  onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes ?? 0 })), totalChartVotes)}
-                >
-                  CSV
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost-small"
-                  onClick={() => exportToJSON(poll)}
-                >
-                  JSON
-                </button>
               </div>
             </div>
 
-            {/* View 1: Horizontal Ledger */}
-            {chartType === "ledger" && (
-              <div className="ledger-section" aria-label="Poll results breakdown">
-                {poll.options.map((o, idx) => {
-                  const count = o.votes ?? 0;
-                  const total = totalChartVotes > 0 ? totalChartVotes : 1;
-                  const pct = Math.round((count / total) * 100);
-                  const isMine = poll.myVotes.includes(o.id);
-                  const color = CHART_COLORS[idx % CHART_COLORS.length];
+            {/* Result Bars */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {poll.options.map((opt, i) => {
+                const count = opt.votes ?? 0;
+                const total = poll.totalVotes || 1;
+                const pct = Math.round((count / total) * 100);
+                const isMyPick = poll.myVotes.includes(opt.id);
 
-                  return (
-                    <div className="ledger-row" key={o.id}>
-                      <div className="ledger-top">
-                        <div className={`ledger-label ${isMine ? "mine" : ""}`} style={{ gap: 6 }}>
-                          <span className="color-dot" style={{ background: color }} />
-                          <span>{o.label}</span>
-                          {isMine && <span className="mine-badge"> · your pick</span>}
-                          {isLeader(o.id) && <span className="badge-winner">👑 Leader</span>}
-                          {isTiedLeader(o.id) && <span className="badge-tie">Tied #1</span>}
-                        </div>
-                        <div className="ledger-nums">{pct}% · {count}</div>
-                      </div>
-
-                      <div className="ledger-track" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={`${o.label}: ${pct}%`}>
-                        <div className="ledger-fill" style={{ width: `${pct}%`, background: color }} />
-                      </div>
+                return (
+                  <div key={opt.id}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
+                      <span style={{ fontWeight: isMyPick ? 700 : 500, color: isMyPick ? "var(--accent-ink)" : "var(--ink)" }}>
+                        {opt.label} {isMyPick && "✓ (your pick)"}
+                      </span>
+                      <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>
+                        {pct}% ({count})
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* View 2 & 3: Donut & Pie Chart */}
-            {(chartType === "donut" || chartType === "pie") && (
-              <div className="svg-chart-wrap">
-                <div className="svg-chart-container">
-                  <svg viewBox="0 0 240 240" width="220" height="220" className="chart-svg">
-                    {slices.map((slice) =>
-                      slice.path ? (
-                        <path
-                          key={slice.id}
-                          d={slice.path}
-                          fill={slice.color}
-                          stroke="#FAFAF7"
-                          strokeWidth="2"
-                          className="slice-path"
-                        >
-                          <title>{`${slice.label}: ${slice.pct}% (${slice.votes} votes)`}</title>
-                        </path>
-                      ) : null
-                    )}
-                    {chartType === "donut" && (
-                      <text x="120" y="125" textAnchor="middle" className="donut-center-text">
-                        {totalChartVotes} {totalChartVotes === 1 ? "vote" : "votes"}
-                      </text>
-                    )}
-                  </svg>
-                </div>
-
-                <div className="chart-legend">
-                  {slices.map((slice) => (
-                    <div className="legend-item" key={slice.id}>
-                      <span className="legend-color" style={{ background: slice.color }} />
-                      <span className="legend-name">{slice.label}</span>
-                      <span className="legend-val">{slice.pct}% ({slice.votes})</span>
+                    <div className="ledger-track" style={{ height: 10, borderRadius: 5 }}>
+                      <div
+                        className="ledger-fill"
+                        style={{
+                          width: `${pct}%`,
+                          background: isMyPick ? "var(--accent)" : CHART_COLORS[i % CHART_COLORS.length],
+                          borderRadius: 5,
+                        }}
+                      />
                     </div>
-                  ))}
-                </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Voter Action: Change Vote Button (Locked Spec) */}
+            {poll.hasVoted && !poll.isInactive && poll.allowVoteEdit && (
+              <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedIds(poll.myVotes);
+                    setIsEditingVote(true);
+                  }}
+                  className="btn-ghost"
+                  style={{ fontSize: 13, gap: 6 }}
+                >
+                  ↺ Change your vote
+                </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Voter Ledger if Name Required */}
-        {showResults && poll.requireName && poll.voters.length > 0 && (
-          <div className="voter-section">
-            <div className="section-label">Who voted ({poll.voters.length})</div>
-            {poll.voters.map((v, i) => (
-              <div className="voter-row" key={i}>
-                <div className="voter-name">{v.name}</div>
-                <div className="voter-choice">{v.choices.join(", ")}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Actions Bar */}
-        <div className="poll-actions">
-          <button type="button" className="copy-link" onClick={copyLink}>
-            Copy share link
+        {/* Share & Admin Utility Bar */}
+        <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "center", flexWrap: "wrap" }}>
+          <button type="button" onClick={copyLink} className="btn-ghost" style={{ fontSize: 13 }}>
+            📋 Copy Voter Link
           </button>
-          <button type="button" className="btn-ghost" onClick={() => setShowEmbedModal(true)}>
-            ⟨/⟩ Embed
-          </button>
-          <button type="button" className="btn-ghost" onClick={() => setShowQR(true)}>
+          <button type="button" onClick={() => setShowQR(true)} className="btn-ghost" style={{ fontSize: 13 }}>
             📱 QR Code
           </button>
-          <Link href="/" className="btn-ghost">← All polls</Link>
+          <button
+            type="button"
+            onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
+            className="btn-ghost"
+            style={{ fontSize: 13 }}
+          >
+            📥 CSV
+          </button>
+
+          {poll.isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowAdminModal(true)}
+              className="btn-primary"
+              style={{ fontSize: 13 }}
+            >
+              ⚙️ Manage Poll
+            </button>
+          )}
         </div>
       </main>
 
-      {/* Embed Modal */}
-      {showEmbedModal && (
-        <div className="modal-backdrop" onClick={() => setShowEmbedModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Embed Poll Widget">
-            <div className="modal-head">
-              <h3>Embed on your Website</h3>
-              <button className="close-btn" onClick={() => setShowEmbedModal(false)} aria-label="Close modal">&times;</button>
+      {/* Admin Management Modal Drawer */}
+      {showAdminModal && (
+        <div className="modal-backdrop">
+          <div className="modal-box" style={{ maxWidth: 500 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700 }}>⚙️ Poll Management</h2>
+              <button type="button" className="btn-link" onClick={() => setShowAdminModal(false)}>✕</button>
             </div>
-            <div style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
-              Copy and paste this HTML code into your blog post, news article, or forum:
-            </div>
-            <textarea
-              readOnly
-              className="input-textarea"
-              rows={3}
-              value={embedCode}
-              style={{ fontFamily: "monospace", fontSize: 12 }}
-            />
-            <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-              <button
-                className="btn-primary"
-                onClick={() => {
-                  navigator.clipboard?.writeText(embedCode);
-                  showToast("Embed code copied!");
-                  setShowEmbedModal(false);
-                }}
-              >
-                Copy Embed Code
-              </button>
-              <button className="btn-ghost" onClick={() => setShowEmbedModal(false)}>Done</button>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Lifecycle Status */}
+              <div style={{ background: "var(--paper)", padding: 12, borderRadius: 8, border: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>Poll Lifecycle</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>Current status: {poll.status.toUpperCase()}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleStatus}
+                  disabled={adminLoading}
+                  className="btn-ghost"
+                  style={{ fontSize: 12 }}
+                >
+                  {poll.status === "live" ? "⏸️ Pause Poll" : "▶️ Reactivate"}
+                </button>
+              </div>
+
+              {/* Repoll / Next Round */}
+              <div style={{ background: "var(--paper)", padding: 12, borderRadius: 8, border: "1px solid var(--line)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>Start Next Round (Repoll)</div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>Spawns Round 2 and preserves Round 1 history.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRepoll}
+                  disabled={adminLoading}
+                  className="btn-primary"
+                  style={{ fontSize: 12 }}
+                >
+                  🔄 Repoll
+                </button>
+              </div>
+
+              {/* Allow Vote Edit Toggle */}
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={editAllowVoteEdit}
+                  onChange={(e) => setEditAllowVoteEdit(e.target.checked)}
+                />
+                <span>Allow voters to change their vote while live</span>
+              </label>
+
+              {/* Description Edit */}
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>Context Description</label>
+                <textarea
+                  rows={2}
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  placeholder="Update poll context..."
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: 8, justifyContent: "space-between", marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={handleDeletePoll}
+                  disabled={adminLoading}
+                  style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: 13 }}
+                >
+                  🗑️ Delete Poll
+                </button>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button type="button" onClick={() => setShowAdminModal(false)} className="btn-ghost">Cancel</button>
+                  <button type="button" onClick={handleSaveSettings} disabled={adminLoading} className="btn-primary">Save Changes</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -755,73 +783,47 @@ function PollContent() {
 
       {/* QR Code Modal */}
       {showQR && (
-        <div className="modal-backdrop" onClick={() => setShowQR(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Poll QR Code">
-            <div className="modal-head">
-              <h3>Scan to Vote</h3>
-              <button className="close-btn" onClick={() => setShowQR(false)} aria-label="Close modal">&times;</button>
-            </div>
-            <div className="qr-box">
-              <img
-                src={getQRCodeUrl(pageUrl, 240)}
-                alt="Poll QR Code"
-                width={240}
-                height={240}
-                style={{ borderRadius: 8, background: "#fff", padding: 8 }}
-              />
-            </div>
-            <div className="modal-sub">Scan with phone camera to open this poll instantly.</div>
-            <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-              <button className="btn-primary" onClick={copyLink}>Copy Link</button>
-              <button className="btn-ghost" onClick={() => setShowQR(false)}>Done</button>
-            </div>
+        <div className="modal-backdrop">
+          <div className="modal-box" style={{ textAlign: "center", maxWidth: 320 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Scan to Vote</h2>
+            <img
+              src={getQRCodeUrl(typeof window !== "undefined" ? window.location.href : "")}
+              alt="Poll QR Code"
+              style={{ width: 200, height: 200, margin: "0 auto 16px", borderRadius: 8 }}
+            />
+            <button type="button" onClick={() => setShowQR(false)} className="btn-primary" style={{ width: "100%" }}>
+              Done
+            </button>
           </div>
         </div>
       )}
 
-      {/* Creator Admin Modal */}
-      {showAdminModal && poll.isAdmin && (
-        <div className="modal-backdrop" onClick={() => setShowAdminModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Creator Admin Panel">
-            <div className="modal-head">
-              <h3>Creator Admin Panel</h3>
-              <button className="close-btn" onClick={() => setShowAdminModal(false)} aria-label="Close modal">&times;</button>
-            </div>
-            <div className="admin-info-box">
-              <div style={{ fontSize: 13, marginBottom: 8 }}>
-                <strong>Creator Key:</strong> Keep this link private to manage your poll.
-              </div>
-              <button type="button" className="btn-ghost" onClick={copyAdminLink} style={{ width: "100%", fontSize: 12 }}>
-                📋 Copy Private Admin Link
-              </button>
-            </div>
-
-            {!poll.isExpired && (
-              <div style={{ marginTop: 16 }}>
-                <button type="button" className="btn-danger" onClick={handleClosePoll} style={{ width: "100%" }}>
-                  🔒 Close Poll Immediately
-                </button>
-              </div>
-            )}
-            <div style={{ marginTop: 16, textAlign: "right" }}>
-              <button className="btn-ghost" onClick={() => setShowAdminModal(false)}>Close</button>
-            </div>
-          </div>
+      {/* Toast Notification */}
+      {toast && (
+        <div style={{
+          position: "fixed",
+          bottom: 24,
+          right: 24,
+          background: "var(--ink)",
+          color: "var(--paper)",
+          padding: "10px 18px",
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+          zIndex: 999
+        }}>
+          {toast}
         </div>
       )}
-
-      <div className={`toast ${toast ? "show" : ""}`} role="status" aria-live="assertive">{toast}</div>
     </div>
   );
 }
 
 export default function PollPage() {
   return (
-    <Suspense fallback={<div className="wrap"><div className="loading" style={{ padding: 40, textAlign: "center" }}>Loading poll…</div></div>}>
+    <Suspense fallback={<div style={{ padding: "80px 0", textAlign: "center", color: "var(--muted)" }}>Loading...</div>}>
       <PollContent />
     </Suspense>
   );
 }
-
-
-

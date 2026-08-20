@@ -1,8 +1,35 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  username: text("username").notNull().unique(), // Normalized lowercase handle (e.g. 'sandeep')
+  displayName: text("display_name").notNull(),
+  avatarUrl: text("avatar_url"),
+  bio: text("bio"),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const authCodes = sqliteTable("auth_codes", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  codeHash: text("code_hash").notNull(), // sha256 hash of 6-digit OTP
+  attempts: integer("attempts").notNull().default(0), // max 5 attempts before lockout
+  createdAt: integer("created_at").notNull(),
+  expiresAt: integer("expires_at").notNull(), // 10 minutes expiry
+});
+
+export const sessions = sqliteTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  sessionToken: text("session_token").notNull().unique(),
+  createdAt: integer("created_at").notNull(),
+  expiresAt: integer("expires_at").notNull(), // 30 days
+});
+
 export const polls = sqliteTable("polls", {
   id: text("id").primaryKey(),
-  slug: text("slug").notNull().unique(),
+  slug: text("slug").notNull().unique(), // BPC-xxxx (Community) | BPP-xxxx (Private)
   question: text("question").notNull(),
   description: text("description"),
   pollType: text("poll_type").notNull().default("standard"), // 'standard' | 'ranked_choice' | 'image' | 'availability'
@@ -14,9 +41,12 @@ export const polls = sqliteTable("polls", {
   resultsVisibility: text("results_visibility").notNull().default("always_public"),
   requireName: integer("require_name").notNull().default(0),
   securityMode: text("security_mode").notNull().default("standard"),
+  status: text("status").notNull().default("live"), // 'live' | 'inactive' | 'deleted'
+  allowVoteEdit: integer("allow_vote_edit").notNull().default(1), // 1 = enabled, 0 = disabled
+  repolledFrom: text("repolled_from"), // points to previous round's slug
   ipSalt: text("ip_salt"),
   adminKeyHash: text("admin_key_hash"),
-  creatorUserId: text("creator_user_id"),
+  creatorUserId: text("creator_user_id"), // FK to users.id
   createdAt: integer("created_at").notNull(),
   expiresAt: integer("expires_at"),
 });
@@ -43,6 +73,7 @@ export const votes = sqliteTable("votes", {
   idempotencyKey: text("idempotency_key"),
   createdAt: integer("created_at").notNull(),
 });
+
 
 
 
