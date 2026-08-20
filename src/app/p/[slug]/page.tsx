@@ -911,54 +911,70 @@ function PollContent() {
             {poll.pollType === "ranked_choice" ? (
               /* RANKED CHOICE (POINTS) DEDICATED LEADERBOARD VIEW */
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
                   <div>
                     <h2 style={{ fontSize: 18, fontWeight: 700 }}>Ranked Points Results</h2>
                     <div style={{ fontSize: 12, color: "var(--muted)" }}>
                       {poll.totalVotes || 0} {poll.totalVotes === 1 ? "ballot recorded" : "total ballots recorded"} · {poll.rankedPointsResult?.totalPointsAwarded || 0} total points scored
                     </div>
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)", background: "var(--accent-soft)", border: "1px solid var(--accent)", padding: "4px 8px", borderRadius: 6, fontFamily: "monospace" }}>
-                    Points Scoring
-                  </div>
+
+                  {/* Top-Right Result / Tie Badge */}
+                  {(() => {
+                    const topPoints = poll.rankedPointsResult?.leaderboard?.[0]?.totalPoints || 0;
+                    const topWinners = (poll.rankedPointsResult?.leaderboard || []).filter(
+                      (item) => item.totalPoints === topPoints && item.totalPoints > 0
+                    );
+
+                    if (topWinners.length === 1) {
+                      return (
+                        <div style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: "var(--accent-ink)",
+                          background: "var(--accent-soft)",
+                          border: "1px solid var(--accent)",
+                          padding: "4px 10px",
+                          borderRadius: 6,
+                        }}>
+                          Result: {topWinners[0].label}
+                        </div>
+                      );
+                    }
+                    if (topWinners.length > 1) {
+                      return (
+                        <div style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: "var(--accent-ink)",
+                          background: "var(--accent-soft)",
+                          border: "1px solid var(--accent)",
+                          padding: "4px 10px",
+                          borderRadius: 6,
+                        }}>
+                          Result: Tied between {topWinners.map((w) => w.label).join(", ")}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "var(--muted)",
+                        background: "var(--paper)",
+                        border: "1px solid var(--line)",
+                        padding: "4px 10px",
+                        borderRadius: 6,
+                      }}>
+                        Result: Awaiting votes
+                      </div>
+                    );
+                  })()}
                 </div>
 
-                {/* 🏆 Highest Scoring Winner Banner */}
-                {poll.rankedPointsResult?.winner ? (
-                  <div style={{
-                    background: "var(--accent-soft)",
-                    border: "1px solid var(--accent)",
-                    borderRadius: 8,
-                    padding: "14px 16px",
-                    marginBottom: 20
-                  }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 18 }}>🏆</span>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: "var(--accent-ink)" }}>
-                        Highest-Scoring Winner: {poll.rankedPointsResult.winner.label}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                      Accumulated <strong>{poll.rankedPointsResult.winner.totalPoints} points</strong> ({poll.rankedPointsResult.winner.scorePct}% score share) across {poll.totalVotes || 0} ballots · Weighted scoring (1st choice = {poll.options.length} pts down to 1 pt).
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{
-                    background: "var(--paper)",
-                    border: "1px solid var(--line)",
-                    borderRadius: 8,
-                    padding: "12px 14px",
-                    marginBottom: 20,
-                    fontSize: 12,
-                    color: "var(--muted)"
-                  }}>
-                    ⚡ Waiting for ballots to calculate ranked points winner...
-                  </div>
-                )}
-
-                {/* ↔ Split Comparison: Left = Your Preference, Right = Points Leaderboard */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 16 }}>
-                  {/* Left Column: Your Personal Preference & Points */}
+                {/* ↔ Split Comparison: Left 35% = Your Preference, Right 65% = Points Leaderboard */}
+                <div className="ranked-split-grid">
+                  {/* Left Column (35%): Your Personal Preference & Points */}
                   <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: 14 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       <span>🗳️ Your Preference & Points</span>
@@ -1016,13 +1032,14 @@ function PollContent() {
                     )}
                   </div>
 
-                  {/* Right Column: Group Points Leaderboard */}
+                  {/* Right Column (65%): Group Points Leaderboard with Ties Grouped */}
                   <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: 14 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       <span>📊 Points Leaderboard</span>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      {(poll.rankedPointsResult?.leaderboard || poll.options.map((o, i) => ({
+
+                    {(() => {
+                      const rawItems = poll.rankedPointsResult?.leaderboard || poll.options.map((o, i) => ({
                         id: o.id,
                         label: o.label,
                         rank: i + 1,
@@ -1031,62 +1048,152 @@ function PollContent() {
                         firstChoiceVotes: 0,
                         avgRank: 0,
                         status: "0 pts",
-                      }))).map((item, idx) => {
-                        const isWinner = idx === 0 && poll.rankedPointsResult?.winner;
-                        const rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
+                      }));
 
-                        return (
-                          <div
-                            key={item.id}
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 6,
-                              padding: "8px 10px",
-                              borderRadius: 6,
-                              background: isWinner ? "var(--accent-soft)" : "var(--surface)",
-                              border: isWinner ? "1px solid var(--accent)" : "1px solid var(--line)",
-                            }}
-                          >
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
-                                <span style={{ minWidth: 22, fontSize: idx < 3 ? 14 : 12, fontWeight: 700, fontFamily: "monospace", color: isWinner ? "var(--accent-ink)" : "var(--muted)" }}>
-                                  {rankIcon}
-                                </span>
-                                <span style={{ fontWeight: isWinner ? 700 : 600, color: isWinner ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {item.label}
-                                </span>
-                              </div>
-                              <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: isWinner ? "var(--accent-ink)" : "var(--ink)" }}>
-                                {item.totalPoints} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({item.scorePct}%)</span>
-                              </span>
-                            </div>
+                      // Group items by totalPoints for clean tie presentation
+                      type PointsGroup = {
+                        points: number;
+                        scorePct: number;
+                        items: typeof rawItems;
+                      };
 
-                            {/* Point Score Progress Bar */}
-                            <div className="ledger-track" style={{ height: 6, borderRadius: 3 }}>
+                      const groups: PointsGroup[] = [];
+                      rawItems.forEach((item) => {
+                        const last = groups[groups.length - 1];
+                        if (last && last.points === item.totalPoints && item.totalPoints > 0) {
+                          last.items.push(item);
+                        } else {
+                          groups.push({
+                            points: item.totalPoints,
+                            scorePct: item.scorePct,
+                            items: [item],
+                          });
+                        }
+                      });
+
+                      let runningRank = 1;
+
+                      return (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          {groups.map((grp, gIdx) => {
+                            const isTop = gIdx === 0 && grp.points > 0;
+                            const isTied = grp.items.length > 1;
+                            const rankIcon = gIdx === 0 ? "🥇" : gIdx === 1 ? "🥈" : gIdx === 2 ? "🥉" : `#${runningRank}`;
+                            const rankLabel = isTied ? `${rankIcon} #${runningRank} (Tied)` : `${rankIcon}`;
+                            runningRank += grp.items.length;
+
+                            if (isTied) {
+                              return (
+                                <div
+                                  key={`group-${gIdx}`}
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 10,
+                                    padding: "10px 12px",
+                                    borderRadius: 6,
+                                    background: isTop ? "var(--accent-soft)" : "var(--surface)",
+                                    border: isTop ? "1px solid var(--accent)" : "1px solid var(--line)",
+                                  }}
+                                >
+                                  {/* Tied Group Header */}
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--line)", paddingBottom: 6 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: isTop ? "var(--accent-ink)" : "var(--muted)" }}>
+                                        {rankLabel} · {grp.items.length} Options
+                                      </span>
+                                    </div>
+                                    <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--ink)" }}>
+                                      {grp.points} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({grp.scorePct}%)</span>
+                                    </span>
+                                  </div>
+
+                                  {/* Individual items inside tie */}
+                                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                    {grp.items.map((item, itemIdx) => (
+                                      <div key={item.id} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                                          <span style={{ fontWeight: 600, color: isTop ? "var(--accent-ink)" : "var(--ink)" }}>
+                                            {item.label}
+                                          </span>
+                                          <span style={{ fontSize: 11, color: "var(--muted)" }}>
+                                            {item.firstChoiceVotes} 1st-choice picks
+                                          </span>
+                                        </div>
+                                        {/* Progress Bar */}
+                                        <div className="ledger-track" style={{ height: 6, borderRadius: 3 }}>
+                                          <div
+                                            className="ledger-fill"
+                                            style={{
+                                              width: `${item.scorePct}%`,
+                                              background: isTop ? "var(--accent)" : CHART_COLORS[(gIdx * 2 + itemIdx) % CHART_COLORS.length],
+                                              borderRadius: 3,
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            // Single Option (No Tie)
+                            const item = grp.items[0];
+                            return (
                               <div
-                                className="ledger-fill"
+                                key={item.id}
                                 style={{
-                                  width: `${item.scorePct}%`,
-                                  background: isWinner ? "var(--accent)" : CHART_COLORS[idx % CHART_COLORS.length],
-                                  borderRadius: 3,
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 6,
+                                  padding: "8px 10px",
+                                  borderRadius: 6,
+                                  background: isTop ? "var(--accent-soft)" : "var(--surface)",
+                                  border: isTop ? "1px solid var(--accent)" : "1px solid var(--line)",
                                 }}
-                              />
-                            </div>
+                              >
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                                    <span style={{ minWidth: 22, fontSize: gIdx < 3 ? 14 : 12, fontWeight: 700, fontFamily: "monospace", color: isTop ? "var(--accent-ink)" : "var(--muted)" }}>
+                                      {rankIcon}
+                                    </span>
+                                    <span style={{ fontWeight: isTop ? 700 : 600, color: isTop ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                      {item.label}
+                                    </span>
+                                  </div>
+                                  <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--ink)" }}>
+                                    {item.totalPoints} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({item.scorePct}%)</span>
+                                  </span>
+                                </div>
 
-                            {/* Stats Sub-row */}
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muted)", paddingLeft: 30 }}>
-                              <span>{item.firstChoiceVotes} 1st-choice picks</span>
-                              {item.avgRank > 0 && <span>Avg Rank: #{item.avgRank}</span>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                                {/* Point Score Progress Bar */}
+                                <div className="ledger-track" style={{ height: 6, borderRadius: 3 }}>
+                                  <div
+                                    className="ledger-fill"
+                                    style={{
+                                      width: `${item.scorePct}%`,
+                                      background: isTop ? "var(--accent)" : CHART_COLORS[gIdx % CHART_COLORS.length],
+                                      borderRadius: 3,
+                                    }}
+                                  />
+                                </div>
+
+                                {/* Stats Sub-row (No Avg Rank) */}
+                                <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 10, color: "var(--muted)" }}>
+                                  <span>{item.firstChoiceVotes} 1st-choice picks</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
             ) : (
+
 
               /* STANDARD & MULTIPLE CHOICE POLL RESULTS VIEW */
               <div>

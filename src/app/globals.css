@@ -62,6 +62,20 @@ body {
   .wrap, .wrap-narrow { padding: 0 16px 60px; }
 }
 
+.ranked-split-grid {
+  display: grid;
+  grid-template-columns: 35% 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .ranked-split-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 
 
 header.top {
