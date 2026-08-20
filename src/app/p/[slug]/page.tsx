@@ -749,51 +749,57 @@ function PollContent() {
           </div>
         )}
 
-        {/* Share & Admin Utility Bar */}
-        <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "center", flexWrap: "wrap" }}>
-          {/* 1. Polling Link (All users) */}
-          <button type="button" onClick={copyPollingLink} className="btn-ghost" style={{ fontSize: 13, gap: 6 }}>
-            🔗 Polling Link 📋
+        {/* Typeform-Style Minimalist Action Bar */}
+        <div className="typeform-action-bar">
+          {/* 1. Polling Link */}
+          <button type="button" onClick={copyPollingLink} className="action-text-btn" title="Copy public polling link">
+            <span>Polling link</span>
+            <span className="action-bracket">[ 📋 ]</span>
           </button>
 
-          {/* 2. QR Code (All users) */}
-          <button type="button" onClick={() => setShowQR(true)} className="btn-ghost" style={{ fontSize: 13, gap: 6 }}>
-            📱 QR Code
+          {/* 2. QR Code */}
+          <button type="button" onClick={() => setShowQR(true)} className="action-text-btn" title="Scan to vote QR code">
+            <span>QR code</span>
+            <span className="action-bracket">[ ⤢ ]</span>
           </button>
 
-          {/* 3. Embed (Creator only) */}
           {poll.isAdmin && (
-            <button type="button" onClick={() => setShowEmbedModal(true)} className="btn-ghost" style={{ fontSize: 13, gap: 6 }}>
-              ‹/› Embed
-            </button>
-          )}
+            <>
+              {/* Subtle Divider */}
+              <span style={{ width: 1, height: 14, background: "var(--line)", display: "inline-block", margin: "0 2px" }} />
 
-          {/* 4. CSV Export (Creator only) */}
-          {poll.isAdmin && (
-            <button
-              type="button"
-              onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
-              className="btn-ghost"
-              style={{ fontSize: 13, gap: 6 }}
-            >
-              📥 CSV
-            </button>
-          )}
+              {/* 3. Embed */}
+              <button type="button" onClick={() => setShowEmbedModal(true)} className="action-text-btn" title="Embed poll widget">
+                <span>Embed</span>
+                <span className="action-bracket">[ ‹/› ]</span>
+              </button>
 
-          {/* 5. Manage Poll (Creator only) */}
-          {poll.isAdmin && (
-            <button
-              type="button"
-              onClick={openManageModal}
-              className="btn-primary"
-              style={{ fontSize: 13, gap: 6 }}
-            >
-              ⚙️ Manage Poll
-            </button>
-          )}
+              {/* 4. CSV Export */}
+              <button
+                type="button"
+                onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
+                className="action-text-btn"
+                title="Download raw CSV results"
+              >
+                <span>CSV</span>
+                <span className="action-bracket">[ ⭳ ]</span>
+              </button>
 
+              {/* 5. Manage Poll */}
+              <button
+                type="button"
+                onClick={openManageModal}
+                className="action-manage-btn"
+                title="Open poll management controls"
+              >
+                <span>Manage poll</span>
+                <span style={{ fontSize: 11, fontFamily: "monospace" }}>[ ⚙ ]</span>
+              </button>
+            </>
+          )}
         </div>
       </main>
+
 
       {/* Redesigned Poll Management Modal */}
       {showAdminModal && (

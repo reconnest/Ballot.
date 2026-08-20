@@ -984,3 +984,70 @@ textarea:focus {
   background: var(--line);
   margin: 4px 0;
 }
+
+/* Typeform-Style Action Bar */
+.typeform-action-bar {
+  display: flex;
+  gap: 8px;
+  margin: 28px auto 0;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  width: fit-content;
+}
+
+.action-text-btn {
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.action-text-btn:hover {
+  background: var(--paper);
+  color: var(--accent-ink);
+}
+
+.action-text-btn .action-bracket {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.action-text-btn:hover .action-bracket {
+  color: var(--accent);
+}
+
+.action-manage-btn {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  transition: all 0.15s ease;
+}
+
+.action-manage-btn:hover {
+  opacity: 0.85;
+}
+
