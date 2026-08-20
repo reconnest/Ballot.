@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar, SessionUser } from "@/components/Navbar";
 import { BallotLogo } from "@/components/BallotLogo";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
+import { getCachedSessionUser } from "@/lib/session-cache";
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
@@ -20,10 +21,28 @@ type PublicPoll = {
 };
 
 export default function HomePage() {
-  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
-  const [polls, setPolls] = useState<Summary[] | null>(null);
-  const [showMyPolls, setShowMyPolls] = useState(false);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(() => getCachedSessionUser());
+  const [polls, setPolls] = useState<Summary[] | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("ballot_my_polls");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [showMyPolls, setShowMyPolls] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = localStorage.getItem("ballot_my_polls");
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) && parsed.length > 0;
+    } catch {
+      return false;
+    }
+  });
   const [trendingPolls, setTrendingPolls] = useState<PublicPoll[]>([]);
+
 
   // Ephemeral Sandbox State (100% client-side, zero network API calls)
   const [sandboxFormat, setSandboxFormat] = useState<"standard" | "ranked" | "image">("standard");
@@ -125,6 +144,7 @@ export default function HomePage() {
       if (!sessionUser) {
         setPolls(null);
         setShowMyPolls(false);
+        try { localStorage.removeItem("ballot_my_polls"); } catch {}
         return;
       }
 
@@ -142,6 +162,7 @@ export default function HomePage() {
             }));
             setPolls(formatted);
             setShowMyPolls(formatted.length > 0);
+            try { localStorage.setItem("ballot_my_polls", JSON.stringify(formatted)); } catch {}
           }
         }
       } catch {}
@@ -149,6 +170,7 @@ export default function HomePage() {
 
     loadCreatorPolls();
   }, [sessionUser]);
+
 
   return (
     <div className="wrap">

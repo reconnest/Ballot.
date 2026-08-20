@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { BallotLogo } from "./BallotLogo";
 import { ThemeToggle } from "./ThemeToggle";
 import { AuthModal } from "./AuthModal";
+import { getCachedSessionUser, setCachedSessionUser } from "@/lib/session-cache";
 
 export type SessionUser = {
   id: string;
@@ -24,8 +25,8 @@ export function Navbar({ onUserChange }: NavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<SessionUser | null>(() => getCachedSessionUser());
+  const [loading, setLoading] = useState(false);
   
   // Modals & Dropdown State
   const [showDropdown, setShowDropdown] = useState(false);
@@ -34,7 +35,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
   // Settings Form State
-  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editDisplayName, setEditDisplayName] = useState(() => getCachedSessionUser()?.displayName || "");
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
@@ -53,16 +54,27 @@ export function Navbar({ onUserChange }: NavbarProps) {
   }, []);
 
   useEffect(() => {
+    // Notify parent immediately of cached user
+    const cached = getCachedSessionUser();
+    if (cached && onUserChange) {
+      onUserChange(cached);
+    }
+
     async function loadUser() {
       try {
         const res = await fetch(`/api/auth/me?_t=${Date.now()}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           setUser(data.user || null);
+          setCachedSessionUser(data.user || null);
           if (data.user) {
             setEditDisplayName(data.user.displayName || "");
           }
           if (onUserChange) onUserChange(data.user || null);
+        } else {
+          setUser(null);
+          setCachedSessionUser(null);
+          if (onUserChange) onUserChange(null);
         }
       } catch {}
       setLoading(false);
@@ -74,12 +86,14 @@ export function Navbar({ onUserChange }: NavbarProps) {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
+      setCachedSessionUser(null);
       setShowDropdown(false);
       if (onUserChange) onUserChange(null);
       router.push("/explore");
       router.refresh();
     } catch {}
   }
+
 
   function handleOpenSignIn(msg?: string) {
     setAuthMessage(msg || "Sign in with your email to access your creator dashboard.");

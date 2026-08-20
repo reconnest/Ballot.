@@ -7,6 +7,7 @@ import { Navbar } from "@/components/Navbar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BallotLogo } from "@/components/BallotLogo";
 import { AuthModal } from "@/components/AuthModal";
+import { getCachedSessionUser, setCachedSessionUser } from "@/lib/session-cache";
 
 const EXPIRY_PRESETS = [
   { label: "No limit", ms: null },
@@ -15,6 +16,7 @@ const EXPIRY_PRESETS = [
   { label: "7 days", ms: 7 * 24 * 60 * 60 * 1000 },
   { label: "30 days", ms: 30 * 24 * 60 * 60 * 1000 },
 ];
+
 
 const VISIBILITY_CHOICES = [
   { value: "after_vote", label: "After voting", hint: "Voters see live results immediately after casting their ballot" },
@@ -37,17 +39,30 @@ const SECURITY_MODES = [
   },
   {
     value: "strict",
-    label: "Strict",
-    short: "High Security",
-    desc: "Verification challenge check. Maximum defense against automated bot traffic."
+    label: "Strict (Recommended)",
+    short: "High Integrity",
+    desc: "Browser fingerprinting + Cookie defense. Blocks private window voting."
   },
 ];
 
 const POLL_TYPES = [
-  { value: "standard", label: "Standard Poll", hint: "Single choice or multiple selections" },
-  { value: "ranked_choice", label: "Ranked Choice (Points)", hint: "Voters rank choices in order of preference (1st gets max points)" },
-  { value: "image", label: "Image Poll", hint: "Include image previews with each choice" },
+  {
+    value: "standard",
+    label: "Standard Poll",
+    hint: "Single choice or multiple selections",
+  },
+  {
+    value: "ranked_choice",
+    label: "Ranked Choice (Points)",
+    hint: "Voters rank choices in order of preference (1st gets max points)",
+  },
+  {
+    value: "image",
+    label: "Image Poll",
+    hint: "Include image previews with each choice",
+  },
 ];
+
 
 
 const PRESET_CATEGORIES = [
@@ -68,7 +83,7 @@ type SessionUser = {
 
 export default function NewPollPage() {
   const router = useRouter();
-  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(() => getCachedSessionUser());
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMsg, setAuthModalMsg] = useState("");
 
@@ -79,7 +94,7 @@ export default function NewPollPage() {
   const [category, setCategory] = useState("general");
   const [customCategory, setCustomCategory] = useState("");
   const [isAddingCustom, setIsAddingCustom] = useState(false);
-  const [isPublic, setIsPublic] = useState(false); // Default to Private
+  const [isPublic, setIsPublic] = useState(() => !!getCachedSessionUser()); // Default to Public if logged in
   const [opts, setOpts] = useState<{ label: string; imageUrl: string }[]>([
     { label: "", imageUrl: "" },
     { label: "", imageUrl: "" },
@@ -110,12 +125,17 @@ export default function NewPollPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const res = await fetch("/api/auth/me");
+        const res = await fetch(`/api/auth/me?_t=${Date.now()}`);
         if (res.ok) {
           const data = await res.json();
           if (data.user) {
             setSessionUser(data.user);
+            setCachedSessionUser(data.user);
             setIsPublic(true);
+          } else {
+            setSessionUser(null);
+            setCachedSessionUser(null);
+            setIsPublic(false);
           }
         }
       } catch {}

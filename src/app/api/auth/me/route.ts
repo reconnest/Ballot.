@@ -10,7 +10,6 @@ export const fetchCache = "force-no-store";
 
 export async function GET(req: NextRequest) {
   try {
-    await ensureDbSchema();
     const user = await getSessionUser(req);
     return NextResponse.json({ user }, {
       headers: {
@@ -26,6 +25,7 @@ export async function GET(req: NextRequest) {
     });
   }
 }
+
 
 export async function PATCH(req: NextRequest) {
   try {
