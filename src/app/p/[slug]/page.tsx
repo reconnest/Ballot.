@@ -8,7 +8,9 @@ import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/
 import type { RankedPointsResult } from "@/lib/ranking";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
+import { AuthModal } from "@/components/AuthModal";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
+
 
 type OptionData = { id: string; label: string; imageUrl?: string | null; votes: number | null };
 type VoterEntry = { name: string; choices: string[] };
@@ -95,7 +97,9 @@ function PollContent() {
   const [chartType, setChartType] = useState<"cards" | "ledger" | "donut">("ledger");
   const [showAdminKeyBanner, setShowAdminKeyBanner] = useState(true);
   const [adminLinkCopied, setAdminLinkCopied] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [showIRVSteps, setShowIRVSteps] = useState(false);
+
   const [activeViewers, setActiveViewers] = useState<number>(1);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [isCastingAnotherVote, setIsCastingAnotherVote] = useState<boolean>(false);
@@ -476,6 +480,28 @@ function PollContent() {
     setAdminLoading(false);
   }
 
+  async function handleClaimAfterAuth(user: { id: string; username: string }) {
+    if (!adminKey) return;
+    try {
+      const res = await fetch("/api/polls/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, adminKey }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`🎉 Poll claimed & secured to @${user.username}!`);
+        setShowAdminKeyBanner(false);
+        fetchPoll();
+      } else {
+        showToast(data.error || "Could not claim poll.");
+      }
+    } catch {
+      showToast("Network error while claiming poll.");
+    }
+  }
+
+
 
   async function handleDeletePoll() {
     if (!confirm("Are you sure you want to delete this poll permanently? This cannot be undone.")) return;
@@ -592,57 +618,52 @@ function PollContent() {
 
       <main style={{ maxWidth: 920, margin: "0 auto", paddingBottom: 60, width: "100%" }}>
 
-        {/* 🔑 Secret Creator Admin Key / Management Banner (For unauthenticated / private poll creators) */}
+        {/* ⚠️ Guest Creator Temporary Setup & Account Security Callout Banner */}
         {showAdminKeyBanner && adminKey && !poll.creator && (
           <div style={{
             background: "var(--surface)",
             border: "1px solid var(--accent)",
-            borderRadius: 10,
-            padding: "12px 14px",
-            marginBottom: 16,
+            borderRadius: 12,
+            padding: "16px 18px",
+            marginBottom: 20,
             display: "flex",
             flexDirection: "column",
-            gap: 8,
-            boxShadow: "var(--shadow-sm)",
+            gap: 12,
+            boxShadow: "0 4px 16px rgba(15, 118, 110, 0.08)",
           }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 18 }}>🔑</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                <span style={{ fontSize: 22, lineHeight: 1 }}>⚠️</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent-ink)" }}>
-                    Secret Creator Management Link
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--accent-ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                    Temporary Guest Poll · Secure Your Results
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--muted)" }}>
-                    Save this private link to manage, edit, or close your poll without logging in.
-                  </div>
+                  <p style={{ fontSize: 12, color: "var(--muted)", margin: "4px 0 0 0", lineHeight: 1.5 }}>
+                    You created this poll without logging in. This browser link is a temporary setup — if you lose this URL or clear your browser data, you will lose permanent admin access to manage this poll and its live voter analytics.
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowAdminKeyBanner(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 13 }}
-                title="Dismiss banner"
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 14, padding: "2px 6px" }}
+                title="Dismiss notice"
               >
                 ✕
               </button>
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <input
-                type="text"
-                readOnly
-                value={typeof window !== "undefined" ? `${window.location.origin}/p/${slug}?key=${adminKey}` : `/p/${slug}?key=${adminKey}`}
-                style={{
-                  flex: 1,
-                  fontFamily: "monospace",
-                  fontSize: 11,
-                  padding: "6px 8px",
-                  borderRadius: 6,
-                  border: "1px solid var(--line)",
-                  background: "var(--paper)",
-                  color: "var(--ink)",
-                }}
-              />
+            {/* Actions Row */}
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(true)}
+                className="btn-primary"
+                style={{ fontSize: 12, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                🔐 Sign In to Secure & Claim This Poll
+              </button>
+
               <button
                 type="button"
                 onClick={() => {
@@ -652,14 +673,15 @@ function PollContent() {
                     setTimeout(() => setAdminLinkCopied(false), 2000);
                   }
                 }}
-                className="btn-accent"
-                style={{ fontSize: 11, padding: "6px 12px", whiteSpace: "nowrap" }}
+                className="btn-ghost"
+                style={{ fontSize: 12, padding: "8px 14px", whiteSpace: "nowrap" }}
               >
-                {adminLinkCopied ? "✓ Copied!" : "📋 Copy Admin Link"}
+                {adminLinkCopied ? "✓ Link Copied!" : "📋 Copy Secret Admin Link"}
               </button>
             </div>
           </div>
         )}
+
 
         {/* Poll Metadata Header */}
         <div style={{ marginBottom: 20 }}>
@@ -1917,24 +1939,35 @@ function PollContent() {
               </div>
             )}
 
-            {/* Secret Creator Management Link */}
+            {/* Secret Creator Management Link & Guest Security Callout */}
             {adminKey && (
               <div style={{
                 background: "var(--paper)",
-                padding: "10px 12px",
+                padding: "12px 14px",
                 borderRadius: 8,
                 border: "1px solid var(--line)",
                 marginBottom: 16,
                 display: "flex",
                 flexDirection: "column",
-                gap: 6
+                gap: 8
               }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>
-                  🔑 Secret Admin Management Link
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>
+                    🔑 Secret Admin Management Link
+                  </div>
+                  {!poll.creator && (
+                    <span style={{ fontSize: 10, fontWeight: 700, background: "var(--accent-soft)", color: "var(--accent-ink)", padding: "1px 6px", borderRadius: 4 }}>
+                      Guest Mode
+                    </span>
+                  )}
                 </div>
-                <div style={{ fontSize: 11, color: "var(--muted)" }}>
-                  Bookmark or copy this URL to manage this poll without signing in:
-                </div>
+
+                {!poll.creator && (
+                  <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4 }}>
+                    ⚠️ This link is a temporary session key. Sign in or create a free account to permanently secure this poll to your creator profile:
+                  </div>
+                )}
+
                 <div style={{ display: "flex", gap: 6 }}>
                   <input
                     type="text"
@@ -1960,14 +1993,29 @@ function PollContent() {
                         setTimeout(() => setAdminLinkCopied(false), 2000);
                       }
                     }}
-                    className="btn-accent"
+                    className="btn-ghost"
                     style={{ fontSize: 11, padding: "6px 12px", whiteSpace: "nowrap" }}
                   >
                     {adminLinkCopied ? "✓ Copied" : "Copy"}
                   </button>
                 </div>
+
+                {!poll.creator && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAdminModal(false);
+                      setShowAuthModal(true);
+                    }}
+                    className="btn-primary"
+                    style={{ fontSize: 11, padding: "6px 12px", marginTop: 2, alignSelf: "flex-start" }}
+                  >
+                    🔐 Sign In to Secure & Claim Poll
+                  </button>
+                )}
               </div>
             )}
+
 
 
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -2241,8 +2289,17 @@ function PollContent() {
         </div>
       )}
 
+      {/* Auth Modal for claiming poll and securing account */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        initialMessage="Sign in or register to secure this poll and its results to your permanent creator profile."
+        onSuccess={handleClaimAfterAuth}
+      />
+
       {/* Toast Notification */}
       {toast && (
+
         <div style={{
           position: "fixed",
           bottom: 24,
