@@ -401,33 +401,14 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
 /* Ephemeral Sandbox Demo Card */
 .sandbox-card {
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
-  padding: 24px; text-align: left; width: 100%; max-width: 480px; margin: 0 auto;
+  padding: 24px; text-align: left; width: 100%; max-width: 500px; margin: 0 auto;
   box-shadow: var(--shadow-md); position: relative;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-/* Off-Grid Bleed Overhang on Desktop */
-@media (min-width: 1080px) {
-  .sandbox-card {
-    max-width: 540px;
-    margin-right: -100px;
-    border-color: var(--line);
-    box-shadow: var(--shadow-md);
-  }
-}
-@media (min-width: 1280px) {
-  .sandbox-card {
-    max-width: 580px;
-    margin-right: -160px;
-    border-color: var(--line);
-    box-shadow: var(--shadow-md);
-  }
-}
-
 
 .sandbox-header {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
 }
+
 
 .sandbox-tag {
   font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase;
