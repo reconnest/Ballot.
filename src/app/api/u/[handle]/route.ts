@@ -61,14 +61,13 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
       .orderBy(desc(polls.createdAt));
 
 
-    // Calculate votes for each poll
+    // Calculate votes for each poll (total votes recorded)
     const allVotes = await db.select({ pollId: votes.pollId, voterToken: votes.voterToken }).from(votes);
-    const votesByPoll: Record<string, Set<string>> = {};
+    const voteCountByPoll: Record<string, number> = {};
     const myVotedPollIds = new Set<string>();
 
     for (const v of allVotes) {
-      if (!votesByPoll[v.pollId]) votesByPoll[v.pollId] = new Set();
-      votesByPoll[v.pollId].add(v.voterToken);
+      voteCountByPoll[v.pollId] = (voteCountByPoll[v.pollId] || 0) + 1;
       if (myToken && v.voterToken === myToken) {
         myVotedPollIds.add(v.pollId);
       }
@@ -76,7 +75,7 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
 
     let totalVotes = 0;
     const enrichedPolls = userPolls.map((p) => {
-      const count = (votesByPoll[p.id] || new Set()).size;
+      const count = voteCountByPoll[p.id] || 0;
       totalVotes += count;
       return {
         ...p,
@@ -85,6 +84,7 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
         hasVoted: myVotedPollIds.has(p.id),
       };
     });
+
 
     return NextResponse.json({
       creator: user,

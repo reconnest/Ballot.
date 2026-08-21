@@ -47,18 +47,14 @@ export async function GET(req: NextRequest) {
     const allUsers = await db.select({ id: users.id, username: users.username, displayName: users.displayName, avatarUrl: users.avatarUrl }).from(users);
     const userById = new Map(allUsers.map((u) => [u.id, u]));
 
-    // Compute vote counts for each poll
-    const allVotes = await db.select({ pollId: votes.pollId, voterToken: votes.voterToken }).from(votes);
+    // Compute vote counts for each poll (total votes recorded)
+    const allVotes = await db.select({ pollId: votes.pollId }).from(votes);
     const voteCountByPoll: Record<string, number> = {};
-    const voterSetByPoll: Record<string, Set<string>> = {};
 
     for (const v of allVotes) {
-      if (!voterSetByPoll[v.pollId]) voterSetByPoll[v.pollId] = new Set();
-      voterSetByPoll[v.pollId].add(v.voterToken);
+      voteCountByPoll[v.pollId] = (voteCountByPoll[v.pollId] || 0) + 1;
     }
-    for (const pollId in voterSetByPoll) {
-      voteCountByPoll[pollId] = voterSetByPoll[pollId].size;
-    }
+
 
     const now = Date.now();
 
