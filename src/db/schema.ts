@@ -47,7 +47,7 @@ export const polls = sqliteTable("polls", {
   ipSalt: text("ip_salt"),
   adminKeyHash: text("admin_key_hash"),
   creatorUserId: text("creator_user_id"), // FK to users.id
-  creatorName: text("creator_name"), // Optional attribution name for guest creators
+  creatorName: text("creator_name"), // Max enforced at API layer (80 chars)
   createdAt: integer("created_at").notNull(),
   expiresAt: integer("expires_at"),
 });

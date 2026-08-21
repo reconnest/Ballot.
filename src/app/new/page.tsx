@@ -468,26 +468,35 @@ export default function NewPollPage() {
     setSubmitting(true);
 
     try {
+      // ── Fix 1.3: Client-side payload guard — prevents silent 413 error on Vercel ──
+      const payload = JSON.stringify({
+        question: q,
+        description: description.trim() || undefined,
+        pollType,
+        category: finalCategory,
+        isPublic,
+        options: cleanOpts,
+        allowMultiple: pollType === "standard" ? allowMultiple : false,
+        minChoices: allowMultiple ? minChoices : 1,
+        maxChoices: allowMultiple ? maxChoices : null,
+        resultsVisibility,
+        securityMode,
+        allowVoteEdit: securityMode === "unlimited" ? false : allowVoteEdit,
+        expiresInMs: computeExpiresInMs(),
+        requireName,
+        creatorName: !sessionUser ? guestCreatorName.trim() || undefined : undefined,
+      });
+
+      if (new Blob([payload]).size > 3_800_000) {
+        setError("Your images are too large to submit (total exceeds ~3.8 MB). Please remove some images or reduce their size.");
+        setSubmitting(false);
+        return;
+      }
+
       const res = await fetch("/api/polls", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: q,
-          description: description.trim() || undefined,
-          pollType,
-          category: finalCategory,
-          isPublic,
-          options: cleanOpts,
-          allowMultiple: pollType === "standard" ? allowMultiple : false,
-          minChoices: allowMultiple ? minChoices : 1,
-          maxChoices: allowMultiple ? maxChoices : null,
-          resultsVisibility,
-          securityMode,
-          allowVoteEdit: securityMode === "unlimited" ? false : allowVoteEdit,
-          expiresInMs: computeExpiresInMs(),
-          requireName,
-          creatorName: !sessionUser ? guestCreatorName.trim() || undefined : undefined,
-        }),
+        body: payload,
       });
 
 
@@ -642,7 +651,7 @@ export default function NewPollPage() {
                 <input
                   id="guestName"
                   type="text"
-                  maxLength={60}
+                  maxLength={80}
                   placeholder="e.g. Alex, Team Design (or leave blank for Guest)"
                   value={guestCreatorName}
                   onChange={(e) => setGuestCreatorName(e.target.value)}

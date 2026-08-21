@@ -134,6 +134,20 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     let finalVoterName = voterName;
     let ballotId = nanoid();
 
+    // ── Fix 1.4: Enforce idempotency — prevent double-submit on slow mobile ──
+    if (idempotencyKey && !isUnlimited) {
+      const [alreadySubmitted] = await db
+        .select({ id: votes.id })
+        .from(votes)
+        .where(and(eq(votes.pollId, poll.id), eq(votes.idempotencyKey, idempotencyKey)))
+        .limit(1);
+      if (alreadySubmitted) {
+        const res = NextResponse.json({ ok: true, ballotId, isEdit: false, deduplicated: true });
+        if (isNew) attachVoterCookie(res, voterToken);
+        return res;
+      }
+    }
+
     if (existingVote) {
       if (poll.allowVoteEdit === 0) {
         const res = NextResponse.json(
@@ -148,14 +162,9 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       isVoteEdit = true;
       ballotId = existingVote.ballotId || ballotId;
       finalVoterName = existingVote.voterName || voterName; // Name locked once submitted
-
-      // Atomically delete old choices for this voter
-      await db
-        .delete(votes)
-        .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, voterToken)));
     }
 
-    // Insert new choices under the ballot transaction with rank position
+    // Build new vote rows
     const voteRows = selectedOptionIds.map((optId, index) => ({
       id: nanoid(),
       pollId: poll.id,
@@ -169,7 +178,17 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       createdAt: now,
     }));
 
-    await db.insert(votes).values(voteRows);
+    // ── Fix 1.1: Use DB transaction for vote edit — prevents data loss on server crash ──
+    if (isVoteEdit) {
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(votes)
+          .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, voterToken)));
+        await tx.insert(votes).values(voteRows);
+      });
+    } else {
+      await db.insert(votes).values(voteRows);
+    }
 
     // Trigger debounced realtime broadcast to all active spectators
     try {
@@ -182,6 +201,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     const res = NextResponse.json({ ok: true, ballotId, isEdit: isVoteEdit });
     if (isNew) attachVoterCookie(res, voterToken);
     return res;
+
 
   } catch (e) {
     console.error("vote failed", e);

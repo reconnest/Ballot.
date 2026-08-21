@@ -19,9 +19,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ── Fix 1.3: Guard against Vercel's 4.5 MB serverless payload limit ──
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 4_000_000) {
+      return NextResponse.json(
+        { error: "Total upload size is too large (max ~4 MB). Please reduce the number or size of images." },
+        { status: 413 }
+      );
+    }
+
     const sessionUser = await getSessionUser(req);
     const body = await req.json();
     const isPublic = body.isPublic !== undefined ? (body.isPublic ? 1 : 0) : 1;
+
 
     // Strict Policy: Public Community Polls (BPC) REQUIRE a logged-in creator account
     if (isPublic === 1 && !sessionUser) {
@@ -75,7 +85,8 @@ export async function POST(req: NextRequest) {
     const securityMode = validSecurity.includes(body.securityMode) ? body.securityMode : "relaxed";
 
     const allowVoteEdit = body.allowVoteEdit !== undefined ? (body.allowVoteEdit ? 1 : 0) : 1;
-    const creatorName = !sessionUser && body.creatorName ? body.creatorName.toString().trim().slice(0, 60) : null;
+    // ── Fix 1.2: Enforce 80-char max on creatorName at API layer ──
+    const creatorName = !sessionUser && body.creatorName ? body.creatorName.toString().trim().slice(0, 80) : null;
 
     if (!question) {
       return NextResponse.json({ error: "Question is required." }, { status: 400 });
