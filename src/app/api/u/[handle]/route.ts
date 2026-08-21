@@ -34,7 +34,16 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
     const isOwner = sessionUser ? sessionUser.id === user.id : false;
     const myToken = readVoterTokenFromRequest(req);
 
-    // Fetch user's public polls
+    // Fetch user's polls: all polls if creator themselves is viewing (isOwner), public-only for other visitors
+    const conditions = [
+      eq(polls.creatorUserId, user.id),
+      ne(polls.status, "deleted"),
+    ];
+
+    if (!isOwner) {
+      conditions.push(eq(polls.isPublic, 1));
+    }
+
     const userPolls = await db
       .select({
         id: polls.id,
@@ -43,18 +52,14 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
         pollType: polls.pollType,
         category: polls.category,
         status: polls.status,
+        isPublic: polls.isPublic,
         createdAt: polls.createdAt,
         expiresAt: polls.expiresAt,
       })
       .from(polls)
-      .where(
-        and(
-          eq(polls.creatorUserId, user.id),
-          eq(polls.isPublic, 1),
-          ne(polls.status, "deleted")
-        )
-      )
+      .where(and(...conditions))
       .orderBy(desc(polls.createdAt));
+
 
     // Calculate votes for each poll
     const allVotes = await db.select({ pollId: votes.pollId, voterToken: votes.voterToken }).from(votes);

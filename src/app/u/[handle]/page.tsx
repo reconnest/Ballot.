@@ -22,11 +22,13 @@ type UserPoll = {
   pollType: string;
   category: string;
   status: string;
+  isPublic?: number;
   voteCount: number;
   isExpired: boolean;
   hasVoted?: boolean;
   createdAt: number;
 };
+
 
 export default function CreatorProfilePage() {
   const params = useParams();
@@ -149,15 +151,26 @@ export default function CreatorProfilePage() {
               </div>
             </div>
 
-            {/* Public Community Polls List */}
+            {/* Polls List */}
             <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700 }}>Community Polls by @{creator.username}</h2>
-              <span style={{ fontSize: 12, color: "var(--muted)" }}>{polls.length} published</span>
+              <h2 style={{ fontSize: 18, fontWeight: 700 }}>
+                {isOwner ? "Your Created Polls" : `Community Polls by @${creator.username}`}
+              </h2>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                {polls.length} {polls.length === 1 ? "poll" : "polls"}
+              </span>
             </div>
 
             {polls.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 0", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8 }}>
-                <p style={{ color: "var(--muted)", fontSize: 14 }}>No public polls published yet.</p>
+              <div style={{ textAlign: "center", padding: "48px 16px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8 }}>
+                <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: isOwner ? 16 : 0 }}>
+                  {isOwner ? "You haven't created any polls yet." : "No public polls published yet."}
+                </p>
+                {isOwner && (
+                  <Link href="/new" className="btn-primary" style={{ display: "inline-flex", fontSize: 13 }}>
+                    + Create Your First Poll
+                  </Link>
+                )}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -179,9 +192,23 @@ export default function CreatorProfilePage() {
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                       <div>
-                        <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                        <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap", alignItems: "center" }}>
                           <span className="badge-category">{p.category || "general"}</span>
                           {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+                          {isOwner && p.isPublic === 0 && (
+                            <span style={{
+                              fontSize: 10,
+                              fontFamily: "monospace",
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              background: "var(--paper)",
+                              border: "1px solid var(--line)",
+                              color: "var(--muted)",
+                              fontWeight: 600
+                            }}>
+                              🔒 Unlisted
+                            </span>
+                          )}
                           <span style={{
                             fontSize: 10,
                             fontFamily: "monospace",
@@ -217,6 +244,7 @@ export default function CreatorProfilePage() {
                 ))}
               </div>
             )}
+
           </div>
         )}
       </main>
