@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
 import { db } from "@/db";
-import { polls } from "@/db/schema";
+import { polls, options } from "@/db/schema";
 import { eq } from "drizzle-orm";
-
-type Props = {
-  params: { slug: string };
-  children: React.ReactNode;
-};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -22,22 +17,43 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       };
     }
 
-    const title = `🗳️ ${poll.question} — Ballot`;
-    const description = poll.description
-      ? `${poll.description.slice(0, 120)} · Cast your vote on Ballot (no signup required)`
-      : "Cast your vote on Ballot · 100% free, real-time results, zero signup required.";
+    // Fetch option count for the description
+    const pollOptions = await db
+      .select({ id: options.id })
+      .from(options)
+      .where(eq(options.pollId, poll.id));
+    const optionCount = pollOptions.length;
+
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://ballot-poll.vercel.app";
+    const pollUrl = `${baseUrl}/p/${params.slug}`;
     const ogImageUrl = `${baseUrl}/api/og/${params.slug}`;
+
+    // ── Fix 3.1: Clean, punchy title that shows the actual poll question ──
+    const title = `${poll.question} — Vote on Ballot`;
+    const description = poll.description
+      ? `${poll.description.slice(0, 130)} · ${optionCount} options · Live results · No signup`
+      : `${optionCount} options · Live results · 100% free, no signup required.`;
+
+    // ── Fix 3.2: noindex for private BPP- polls, canonical URL for all polls ──
+    const isPrivate = params.slug.startsWith("BPP-");
 
     return {
       title,
       description,
+      // Canonical URL prevents duplicate content when ?key= is in the URL
+      alternates: {
+        canonical: pollUrl,
+      },
+      // Private polls must not be indexed by search engines
+      robots: isPrivate
+        ? { index: false, follow: false }
+        : { index: true, follow: true },
       openGraph: {
         title,
         description,
         type: "website",
         siteName: "Ballot",
-        url: `${baseUrl}/p/${params.slug}`,
+        url: pollUrl,
         images: [
           {
             url: ogImageUrl,
@@ -62,7 +78,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-
 export default function PollLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
+

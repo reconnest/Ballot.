@@ -60,6 +60,9 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
         voterName: v.voterName,
         createdAt: v.createdAt,
       })),
+    }, {
+      // ── Fix 3.3: Prevent admin key leaking via browser Referer header ──
+      headers: { "Referrer-Policy": "no-referrer" },
     });
   } catch (e) {
     console.error("admin get failed", e);
@@ -228,6 +231,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
         "Pragma": "no-cache",
         "Expires": "0",
+        // ── Fix 3.3: Prevent admin key leaking via browser Referer header ──
+        "Referrer-Policy": "no-referrer",
       },
     });
   } catch (e) {
@@ -254,7 +259,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug: str
     // Mark as deleted for clean 404 handling
     await db.update(polls).set({ status: "deleted" }).where(eq(polls.id, poll.id));
 
-    return NextResponse.json({ ok: true });
+    // ── Fix 3.3: Prevent admin key leaking via browser Referer header ──
+    return NextResponse.json({ ok: true }, {
+      headers: { "Referrer-Policy": "no-referrer" },
+    });
   } catch (e) {
     console.error("admin delete failed", e);
     return NextResponse.json({ error: "Could not delete poll." }, { status: 500 });
