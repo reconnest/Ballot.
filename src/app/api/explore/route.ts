@@ -104,10 +104,20 @@ export async function GET(req: NextRequest) {
       items.sort((a, b) => b.createdAt - a.createdAt);
     }
 
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(60, Math.max(1, parseInt(searchParams.get("limit") || "24")));
+    const offset = (page - 1) * limit;
+
+    const paginatedPolls = items.slice(offset, offset + limit);
+    const hasMore = offset + limit < items.length;
+
     return NextResponse.json(
       {
-        polls: items.slice(0, 30),
+        polls: paginatedPolls,
         total: items.length,
+        page,
+        limit,
+        hasMore,
       },
       {
         headers: {
@@ -115,6 +125,7 @@ export async function GET(req: NextRequest) {
         },
       }
     );
+
   } catch (e) {
 
     console.error("explore fetch failed", e);

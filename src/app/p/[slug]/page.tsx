@@ -413,11 +413,17 @@ function PollContent() {
         fetchPoll();
       }
 
-    } catch {
-      showToast("Network error. Please try again.");
+    } catch (err) {
+      console.error("[handleVote] Submission error:", err);
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        showToast("You're offline. Please reconnect and try again. ☁️");
+      } else {
+        showToast("Network error. Please try again.");
+      }
     }
     setVoting(false);
   }
+
 
 
   // Pre-vote option editors
@@ -1193,7 +1199,7 @@ function PollContent() {
           </form>
         ) : (
           /* 2. RESULTS VIEW */
-          <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 20 }}>
+          <div aria-live="polite" aria-atomic="false" style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 20 }}>
             {poll.pollType === "ranked_choice" ? (
               /* RANKED CHOICE (POINTS) DEDICATED LEADERBOARD VIEW */
               <div>

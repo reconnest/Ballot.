@@ -723,6 +723,7 @@ export default function NewPollPage() {
                               onClick={() => handleMoveOption(i, "prev")}
                               disabled={i === 0}
                               title="Move left"
+                              aria-label={`Move option ${i + 1} left`}
                               style={{
                                 width: 18,
                                 height: 18,
@@ -745,6 +746,7 @@ export default function NewPollPage() {
                               onClick={() => handleMoveOption(i, "next")}
                               disabled={i === opts.length - 1}
                               title="Move right"
+                              aria-label={`Move option ${i + 1} right`}
                               style={{
                                 width: 18,
                                 height: 18,
@@ -768,6 +770,7 @@ export default function NewPollPage() {
                                 className="remove-opt-btn"
                                 onClick={() => removeOpt(i)}
                                 title="Remove option"
+                                aria-label={`Remove option ${i + 1}`}
                                 style={{ fontSize: 11, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 2 }}
                               >
                                 ✕
@@ -986,6 +989,7 @@ export default function NewPollPage() {
                             onClick={() => handleMoveOption(i, "up")}
                             disabled={i === 0}
                             title="Move up"
+                            aria-label={`Move option ${i + 1} up`}
                             style={{
                               width: 22,
                               height: 14,
@@ -1008,6 +1012,7 @@ export default function NewPollPage() {
                             onClick={() => handleMoveOption(i, "down")}
                             disabled={i === opts.length - 1}
                             title="Move down"
+                            aria-label={`Move option ${i + 1} down`}
                             style={{
                               width: 22,
                               height: 14,
@@ -1033,10 +1038,12 @@ export default function NewPollPage() {
                             className="remove-opt-btn"
                             onClick={() => removeOpt(i)}
                             title="Remove option"
+                            aria-label={`Remove option ${i + 1}`}
                           >
                             ✕
                           </button>
                         )}
+
                       </div>
                     );
                   })}

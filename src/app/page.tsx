@@ -299,7 +299,14 @@ export default function HomePage() {
                                 key={i}
                                 role="radio"
                                 aria-checked={isSelected}
+                                tabIndex={0}
                                 onClick={() => setSelectedStandard(i)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setSelectedStandard(i);
+                                  }
+                                }}
                                 style={{
                                   padding: "10px 12px",
                                   borderRadius: 8,
@@ -591,7 +598,14 @@ export default function HomePage() {
                                 key={i}
                                 role="radio"
                                 aria-checked={isSelected}
+                                tabIndex={0}
                                 onClick={() => setSelectedImage(i)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setSelectedImage(i);
+                                  }
+                                }}
                                 style={{
                                   border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
                                   background: isSelected ? "var(--accent-soft)" : "var(--paper)",

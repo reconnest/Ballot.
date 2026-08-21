@@ -37,43 +37,62 @@ function ExploreContent() {
   const searchParams = useSearchParams();
 
   const [polls, setPolls] = useState<PollSummary[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "all");
   const [filter, setFilter] = useState<"trending" | "recent" | "active">("trending");
 
-  async function loadPolls() {
-    setLoading(true);
+  async function loadPolls(targetPage = 1, append = false) {
+    if (targetPage === 1) setLoading(true);
+    else setLoadingMore(true);
+
     try {
       const params = new URLSearchParams();
       if (category !== "all") params.set("category", category);
       if (search) params.set("q", search);
       params.set("filter", filter);
+      params.set("page", targetPage.toString());
+      params.set("limit", "24");
 
       const res = await fetch(`/api/explore?${params.toString()}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
-        setPolls(data.polls || []);
+        const newPolls = data.polls || [];
+        setPolls((prev) => (append ? [...prev, ...newPolls] : newPolls));
+        setTotalCount(data.total || newPolls.length);
+        setHasMore(data.hasMore || false);
+        setPage(targetPage);
       }
-    } catch {}
+    } catch (err) {
+      console.error("[loadPolls] Failed to load explore feed:", err);
+    }
     setLoading(false);
+    setLoadingMore(false);
   }
 
   useEffect(() => {
-    loadPolls();
+    loadPolls(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, filter]);
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
-    loadPolls();
+    loadPolls(1, false);
+  }
+
+  function handleLoadMore() {
+    if (!loadingMore && hasMore) {
+      loadPolls(page + 1, true);
+    }
   }
 
   return (
     <div className="wrap">
       <Navbar />
-
-
 
       <main>
         <div className="section-label">Public Polls</div>
@@ -137,7 +156,7 @@ function ExploreContent() {
             </button>
           </div>
           <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "monospace" }}>
-            {polls.length} poll{polls.length === 1 ? "" : "s"}
+            {totalCount} poll{totalCount === 1 ? "" : "s"}
           </div>
         </div>
 
@@ -152,35 +171,52 @@ function ExploreContent() {
             </button>
           </div>
         ) : (
-          <div className="explore-cards-grid" role="list" aria-label="Public polls list">
-            {polls.map((p) => (
-              <Link href={`/p/${p.slug}`} key={p.id} className="poll-row" role="listitem" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
-                    <span className="badge-category">{p.category || "general"}</span>
-                    {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
-                    {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
-                  </div>
-                  <div className="poll-q" style={{ fontSize: 15 }}>{p.question}</div>
-                  {p.description && (
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>
-                      {p.description}
+          <>
+            <div className="explore-cards-grid" role="list" aria-label="Public polls list">
+              {polls.map((p) => (
+                <Link href={`/p/${p.slug}`} key={p.id} className="poll-row" role="listitem" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+                      <span className="badge-category">{p.category || "general"}</span>
+                      {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+                      {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
                     </div>
-                  )}
-                </div>
-                <div className="poll-meta" style={{ marginTop: 14, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontWeight: 600, color: "var(--ink)" }}>{p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}</span>
-                  <span>{p.isExpired ? "closed" : "active · vote →"}</span>
-                </div>
-              </Link>
-            ))}
-          </div>
+                    <div className="poll-q" style={{ fontSize: 15 }}>{p.question}</div>
+                    {p.description && (
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>
+                        {p.description}
+                      </div>
+                    )}
+                  </div>
+                  <div className="poll-meta" style={{ marginTop: 14, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}</span>
+                    <span>{p.isExpired ? "closed" : "active · vote →"}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
 
+            {/* Pagination / Load More Button */}
+            {hasMore && (
+              <div style={{ marginTop: 24, textAlign: "center" }}>
+                <button
+                  type="button"
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="btn-ghost"
+                  style={{ padding: "10px 24px", fontSize: 13 }}
+                >
+                  {loadingMore ? "Loading more polls…" : "↓ Load More Polls"}
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
   );
 }
+
 
 export default function ExplorePage() {
   return (
