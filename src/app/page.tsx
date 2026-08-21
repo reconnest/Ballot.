@@ -51,7 +51,8 @@ export default function HomePage() {
 
   
   // Standard format state
-  const [standardVote, setStandardVote] = useState<number | null>(null);
+  const [selectedStandard, setSelectedStandard] = useState<number | null>(null);
+  const [standardVoteSubmitted, setStandardVoteSubmitted] = useState<boolean>(false);
   const [standardTallies, setStandardTallies] = useState<number[]>([48, 56, 32, 25]);
   const standardOptions = [
     { label: "🏖️ Beachside Resort" },
@@ -70,20 +71,36 @@ export default function HomePage() {
   const [rankedSubmitted, setRankedSubmitted] = useState<boolean>(false);
 
   // Image format state
-  const [imageVote, setImageVote] = useState<number | null>(null);
+  const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const [imageVoteSubmitted, setImageVoteSubmitted] = useState<boolean>(false);
   const [imageTallies, setImageTallies] = useState<number[]>([54, 42, 38]);
   const imageOptions = [
-    { icon: "📋", label: "Tally Clipboard", desc: "Classic & Clean" },
-    { icon: "🗳️", label: "Ballot Mark", desc: "Minimalist Box" },
-    { icon: "⚡", label: "Dynamic Slit", desc: "High Energy" },
+    {
+      label: "Minimal Logo",
+      subtitle: "Geometric Monogram",
+      icon: "💠",
+      color: "#0f766e",
+    },
+    {
+      label: "Dynamic Slit",
+      subtitle: "High Energy Motion",
+      icon: "⚡",
+      color: "#2563eb",
+    },
+    {
+      label: "Ballot Box",
+      subtitle: "Clean & Modern",
+      icon: "🗳️",
+      color: "#7c3aed",
+    },
   ];
 
-  function handleStandardVote(index: number) {
-    if (standardVote !== null) return;
-    setStandardVote(index);
+  function handleStandardSubmit() {
+    if (selectedStandard === null || standardVoteSubmitted) return;
+    setStandardVoteSubmitted(true);
     setStandardTallies((prev) => {
       const copy = [...prev];
-      copy[index] += 1;
+      copy[selectedStandard] += 1;
       return copy;
     });
     try { fireMotionSafeConfetti(); } catch {}
@@ -103,18 +120,17 @@ export default function HomePage() {
   }
 
   function handleRankedSubmit() {
-
     if (rankedSubmitted) return;
     setRankedSubmitted(true);
     try { fireMotionSafeConfetti(); } catch {}
   }
 
-  function handleImageVote(index: number) {
-    if (imageVote !== null) return;
-    setImageVote(index);
+  function handleImageSubmit() {
+    if (selectedImage === null || imageVoteSubmitted) return;
+    setImageVoteSubmitted(true);
     setImageTallies((prev) => {
       const copy = [...prev];
-      copy[index] += 1;
+      copy[selectedImage] += 1;
       return copy;
     });
     try { fireMotionSafeConfetti(); } catch {}
@@ -122,6 +138,7 @@ export default function HomePage() {
 
   const standardTotal = standardTallies.reduce((a, b) => a + b, 0);
   const imageTotal = imageTallies.reduce((a, b) => a + b, 0);
+
 
 
   // Fetch top 3 trending public polls
@@ -251,14 +268,14 @@ export default function HomePage() {
 
                 <div className="sandbox-header">
                   <span className="sandbox-tag">
-                    {sandboxFormat === "standard" && "Standard Demo"}
-                    {sandboxFormat === "ranked" && "Ranked Choice (Points)"}
-                    {sandboxFormat === "image" && "Image Grid Demo"}
+                    {sandboxFormat === "standard" && "Standard Poll"}
+                    {sandboxFormat === "ranked" && "Ranked Choice"}
+                    {sandboxFormat === "image" && "Image Poll"}
                   </span>
                   <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
-                    {sandboxFormat === "standard" && (standardVote !== null ? `${standardTotal} test votes` : "Try voting:")}
-                    {sandboxFormat === "ranked" && (rankedSubmitted ? "Leaderboard calculated ✓" : "Rank your top picks:")}
-                    {sandboxFormat === "image" && (imageVote !== null ? `${imageTotal} test votes` : "Pick your favorite:")}
+                    {sandboxFormat === "standard" && (standardVoteSubmitted ? `${standardTotal} votes recorded` : "Select an option:")}
+                    {sandboxFormat === "ranked" && (rankedSubmitted ? "Leaderboard calculated ✓" : "Rank by preference:")}
+                    {sandboxFormat === "image" && (imageVoteSubmitted ? `${imageTotal} votes recorded` : "Select a card:")}
                   </span>
                 </div>
 
@@ -267,44 +284,97 @@ export default function HomePage() {
                   <div>
                     <div className="sandbox-title">Where should we host the team offsite?</div>
 
-                    {standardVote === null ? (
-                      <div role="radiogroup" aria-label="Standard demo options">
-                        {standardOptions.map((opt, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            role="radio"
-                            aria-checked={false}
-                            className="sandbox-option-btn"
-                            onClick={() => handleStandardVote(i)}
-                          >
-                            <span>{opt.label}</span>
-                            <span style={{ color: "var(--accent)", fontSize: 12 }}>Vote →</span>
-                          </button>
-                        ))}
+                    {!standardVoteSubmitted ? (
+                      <div>
+                        <div role="radiogroup" aria-label="Standard demo options" style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                          {standardOptions.map((opt, i) => {
+                            const isSelected = selectedStandard === i;
+                            return (
+                              <div
+                                key={i}
+                                role="radio"
+                                aria-checked={isSelected}
+                                onClick={() => setSelectedStandard(i)}
+                                style={{
+                                  padding: "10px 12px",
+                                  borderRadius: 8,
+                                  border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
+                                  background: isSelected ? "var(--accent-soft)" : "var(--paper)",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  transition: "all 0.15s ease",
+                                  boxShadow: isSelected ? "0 2px 8px rgba(15, 118, 110, 0.12)" : "none",
+                                }}
+                              >
+                                <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)" }}>
+                                  {opt.label}
+                                </span>
+                                <span style={{
+                                  width: 18,
+                                  height: 18,
+                                  borderRadius: "50%",
+                                  border: isSelected ? "5px solid var(--accent)" : "2px solid var(--line)",
+                                  background: "var(--surface)",
+                                  display: "inline-block",
+                                  boxSizing: "border-box",
+                                }} />
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={selectedStandard === null}
+                          onClick={handleStandardSubmit}
+                          className="btn-primary"
+                          style={{ width: "100%", padding: "10px 14px", fontSize: 13, justifyContent: "center" }}
+                        >
+                          Submit Vote →
+                        </button>
                       </div>
                     ) : (
                       <div aria-live="polite">
-                        {standardOptions.map((opt, i) => {
-                          const count = standardTallies[i];
-                          const pct = Math.round((count / standardTotal) * 100);
-                          const isMine = standardVote === i;
-                          return (
-                            <div key={i} style={{ marginBottom: 9 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                                <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
-                                  {opt.label} {isMine && "(your pick ✓)"}
-                                </span>
-                                <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% · {count}</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>Live Results</span>
+                          <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>{standardTotal} total votes</span>
+                        </div>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          {standardOptions.map((opt, i) => {
+                            const count = standardTallies[i];
+                            const pct = Math.round((count / standardTotal) * 100);
+                            const isMine = selectedStandard === i;
+                            return (
+                              <div key={i}>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                                  <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
+                                    {opt.label} {isMine && "(your pick ✓)"}
+                                  </span>
+                                  <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% ({count})</span>
+                                </div>
+                                <div className="ledger-track" style={{ height: 7, borderRadius: 4 }}>
+                                  <div className="ledger-fill" style={{ width: `${pct}%`, background: isMine ? "var(--accent)" : "var(--faint)", borderRadius: 4 }} />
+                                </div>
                               </div>
-                              <div className="ledger-track" style={{ height: 6 }}>
-                                <div className="ledger-fill" style={{ width: `${pct}%`, background: isMine ? "var(--accent)" : "var(--faint)" }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                        <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 10 }}>
-                          ✨ Standard pick-one poll preview
+                            );
+                          })}
+                        </div>
+
+                        <div style={{ marginTop: 14, textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedStandard(null);
+                              setStandardVoteSubmitted(false);
+                            }}
+                            className="btn-ghost"
+                            style={{ fontSize: 11, padding: "5px 10px" }}
+                          >
+                            🗳️ Cast Another Vote
+                          </button>
                         </div>
                       </div>
                     )}
@@ -319,7 +389,7 @@ export default function HomePage() {
                     {!rankedSubmitted ? (
                       <div>
                         <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
-                          Use arrows to rank preferences from 1st to 4th Choice (1st gets 4 pts):
+                          Use arrows to rank preferences from 1st to 4th Choice:
                         </div>
                         {rankedOrder.map((item, idx) => (
                           <div
@@ -377,14 +447,21 @@ export default function HomePage() {
                       <div aria-live="polite">
                         <div style={{ background: "var(--accent-soft)", padding: 12, borderRadius: 6, marginBottom: 10, border: "1px solid var(--accent)" }}>
                           <div style={{ fontWeight: 700, fontSize: 13, color: "var(--accent-ink)", marginBottom: 4 }}>
-                            🏆 Highest Score Winner: {rankedOrder[0]}
+                            🏆 Consensus Winner: {rankedOrder[0]}
                           </div>
                           <div style={{ fontSize: 11, color: "var(--muted)" }}>
-                            Ranked Points scoring (#1=4pts, #2=3pts, #3=2pts, #4=1pt) across all ballots.
+                            Ranked Points scoring (#1=4pts, #2=3pts, #3=2pts, #4=1pt) computed across all ballots.
                           </div>
                         </div>
-                        <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center" }}>
-                          ✨ Weighted point allocation · Highest consensus winner
+                        <div style={{ textAlign: "center", marginTop: 10 }}>
+                          <button
+                            type="button"
+                            onClick={() => setRankedSubmitted(false)}
+                            className="btn-ghost"
+                            style={{ fontSize: 11, padding: "5px 10px" }}
+                          >
+                            ↺ Re-rank & Vote Again
+                          </button>
                         </div>
                       </div>
                     )}
@@ -397,46 +474,152 @@ export default function HomePage() {
                   <div>
                     <div className="sandbox-title">Which logo mark concept works best for Ballot?</div>
 
-                    {imageVote === null ? (
-                      <div className="sandbox-image-grid" role="radiogroup" aria-label="Image poll demo options">
-                        {imageOptions.map((opt, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            role="radio"
-                            aria-checked={false}
-                            className="sandbox-image-card"
-                            onClick={() => handleImageVote(i)}
-                          >
-                            <span style={{ fontSize: 28 }}>{opt.icon}</span>
-                            <div style={{ fontWeight: 700, fontSize: 12, color: "var(--ink)" }}>{opt.label}</div>
-                            <div style={{ fontSize: 10, color: "var(--muted)" }}>{opt.desc}</div>
-                            <span style={{ fontSize: 11, color: "var(--accent)", marginTop: 2 }}>Vote →</span>
-                          </button>
-                        ))}
+                    {!imageVoteSubmitted ? (
+                      <div>
+                        <div className="sandbox-image-grid" role="radiogroup" aria-label="Image poll demo options" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
+                          {imageOptions.map((opt, i) => {
+                            const isSelected = selectedImage === i;
+                            return (
+                              <div
+                                key={i}
+                                role="radio"
+                                aria-checked={isSelected}
+                                onClick={() => setSelectedImage(i)}
+                                style={{
+                                  border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
+                                  background: isSelected ? "var(--accent-soft)" : "var(--paper)",
+                                  borderRadius: 8,
+                                  overflow: "hidden",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  transition: "all 0.15s ease",
+                                  boxShadow: isSelected ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
+                                }}
+                              >
+                                <div style={{
+                                  height: 70,
+                                  background: "var(--surface)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  borderBottom: "1px solid var(--line)",
+                                  fontSize: 26
+                                }}>
+                                  {opt.icon}
+                                </div>
+                                <div style={{ padding: "8px 6px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                                  <div style={{ fontWeight: 700, fontSize: 11, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>
+                                    {opt.label}
+                                  </div>
+                                  <span style={{
+                                    width: 14,
+                                    height: 14,
+                                    borderRadius: "50%",
+                                    border: isSelected ? "4px solid var(--accent)" : "1.5px solid var(--line)",
+                                    background: "var(--surface)",
+                                    display: "inline-block",
+                                    boxSizing: "border-box",
+                                    marginTop: 4
+                                  }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={selectedImage === null}
+                          onClick={handleImageSubmit}
+                          className="btn-primary"
+                          style={{ width: "100%", padding: "10px 14px", fontSize: 13, justifyContent: "center" }}
+                        >
+                          Submit Vote →
+                        </button>
                       </div>
                     ) : (
                       <div aria-live="polite">
-                        {imageOptions.map((opt, i) => {
-                          const count = imageTallies[i];
-                          const pct = Math.round((count / imageTotal) * 100);
-                          const isMine = imageVote === i;
-                          return (
-                            <div key={i} style={{ marginBottom: 9 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                                <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
-                                  {opt.icon} {opt.label} {isMine && "(your pick ✓)"}
-                                </span>
-                                <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% · {count}</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>Live Results</span>
+                          <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>{imageTotal} total votes</span>
+                        </div>
+
+                        {/* 3-Column Cards Results View */}
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                          {imageOptions.map((opt, i) => {
+                            const count = imageTallies[i];
+                            const pct = Math.round((count / imageTotal) * 100);
+                            const isMine = selectedImage === i;
+                            return (
+                              <div
+                                key={i}
+                                style={{
+                                  background: "var(--paper)",
+                                  border: isMine ? "2px solid var(--accent)" : "1px solid var(--line)",
+                                  borderRadius: 8,
+                                  overflow: "hidden",
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  boxShadow: isMine ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
+                                }}
+                              >
+                                <div style={{
+                                  height: 65,
+                                  background: "var(--surface)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  borderBottom: "1px solid var(--line)",
+                                  position: "relative",
+                                  fontSize: 24
+                                }}>
+                                  {opt.icon}
+                                  <div style={{
+                                    position: "absolute",
+                                    top: 4,
+                                    right: 4,
+                                    background: "rgba(0,0,0,0.75)",
+                                    color: "#FFFFFF",
+                                    padding: "1px 5px",
+                                    borderRadius: 3,
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    fontFamily: "monospace"
+                                  }}>
+                                    {pct}%
+                                  </div>
+                                </div>
+
+                                <div style={{ padding: "6px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
+                                  <div style={{ fontSize: 11, fontWeight: isMine ? 700 : 600, color: isMine ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {opt.label}
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "var(--muted)" }}>
+                                    <span>{count} votes</span>
+                                    {isMine && <span style={{ color: "var(--accent)", fontWeight: 700 }}>✓ You</span>}
+                                  </div>
+                                  <div className="ledger-track" style={{ height: 4, borderRadius: 2, marginTop: 2 }}>
+                                    <div className="ledger-fill" style={{ width: `${pct}%`, background: isMine ? "var(--accent)" : "var(--faint)", borderRadius: 2 }} />
+                                  </div>
+                                </div>
                               </div>
-                              <div className="ledger-track" style={{ height: 6 }}>
-                                <div className="ledger-fill" style={{ width: `${pct}%`, background: isMine ? "var(--accent)" : "var(--faint)" }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                        <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 10 }}>
-                          ✨ Visual image card poll preview
+                            );
+                          })}
+                        </div>
+
+                        <div style={{ marginTop: 14, textAlign: "center" }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedImage(null);
+                              setImageVoteSubmitted(false);
+                            }}
+                            className="btn-ghost"
+                            style={{ fontSize: 11, padding: "5px 10px" }}
+                          >
+                            🗳️ Cast Another Vote
+                          </button>
                         </div>
                       </div>
                     )}
@@ -447,6 +630,7 @@ export default function HomePage() {
           </div>
 
         </section>
+
 
         {/* User's Created Polls Drawer (Only when creator is logged in) */}
         {sessionUser && polls && polls.length > 0 && (
