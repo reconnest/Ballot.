@@ -161,16 +161,49 @@ function ExploreContent() {
         </div>
 
         {loading ? (
-          <div className="loading">Loading explore feed…</div>
+          <div className="explore-cards-grid" aria-label="Loading explore feed">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div key={n} className="skeleton-card" style={{ gap: 12 }}>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <div className="skeleton-box" style={{ width: 64, height: 20, borderRadius: 10 }} />
+                  <div className="skeleton-box" style={{ width: 80, height: 20, borderRadius: 10 }} />
+                </div>
+                <div className="skeleton-box" style={{ width: "90%", height: 22, marginTop: 4 }} />
+                <div className="skeleton-box" style={{ width: "70%", height: 16 }} />
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+                  <div className="skeleton-box" style={{ width: 50, height: 14 }} />
+                  <div className="skeleton-box" style={{ width: 60, height: 14 }} />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : polls.length === 0 ? (
-          <div className="empty">
-            No polls found matching your criteria.
-            <br /><br />
-            <button type="button" className="btn-ghost" onClick={() => { setSearch(""); setCategory("all"); }}>
-              Reset filters
-            </button>
+          <div className="empty" style={{ padding: "48px 16px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10 }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>No matching polls found</h3>
+            <p style={{ color: "var(--muted)", fontSize: 14, maxWidth: 400, margin: "0 auto 20px" }}>
+              We couldn&apos;t find any polls matching &ldquo;{search || category}&rdquo;. Try another keyword or create the first one!
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => { setSearch(""); setCategory("all"); }}
+                style={{ padding: "8px 16px", fontSize: 13 }}
+              >
+                Reset filters
+              </button>
+              <Link
+                href="/new"
+                className="btn-primary"
+                style={{ padding: "8px 18px", fontSize: 13, textDecoration: "none" }}
+              >
+                + Create a Poll
+              </Link>
+            </div>
           </div>
         ) : (
+
           <>
             <div className="explore-cards-grid" role="list" aria-label="Public polls list">
               {polls.map((p) => (

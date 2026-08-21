@@ -717,7 +717,7 @@ export default function NewPollPage() {
                           </div>
 
                           {/* Quick Shift Arrows & Remove */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                             <button
                               type="button"
                               onClick={() => handleMoveOption(i, "prev")}
@@ -725,16 +725,16 @@ export default function NewPollPage() {
                               title="Move left"
                               aria-label={`Move option ${i + 1} left`}
                               style={{
-                                width: 18,
-                                height: 18,
+                                width: 24,
+                                height: 24,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: 9,
+                                fontSize: 11,
                                 border: "1px solid var(--line)",
                                 background: i === 0 ? "transparent" : "var(--paper)",
                                 color: i === 0 ? "var(--faint)" : "var(--ink)",
-                                borderRadius: 3,
+                                borderRadius: 4,
                                 cursor: i === 0 ? "not-allowed" : "pointer",
                                 padding: 0
                               }}
@@ -748,16 +748,16 @@ export default function NewPollPage() {
                               title="Move right"
                               aria-label={`Move option ${i + 1} right`}
                               style={{
-                                width: 18,
-                                height: 18,
+                                width: 24,
+                                height: 24,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: 9,
+                                fontSize: 11,
                                 border: "1px solid var(--line)",
                                 background: i === opts.length - 1 ? "transparent" : "var(--paper)",
                                 color: i === opts.length - 1 ? "var(--faint)" : "var(--ink)",
-                                borderRadius: 3,
+                                borderRadius: 4,
                                 cursor: i === opts.length - 1 ? "not-allowed" : "pointer",
                                 padding: 0
                               }}
@@ -771,12 +771,13 @@ export default function NewPollPage() {
                                 onClick={() => removeOpt(i)}
                                 title="Remove option"
                                 aria-label={`Remove option ${i + 1}`}
-                                style={{ fontSize: 11, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 2 }}
+                                style={{ fontSize: 13, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 2 }}
                               >
                                 ✕
                               </button>
                             )}
                           </div>
+
                         </div>
 
                         {/* Image Dropzone / Preview */}
@@ -991,12 +992,12 @@ export default function NewPollPage() {
                             title="Move up"
                             aria-label={`Move option ${i + 1} up`}
                             style={{
-                              width: 22,
-                              height: 14,
+                              width: 24,
+                              height: 16,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              fontSize: 8,
+                              fontSize: 9,
                               border: "1px solid var(--line)",
                               background: i === 0 ? "transparent" : "var(--paper)",
                               color: i === 0 ? "var(--faint)" : "var(--ink)",
@@ -1014,12 +1015,12 @@ export default function NewPollPage() {
                             title="Move down"
                             aria-label={`Move option ${i + 1} down`}
                             style={{
-                              width: 22,
-                              height: 14,
+                              width: 24,
+                              height: 16,
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              fontSize: 8,
+                              fontSize: 9,
                               border: "1px solid var(--line)",
                               background: i === opts.length - 1 ? "transparent" : "var(--paper)",
                               color: i === opts.length - 1 ? "var(--faint)" : "var(--ink)",
@@ -1039,10 +1040,12 @@ export default function NewPollPage() {
                             onClick={() => removeOpt(i)}
                             title="Remove option"
                             aria-label={`Remove option ${i + 1}`}
+                            style={{ fontSize: 13, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}
                           >
                             ✕
                           </button>
                         )}
+
 
                       </div>
                     );
