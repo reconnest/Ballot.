@@ -829,8 +829,8 @@ function PollContent() {
                 })}
               </div>
             ) : poll.pollType === "image" ? (
-              /* 🖼️ IMAGE POLL 2-COLUMN VISUAL VOTING GRID */
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 14, marginBottom: 20 }}>
+              /* 🖼️ IMAGE POLL 3-COLUMN VISUAL VOTING GRID */
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
                 {poll.options.map((opt) => {
                   const isSelected = selectedIds.includes(opt.id);
                   return (
@@ -840,7 +840,7 @@ function PollContent() {
                       style={{
                         border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
                         background: isSelected ? "var(--accent-soft)" : "var(--paper)",
-                        borderRadius: 10,
+                        borderRadius: 8,
                         overflow: "hidden",
                         cursor: "pointer",
                         display: "flex",
@@ -850,7 +850,7 @@ function PollContent() {
                       }}
                     >
                       {/* Image Preview Box */}
-                      <div style={{ width: "100%", height: 160, background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--line)", overflow: "hidden" }}>
+                      <div style={{ width: "100%", height: 130, background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--line)", overflow: "hidden" }}>
                         {opt.imageUrl ? (
                           <img
                             src={opt.imageUrl}
@@ -858,19 +858,19 @@ function PollContent() {
                             style={{ width: "100%", height: "100%", objectFit: "contain" }}
                           />
                         ) : (
-                          <span style={{ fontSize: 32 }}>🖼️</span>
+                          <span style={{ fontSize: 28 }}>🖼️</span>
                         )}
                       </div>
 
                       {/* Bottom Caption & Selection State */}
-                      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                        <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {opt.label}
                         </span>
                         <div style={{
-                          width: 20,
-                          height: 20,
-                          minWidth: 20,
+                          width: 18,
+                          height: 18,
+                          minWidth: 18,
                           borderRadius: poll.allowMultiple ? 4 : "50%",
                           border: isSelected ? "2px solid var(--accent)" : "2px solid var(--muted)",
                           background: isSelected ? "var(--accent)" : "transparent",
@@ -878,7 +878,7 @@ function PollContent() {
                           alignItems: "center",
                           justifyContent: "center",
                           color: "#FFFFFF",
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: 700,
                         }}>
                           {isSelected && (poll.allowMultiple ? "✓" : "●")}
@@ -888,6 +888,7 @@ function PollContent() {
                   );
                 })}
               </div>
+
             ) : (
               /* Standard / Multi-Choice Voting UI */
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>

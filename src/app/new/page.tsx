@@ -241,11 +241,84 @@ export default function NewPollPage() {
     };
     reader.readAsDataURL(file);
   }
+
+  function formatFileNameToLabel(fileName: string): string {
+    const withoutExt = fileName.replace(/\.[^/.]+$/, "");
+    const withSpaces = withoutExt.replace(/[_-]+/g, " ").trim();
+    return withSpaces
+      .split(/\s+/)
+      .map((w) => (w.length > 0 ? w.charAt(0).toUpperCase() + w.slice(1) : ""))
+      .join(" ");
+  }
+
+  async function handleBulkImageUpload(files: FileList | File[]) {
+    const fileArr = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (fileArr.length === 0) {
+      setError("Please select valid image files (PNG, JPG, WEBP, GIF).");
+      return;
+    }
+    setError("");
+
+    const processFile = (file: File): Promise<{ label: string; imageUrl: string }> => {
+      return new Promise((resolve) => {
+        const label = formatFileNameToLabel(file.name);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          if (!result) {
+            resolve({ label, imageUrl: "" });
+            return;
+          }
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 800;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, w, h);
+              const compressed = canvas.toDataURL("image/jpeg", 0.85);
+              resolve({ label, imageUrl: compressed });
+            } else {
+              resolve({ label, imageUrl: result });
+            }
+          };
+          img.onerror = () => {
+            resolve({ label, imageUrl: result });
+          };
+          img.src = result;
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+
+    const processed = await Promise.all(fileArr.map(processFile));
+
+    setOpts((prev) => {
+      const hasOnlyEmptyOpts = prev.every((o) => !o.label.trim() && !o.imageUrl);
+      const combined = hasOnlyEmptyOpts ? processed : [...prev, ...processed];
+      return combined.slice(0, 30);
+    });
+  }
+
   function addOpt() {
     if (opts.length < 30) {
       setOpts((prev) => [...prev, { label: "", imageUrl: "" }]);
     }
   }
+
 
   function removeOpt(i: number) {
     if (opts.length > 2) {
@@ -530,7 +603,38 @@ export default function NewPollPage() {
                 <label className="field-label" style={{ marginBottom: 0 }}>
                   Options <span style={{ color: "var(--accent)" }}>*</span>
                 </label>
-                {pollType !== "image" && (
+                {pollType === "image" ? (
+                  <label
+                    className="btn-ghost"
+                    style={{
+                      fontSize: 12,
+                      padding: "4px 10px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      cursor: "pointer",
+                      color: "var(--accent-ink)",
+                      background: "var(--accent-soft)",
+                      border: "1px solid var(--accent)",
+                      borderRadius: "var(--radius)",
+                      fontWeight: 600,
+                    }}
+                    title="Select multiple images at once to auto-create options & labels"
+                  >
+                    <span>📁 Bulk Upload Images</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          handleBulkImageUpload(e.target.files);
+                        }
+                      }}
+                    />
+                  </label>
+                ) : (
                   <button
                     type="button"
                     className="btn-ghost"
@@ -543,27 +647,27 @@ export default function NewPollPage() {
               </div>
 
               {pollType === "image" ? (
-                /* 🖼️ 2-COLUMN IMAGE POLL CREATION GRID */
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 14 }}>
+                /* 🖼️ 3-COLUMN IMAGE POLL CREATION GRID */
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
                   {opts.map((opt, i) => (
                     <div
                       key={i}
                       style={{
                         background: "var(--surface)",
                         border: "1px solid var(--line)",
-                        borderRadius: 10,
-                        padding: 12,
+                        borderRadius: 8,
+                        padding: 8,
                         display: "flex",
                         flexDirection: "column",
-                        gap: 10,
+                        gap: 8,
                         position: "relative",
                         boxShadow: "var(--shadow-sm)",
                       }}
                     >
                       {/* Card Header: Option Badge + Delete */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 12, color: "var(--accent)" }}>
-                          Option {i + 1}
+                        <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 11, color: "var(--accent)" }}>
+                          #{i + 1}
                         </span>
                         {opts.length > 2 && (
                           <button
@@ -571,7 +675,7 @@ export default function NewPollPage() {
                             className="remove-opt-btn"
                             onClick={() => removeOpt(i)}
                             title="Remove option"
-                            style={{ fontSize: 12, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center" }}
+                            style={{ fontSize: 11, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}
                           >
                             ✕
                           </button>
@@ -583,7 +687,7 @@ export default function NewPollPage() {
                         <div style={{
                           position: "relative",
                           width: "100%",
-                          height: 150,
+                          height: 110,
                           borderRadius: 6,
                           overflow: "hidden",
                           border: "1px solid var(--line)",
@@ -600,21 +704,21 @@ export default function NewPollPage() {
                           {/* Bottom Control Bar */}
                           <div style={{
                             position: "absolute",
-                            bottom: 6,
-                            left: 6,
-                            right: 6,
+                            bottom: 4,
+                            left: 4,
+                            right: 4,
                             display: "flex",
                             justifyContent: "space-between",
-                            gap: 6
+                            gap: 4
                           }}>
                             <label
                               style={{
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: 600,
                                 color: "var(--ink)",
                                 background: "var(--surface)",
                                 border: "1px solid var(--line)",
-                                padding: "4px 8px",
+                                padding: "2px 6px",
                                 borderRadius: 4,
                                 cursor: "pointer",
                                 boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
@@ -635,18 +739,18 @@ export default function NewPollPage() {
                               type="button"
                               onClick={() => updateOptImage(i, "")}
                               style={{
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: 600,
                                 color: "#EF4444",
                                 background: "var(--surface)",
                                 border: "1px solid var(--line)",
-                                padding: "4px 8px",
+                                padding: "2px 6px",
                                 borderRadius: 4,
                                 cursor: "pointer",
                                 boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
                               }}
                             >
-                              ✕ Remove
+                              ✕
                             </button>
                           </div>
                         </div>
@@ -654,7 +758,7 @@ export default function NewPollPage() {
                         <label
                           style={{
                             width: "100%",
-                            height: 150,
+                            height: 110,
                             borderRadius: 6,
                             border: "2px dashed var(--line)",
                             background: "var(--paper)",
@@ -662,14 +766,15 @@ export default function NewPollPage() {
                             flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            gap: 6,
+                            gap: 4,
                             cursor: "pointer",
                             transition: "all 0.15s ease",
+                            textAlign: "center",
+                            padding: 4
                           }}
                         >
-                          <span style={{ fontSize: 28 }}>📷</span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>Upload Image</span>
-                          <span style={{ fontSize: 11, color: "var(--muted)" }}>PNG, JPG, WEBP, GIF</span>
+                          <span style={{ fontSize: 20 }}>📷</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)" }}>Upload</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -686,11 +791,11 @@ export default function NewPollPage() {
                       <input
                         type="text"
                         maxLength={100}
-                        placeholder={`Option ${i + 1} (optional label)`}
+                        placeholder={`Option ${i + 1}`}
                         value={opt.label}
                         onChange={(e) => updateOptLabel(i, e.target.value)}
                         className="input-text"
-                        style={{ fontSize: 13, padding: "8px 10px" }}
+                        style={{ fontSize: 12, padding: "5px 8px" }}
                       />
                     </div>
                   ))}
@@ -701,26 +806,27 @@ export default function NewPollPage() {
                       type="button"
                       onClick={addOpt}
                       style={{
-                        minHeight: 220,
+                        minHeight: 160,
                         background: "var(--paper)",
                         border: "2px dashed var(--line)",
-                        borderRadius: 10,
+                        borderRadius: 8,
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
-                        gap: 8,
+                        gap: 6,
                         color: "var(--muted)",
                         cursor: "pointer",
                         transition: "all 0.15s ease",
+                        padding: 8
                       }}
                     >
-                      <span style={{ fontSize: 26 }}>➕</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent-ink)" }}>
-                        + Add Image Option
+                      <span style={{ fontSize: 20 }}>➕</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>
+                        + Add Image
                       </span>
-                      <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                        ({opts.length}/30 options)
+                      <span style={{ fontSize: 10, color: "var(--muted)" }}>
+                        ({opts.length}/30)
                       </span>
                     </button>
                   )}
@@ -763,6 +869,7 @@ export default function NewPollPage() {
               )}
             </div>
           </div>
+
 
 
           {/* Right Column: Visibility, Category, Mode & Advanced Settings */}
@@ -1294,8 +1401,8 @@ export default function NewPollPage() {
                     })}
                   </div>
                 ) : pollType === "image" ? (
-                  /* 2. Image Poll Interactive 2-Column Gallery Grid */
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
+                  /* 2. Image Poll Interactive 3-Column Gallery Grid */
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10, marginBottom: 16 }}>
                     {opts.map((opt, idx) => {
                       const labelText = opt.label.trim() || `Option ${idx + 1}`;
                       if (!opt.label.trim() && !opt.imageUrl) return null;
@@ -1308,7 +1415,7 @@ export default function NewPollPage() {
                           style={{
                             display: "flex",
                             flexDirection: "column",
-                            borderRadius: 10,
+                            borderRadius: 8,
                             overflow: "hidden",
                             border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
                             background: isSelected ? "var(--accent-soft)" : "var(--paper)",
@@ -1318,23 +1425,23 @@ export default function NewPollPage() {
                           }}
                         >
                           {/* Image Box */}
-                          <div style={{ width: "100%", height: 140, background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--line)", overflow: "hidden" }}>
+                          <div style={{ width: "100%", height: 110, background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--line)", overflow: "hidden" }}>
                             {opt.imageUrl ? (
                               <img src={opt.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                             ) : (
-                              <span style={{ fontSize: 28 }}>🖼️</span>
+                              <span style={{ fontSize: 24 }}>🖼️</span>
                             )}
                           </div>
 
                           {/* Bottom Caption & Selection Indicator */}
-                          <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                            <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <div style={{ padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                            <span style={{ fontSize: 12, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                               {labelText}
                             </span>
                             <div style={{
-                              width: 18,
-                              height: 18,
-                              minWidth: 18,
+                              width: 16,
+                              height: 16,
+                              minWidth: 16,
                               borderRadius: allowMultiple ? 4 : "50%",
                               border: isSelected ? "2px solid var(--accent)" : "2px solid var(--muted)",
                               background: isSelected ? "var(--accent)" : "transparent",
@@ -1342,7 +1449,7 @@ export default function NewPollPage() {
                               alignItems: "center",
                               justifyContent: "center",
                               color: "#FFFFFF",
-                              fontSize: 10,
+                              fontSize: 9,
                               fontWeight: 700,
                             }}>
                               {isSelected && (allowMultiple ? "✓" : "●")}
@@ -1352,6 +1459,7 @@ export default function NewPollPage() {
                       );
                     })}
                   </div>
+
                 ) : (
                   /* 3. Standard Choice List */
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
