@@ -343,25 +343,42 @@ export default function HomePage() {
                         </div>
 
                         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                          {standardOptions.map((opt, i) => {
-                            const count = standardTallies[i];
-                            const pct = Math.round((count / standardTotal) * 100);
-                            const isMine = selectedStandard === i;
-                            return (
-                              <div key={i}>
-                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
-                                  <span style={{ fontWeight: isMine ? 700 : 500, color: isMine ? "var(--accent-ink)" : "var(--ink)" }}>
-                                    {opt.label} {isMine && "(your pick ✓)"}
-                                  </span>
-                                  <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% ({count})</span>
+                          {(() => {
+                            const maxStandard = Math.max(...standardTallies);
+                            return standardOptions.map((opt, i) => {
+                              const count = standardTallies[i];
+                              const pct = Math.round((count / standardTotal) * 100);
+                              const isLeader = maxStandard > 0 && count === maxStandard;
+                              const isMine = selectedStandard === i;
+                              return (
+                                <div key={i}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, marginBottom: 4 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ fontWeight: isLeader ? 700 : 500, color: isLeader ? "var(--accent-ink)" : "var(--ink)" }}>
+                                        {opt.label}
+                                      </span>
+                                      {isLeader && (
+                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 5px", borderRadius: 3 }}>
+                                          🏆 Leader
+                                        </span>
+                                      )}
+                                      {isMine && (
+                                        <span style={{ fontSize: 10, fontWeight: 600, color: "var(--muted)" }}>
+                                          (your pick ✓)
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>{pct}% ({count})</span>
+                                  </div>
+                                  <div className="ledger-track" style={{ height: 7, borderRadius: 4 }}>
+                                    <div className="ledger-fill" style={{ width: `${pct}%`, background: isLeader ? "var(--accent)" : "var(--faint)", borderRadius: 4 }} />
+                                  </div>
                                 </div>
-                                <div className="ledger-track" style={{ height: 7, borderRadius: 4 }}>
-                                  <div className="ledger-fill" style={{ width: `${pct}%`, background: isMine ? "var(--accent)" : "var(--faint)", borderRadius: 4 }} />
-                                </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            });
+                          })()}
                         </div>
+
 
                         <div style={{ marginTop: 14, textAlign: "center" }}>
                           <button
@@ -631,66 +648,78 @@ export default function HomePage() {
 
                         {/* 3-Column Cards Results View */}
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-                          {imageOptions.map((opt, i) => {
-                            const count = imageTallies[i];
-                            const pct = Math.round((count / imageTotal) * 100);
-                            const isMine = selectedImage === i;
-                            return (
-                              <div
-                                key={i}
-                                style={{
-                                  background: "var(--paper)",
-                                  border: isMine ? "2px solid var(--accent)" : "1px solid var(--line)",
-                                  borderRadius: 8,
-                                  overflow: "hidden",
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  boxShadow: isMine ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
-                                }}
-                              >
-                                <div style={{
-                                  height: 65,
-                                  background: "var(--surface)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  borderBottom: "1px solid var(--line)",
-                                  position: "relative",
-                                  fontSize: 24
-                                }}>
-                                  {opt.icon}
+                          {(() => {
+                            const maxImage = Math.max(...imageTallies);
+                            return imageOptions.map((opt, i) => {
+                              const count = imageTallies[i];
+                              const pct = Math.round((count / imageTotal) * 100);
+                              const isLeader = maxImage > 0 && count === maxImage;
+                              const isMine = selectedImage === i;
+                              return (
+                                <div
+                                  key={i}
+                                  style={{
+                                    background: "var(--paper)",
+                                    border: isLeader ? "2px solid var(--accent)" : "1px solid var(--line)",
+                                    borderRadius: 8,
+                                    overflow: "hidden",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    boxShadow: isLeader ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
+                                  }}
+                                >
                                   <div style={{
-                                    position: "absolute",
-                                    top: 4,
-                                    right: 4,
-                                    background: "rgba(0,0,0,0.75)",
-                                    color: "#FFFFFF",
-                                    padding: "1px 5px",
-                                    borderRadius: 3,
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    fontFamily: "monospace"
+                                    height: 65,
+                                    background: "var(--surface)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    borderBottom: "1px solid var(--line)",
+                                    position: "relative",
+                                    fontSize: 24
                                   }}>
-                                    {pct}%
+                                    {opt.icon}
+                                    <div style={{
+                                      position: "absolute",
+                                      top: 4,
+                                      right: 4,
+                                      background: isLeader ? "var(--accent)" : "rgba(0,0,0,0.75)",
+                                      color: "#FFFFFF",
+                                      padding: "1px 5px",
+                                      borderRadius: 3,
+                                      fontSize: 10,
+                                      fontWeight: 700,
+                                      fontFamily: "monospace"
+                                    }}>
+                                      {pct}%
+                                    </div>
                                   </div>
-                                </div>
 
-                                <div style={{ padding: "6px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
-                                  <div style={{ fontSize: 11, fontWeight: isMine ? 700 : 600, color: isMine ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                    {opt.label}
-                                  </div>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "var(--muted)" }}>
-                                    <span>{count} votes</span>
-                                    {isMine && <span style={{ color: "var(--accent)", fontWeight: 700 }}>✓ You</span>}
-                                  </div>
-                                  <div className="ledger-track" style={{ height: 4, borderRadius: 2, marginTop: 2 }}>
-                                    <div className="ledger-fill" style={{ width: `${pct}%`, background: isMine ? "var(--accent)" : "var(--faint)", borderRadius: 2 }} />
+                                  <div style={{ padding: "6px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+                                      <div style={{ fontSize: 11, fontWeight: isLeader ? 700 : 600, color: isLeader ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                        {opt.label}
+                                      </div>
+                                      {isLeader && (
+                                        <span style={{ fontSize: 9, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 4px", borderRadius: 2, flexShrink: 0 }}>
+                                          🏆
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "var(--muted)" }}>
+                                      <span>{count} votes</span>
+                                      {isMine && <span style={{ color: "var(--accent)", fontWeight: 700 }}>✓ You</span>}
+                                    </div>
+                                    <div className="ledger-track" style={{ height: 4, borderRadius: 2, marginTop: 2 }}>
+                                      <div className="ledger-fill" style={{ width: `${pct}%`, background: isLeader ? "var(--accent)" : "var(--faint)", borderRadius: 2 }} />
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            });
+                          })()}
                         </div>
+
 
                         <div style={{ marginTop: 14, textAlign: "center" }}>
                           <button

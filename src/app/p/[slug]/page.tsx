@@ -1491,19 +1491,19 @@ function PollContent() {
                             const pct = totalVotesCast > 0 ? Math.round((count / totalVotesCast) * 100) : 0;
                             const isLeader = maxOptionVotes > 0 && count === maxOptionVotes;
                             const isMyPick = !isUnlimited && poll.myVotes.includes(opt.id);
-                            const isHighlighted = isUnlimited ? isLeader : isMyPick;
+                            const isHighlighted = isLeader;
 
                             return (
                               <div
                                 key={opt.id}
                                 style={{
                                   background: "var(--paper)",
-                                  border: isHighlighted ? "2px solid var(--accent)" : "1px solid var(--line)",
+                                  border: isLeader ? "2px solid var(--accent)" : "1px solid var(--line)",
                                   borderRadius: 8,
                                   overflow: "hidden",
                                   display: "flex",
                                   flexDirection: "column",
-                                  boxShadow: isHighlighted ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "var(--shadow-sm)",
+                                  boxShadow: isLeader ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "var(--shadow-sm)",
                                 }}
                               >
                                 {/* Image Box with Floating % Badge */}
@@ -1534,7 +1534,7 @@ function PollContent() {
                                     position: "absolute",
                                     top: 6,
                                     right: 6,
-                                    background: "rgba(0,0,0,0.75)",
+                                    background: isLeader ? "var(--accent)" : "rgba(0,0,0,0.75)",
                                     color: "#FFFFFF",
                                     padding: "2px 6px",
                                     borderRadius: 4,
@@ -1549,22 +1549,21 @@ function PollContent() {
                                 {/* Details */}
                                 <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4 }}>
-                                    <span style={{ fontSize: 13, fontWeight: isHighlighted ? 700 : 600, color: isHighlighted ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    <span style={{ fontSize: 13, fontWeight: isLeader ? 700 : 600, color: isLeader ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                       {opt.label}
                                     </span>
-                                    {isUnlimited ? (
-                                      isLeader && (
-                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 5px", borderRadius: 3, flexShrink: 0 }}>
+                                    <div style={{ display: "flex", gap: 4, alignItems: "center", flexShrink: 0 }}>
+                                      {isLeader && (
+                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 5px", borderRadius: 3 }}>
                                           🏆 Leader
                                         </span>
-                                      )
-                                    ) : (
-                                      isMyPick && (
-                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 4px", borderRadius: 3, flexShrink: 0 }}>
+                                      )}
+                                      {isMyPick && (
+                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", background: "var(--line)", padding: "1px 4px", borderRadius: 3 }}>
                                           ✓ You
                                         </span>
-                                      )
-                                    )}
+                                      )}
+                                    </div>
                                   </div>
 
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "var(--muted)" }}>
@@ -1573,12 +1572,12 @@ function PollContent() {
                                   </div>
 
                                   {/* Mini Progress Track */}
-                                  <div className="ledger-track" style={{ height: 6, borderRadius: 3, marginTop: 2 }}>
+                                  <div className="ledger-track" style={{ height: 5, borderRadius: 3 }}>
                                     <div
                                       className="ledger-fill"
                                       style={{
                                         width: `${pct}%`,
-                                        background: isHighlighted ? "var(--accent)" : CHART_COLORS[i % CHART_COLORS.length],
+                                        background: isLeader ? "var(--accent)" : CHART_COLORS[i % CHART_COLORS.length],
                                         borderRadius: 3,
                                       }}
                                     />
@@ -1596,7 +1595,7 @@ function PollContent() {
                             const pct = totalVotesCast > 0 ? Math.round((count / totalVotesCast) * 100) : 0;
                             const isLeader = maxOptionVotes > 0 && count === maxOptionVotes;
                             const isMyPick = !isUnlimited && poll.myVotes.includes(opt.id);
-                            const isHighlighted = isUnlimited ? isLeader : isMyPick;
+                            const isHighlighted = isLeader;
 
                             return (
                               <div key={opt.id}>
@@ -1612,11 +1611,10 @@ function PollContent() {
                                         style={{ width: 26, height: 26, borderRadius: 4, objectFit: "cover", flexShrink: 0 }}
                                       />
                                     )}
-                                    <span style={{ fontWeight: isHighlighted ? 700 : 500, color: isHighlighted ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    <span style={{ fontWeight: isLeader ? 700 : 500, color: isLeader ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                       {opt.label}
-                                      {isUnlimited
-                                        ? (isLeader ? " 🏆 (leader)" : "")
-                                        : (isMyPick ? " ✓ (your pick)" : "")}
+                                      {isLeader && " 🏆 (leader)"}
+                                      {isMyPick && " ✓ (your pick)"}
                                     </span>
                                   </div>
 
