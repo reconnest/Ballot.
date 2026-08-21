@@ -481,22 +481,25 @@ export default function NewPollPage() {
           maxChoices: allowMultiple ? maxChoices : null,
           resultsVisibility,
           securityMode,
-          allowVoteEdit,
+          allowVoteEdit: securityMode === "unlimited" ? false : allowVoteEdit,
           expiresInMs: computeExpiresInMs(),
           requireName,
         }),
       });
 
-      const data = await res.json();
       if (!res.ok) {
-        if (data.requiresAuth) {
+        const d = await res.json().catch(() => ({}));
+        if (d.requiresAuth) {
           setShowAuthModal(true);
         } else {
-          setError(data.error ?? "Could not create poll.");
+          setError(d.error ?? "Failed to create poll.");
         }
         setSubmitting(false);
         return;
       }
+
+      const data = await res.json();
+
 
       // Store in localStorage
       try {
@@ -518,7 +521,7 @@ export default function NewPollPage() {
         console.error("Failed to save to localStorage", e);
       }
 
-      router.push(`/p/${data.slug}?created=1`);
+      router.push(data.adminKey ? `/p/${data.slug}?key=${data.adminKey}&created=1` : `/p/${data.slug}?created=1`);
     } catch {
       setError("Could not create poll — check your connection.");
       setSubmitting(false);
@@ -1206,7 +1209,11 @@ export default function NewPollPage() {
             <div className="block">
               <label className="field-label">Voter Editing</label>
               <div
-                onClick={() => setAllowVoteEdit(!allowVoteEdit)}
+                onClick={() => {
+                  if (securityMode !== "unlimited") {
+                    setAllowVoteEdit(!allowVoteEdit);
+                  }
+                }}
                 style={{
                   background: "var(--surface)",
                   border: "1px solid var(--line)",
@@ -1215,7 +1222,8 @@ export default function NewPollPage() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  cursor: "pointer"
+                  cursor: securityMode === "unlimited" ? "not-allowed" : "pointer",
+                  opacity: securityMode === "unlimited" ? 0.6 : 1,
                 }}
               >
                 <div>
@@ -1223,14 +1231,16 @@ export default function NewPollPage() {
                     Allow voters to change their vote
                   </div>
                   <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                    Voters can update their selection while the poll is live.
+                    {securityMode === "unlimited"
+                      ? "Disabled in Unlimited mode — voters can cast new ballots at any time."
+                      : "Voters can update their selection while the poll is live."}
                   </div>
                 </div>
                 <div style={{
                   width: 36,
                   height: 20,
                   borderRadius: 12,
-                  background: allowVoteEdit ? "var(--accent)" : "var(--line)",
+                  background: (allowVoteEdit && securityMode !== "unlimited") ? "var(--accent)" : "var(--line)",
                   position: "relative",
                   transition: "background 0.15s ease"
                 }}>
@@ -1241,7 +1251,7 @@ export default function NewPollPage() {
                     background: "#FFFFFF",
                     position: "absolute",
                     top: 2,
-                    left: allowVoteEdit ? 18 : 2,
+                    left: (allowVoteEdit && securityMode !== "unlimited") ? 18 : 2,
                     transition: "left 0.15s ease"
                   }} />
                 </div>
@@ -1345,7 +1355,12 @@ export default function NewPollPage() {
                           type="button"
                           key={sc.value}
                           className={`expiry-chip ${securityMode === sc.value ? "active" : ""}`}
-                          onClick={() => setSecurityMode(sc.value)}
+                          onClick={() => {
+                            setSecurityMode(sc.value);
+                            if (sc.value === "unlimited") {
+                              setAllowVoteEdit(false);
+                            }
+                          }}
                         >
                           {sc.label}
                         </button>

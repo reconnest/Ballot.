@@ -92,7 +92,9 @@ function PollContent() {
   const [adminTab, setAdminTab] = useState<"edit" | "settings" | "actions">("edit");
   
   const [adminKey, setAdminKey] = useState<string | null>(null);
-  const [chartType, setChartType] = useState<"ledger" | "donut">("ledger");
+  const [chartType, setChartType] = useState<"cards" | "ledger" | "donut">("ledger");
+  const [showAdminKeyBanner, setShowAdminKeyBanner] = useState(true);
+  const [adminLinkCopied, setAdminLinkCopied] = useState(false);
   const [showIRVSteps, setShowIRVSteps] = useState(false);
   const [activeViewers, setActiveViewers] = useState<number>(1);
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
@@ -110,12 +112,15 @@ function PollContent() {
   const showAdminModalRef = useRef(false);
   const submitBtnRef = useRef<HTMLButtonElement>(null);
   const rankedInitializedRef = useRef(false);
+  const chartTypeInitializedRef = useRef(false);
 
   // Reset initialization flag when switching to a different poll slug
   useEffect(() => {
     rankedInitializedRef.current = false;
+    chartTypeInitializedRef.current = false;
     setRankedOptions([]);
   }, [slug]);
+
 
   // Initialize rankedOptions ONLY when first loading or explicitly entering edit mode
   useEffect(() => {
@@ -189,7 +194,12 @@ function PollContent() {
       }
       const data: PollData = await res.json();
       setPoll(data);
+      if (data.pollType === "image" && !chartTypeInitializedRef.current) {
+        setChartType("cards");
+        chartTypeInitializedRef.current = true;
+      }
       // ONLY update edit fields if user is NOT currently editing in the modal
+
       if (!showAdminModalRef.current) {
         setEditQuestion(data.question || "");
         setEditOptions((data.options || []).map((o) => ({ label: o.label, imageUrl: o.imageUrl || "" })));
@@ -576,9 +586,78 @@ function PollContent() {
 
       <main style={{ maxWidth: 920, margin: "0 auto", paddingBottom: 60, width: "100%" }}>
 
+        {/* 🔑 Secret Creator Admin Key / Management Banner (For unauthenticated / private poll creators) */}
+        {showAdminKeyBanner && adminKey && !poll.creator && (
+          <div style={{
+            background: "var(--surface)",
+            border: "1px solid var(--accent)",
+            borderRadius: 10,
+            padding: "12px 14px",
+            marginBottom: 16,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            boxShadow: "var(--shadow-sm)",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 18 }}>🔑</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "var(--accent-ink)" }}>
+                    Secret Creator Management Link
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                    Save this private link to manage, edit, or close your poll without logging in.
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdminKeyBanner(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 13 }}
+                title="Dismiss banner"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input
+                type="text"
+                readOnly
+                value={typeof window !== "undefined" ? `${window.location.origin}/p/${slug}?key=${adminKey}` : `/p/${slug}?key=${adminKey}`}
+                style={{
+                  flex: 1,
+                  fontFamily: "monospace",
+                  fontSize: 11,
+                  padding: "6px 8px",
+                  borderRadius: 6,
+                  border: "1px solid var(--line)",
+                  background: "var(--paper)",
+                  color: "var(--ink)",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    navigator.clipboard.writeText(`${window.location.origin}/p/${slug}?key=${adminKey}`);
+                    setAdminLinkCopied(true);
+                    setTimeout(() => setAdminLinkCopied(false), 2000);
+                  }
+                }}
+                className="btn-accent"
+                style={{ fontSize: 11, padding: "6px 12px", whiteSpace: "nowrap" }}
+              >
+                {adminLinkCopied ? "✓ Copied!" : "📋 Copy Admin Link"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Poll Metadata Header */}
         <div style={{ marginBottom: 20 }}>
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <span className="badge-category">{poll.category || "general"}</span>
@@ -1269,6 +1348,23 @@ function PollContent() {
 
                   {/* Chart Switcher */}
                   <div style={{ display: "flex", gap: 4, background: "var(--paper)", padding: 3, borderRadius: 6, border: "1px solid var(--line)" }}>
+                    {poll.pollType === "image" && (
+                      <button
+                        type="button"
+                        onClick={() => setChartType("cards")}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                          border: "none",
+                          background: chartType === "cards" ? "var(--surface)" : "none",
+                          fontWeight: chartType === "cards" ? 700 : 500,
+                          fontSize: 11,
+                          cursor: "pointer",
+                        }}
+                      >
+                        🖼️ Cards
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setChartType("ledger")}
@@ -1302,8 +1398,101 @@ function PollContent() {
                   </div>
                 </div>
 
-                {/* 1. Horizontal Bars View */}
-                {chartType === "ledger" ? (
+                {/* 1. 🖼️ Visual Cards Grid View (Default for Image Polls) */}
+                {chartType === "cards" && poll.pollType === "image" ? (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+                    {poll.options.map((opt, i) => {
+                      const count = opt.votes ?? 0;
+                      const total = poll.totalVotes || 1;
+                      const pct = Math.round((count / total) * 100);
+                      const isMyPick = poll.myVotes.includes(opt.id);
+
+                      return (
+                        <div
+                          key={opt.id}
+                          style={{
+                            background: "var(--paper)",
+                            border: isMyPick ? "2px solid var(--accent)" : "1px solid var(--line)",
+                            borderRadius: 8,
+                            overflow: "hidden",
+                            display: "flex",
+                            flexDirection: "column",
+                            boxShadow: isMyPick ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "var(--shadow-sm)",
+                          }}
+                        >
+                          {/* Image Box with Floating % Badge */}
+                          <div style={{
+                            width: "100%",
+                            height: 130,
+                            background: "var(--surface)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderBottom: "1px solid var(--line)",
+                            overflow: "hidden",
+                            position: "relative"
+                          }}>
+                            {opt.imageUrl ? (
+                              <img
+                                src={opt.imageUrl}
+                                alt={opt.label}
+                                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                              />
+                            ) : (
+                              <span style={{ fontSize: 28 }}>🖼️</span>
+                            )}
+                            <div style={{
+                              position: "absolute",
+                              top: 6,
+                              right: 6,
+                              background: "rgba(0,0,0,0.75)",
+                              color: "#FFFFFF",
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              fontFamily: "monospace"
+                            }}>
+                              {pct}%
+                            </div>
+                          </div>
+
+                          {/* Details */}
+                          <div style={{ padding: "8px 10px", display: "flex", flexDirection: "column", gap: 6 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 4 }}>
+                              <span style={{ fontSize: 13, fontWeight: isMyPick ? 700 : 600, color: isMyPick ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {opt.label}
+                              </span>
+                              {isMyPick && (
+                                <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 4px", borderRadius: 3, flexShrink: 0 }}>
+                                  ✓ You
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: "var(--muted)" }}>
+                              <span>{count} {count === 1 ? "vote" : "votes"}</span>
+                              <span style={{ fontFamily: "monospace", fontWeight: 600 }}>{pct}%</span>
+                            </div>
+
+                            {/* Mini Progress Track */}
+                            <div className="ledger-track" style={{ height: 6, borderRadius: 3, marginTop: 2 }}>
+                              <div
+                                className="ledger-fill"
+                                style={{
+                                  width: `${pct}%`,
+                                  background: isMyPick ? "var(--accent)" : CHART_COLORS[i % CHART_COLORS.length],
+                                  borderRadius: 3,
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : chartType === "ledger" ? (
+                  /* 2. Horizontal Bars View */
                   <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     {poll.options.map((opt, i) => {
                       const count = opt.votes ?? 0;
@@ -1342,7 +1531,8 @@ function PollContent() {
                     })}
                   </div>
                 ) : (
-                  /* 2. Interactive SVG Donut Chart View */
+                  /* 3. Interactive SVG Donut Chart View */
+
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18, padding: "10px 0" }}>
                     <div style={{ position: "relative", width: 220, height: 220 }}>
                       <svg width="220" height="220" viewBox="0 0 240 240">
@@ -1646,6 +1836,59 @@ function PollContent() {
                 🔒 Question & options are locked permanently to protect voter integrity ({poll.totalVotes} votes received).
               </div>
             )}
+
+            {/* Secret Creator Management Link */}
+            {adminKey && (
+              <div style={{
+                background: "var(--paper)",
+                padding: "10px 12px",
+                borderRadius: 8,
+                border: "1px solid var(--line)",
+                marginBottom: 16,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>
+                  🔑 Secret Admin Management Link
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                  Bookmark or copy this URL to manage this poll without signing in:
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input
+                    type="text"
+                    readOnly
+                    value={typeof window !== "undefined" ? `${window.location.origin}/p/${slug}?key=${adminKey}` : `/p/${slug}?key=${adminKey}`}
+                    style={{
+                      flex: 1,
+                      fontFamily: "monospace",
+                      fontSize: 11,
+                      padding: "6px 8px",
+                      borderRadius: 6,
+                      border: "1px solid var(--line)",
+                      background: "var(--surface)",
+                      color: "var(--ink)",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        navigator.clipboard.writeText(`${window.location.origin}/p/${slug}?key=${adminKey}`);
+                        setAdminLinkCopied(true);
+                        setTimeout(() => setAdminLinkCopied(false), 2000);
+                      }
+                    }}
+                    className="btn-accent"
+                    style={{ fontSize: 11, padding: "6px 12px", whiteSpace: "nowrap" }}
+                  >
+                    {adminLinkCopied ? "✓ Copied" : "Copy"}
+                  </button>
+                </div>
+              </div>
+            )}
+
 
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {/* Question Editing */}

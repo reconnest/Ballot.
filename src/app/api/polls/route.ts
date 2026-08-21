@@ -50,13 +50,14 @@ export async function POST(req: NextRequest) {
         if (typeof o === "object" && o !== null) {
           return {
             label: (o.label ?? "").toString().trim().slice(0, 100),
-            imageUrl: o.imageUrl ? o.imageUrl.toString().trim().slice(0, 500) : null,
+            imageUrl: o.imageUrl && typeof o.imageUrl === "string" && o.imageUrl.trim().length > 0 ? o.imageUrl.trim() : null,
           };
         }
         return {
           label: (o ?? "").toString().trim().slice(0, 100),
           imageUrl: null,
         };
+
       })
       .filter((o) => o.label.length > 0)
       .slice(0, 30);
