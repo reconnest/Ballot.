@@ -445,15 +445,98 @@ export default function HomePage() {
                       </div>
                     ) : (
                       <div aria-live="polite">
-                        <div style={{ background: "var(--accent-soft)", padding: 12, borderRadius: 6, marginBottom: 10, border: "1px solid var(--accent)" }}>
-                          <div style={{ fontWeight: 700, fontSize: 13, color: "var(--accent-ink)", marginBottom: 4 }}>
-                            🏆 Consensus Winner: {rankedOrder[0]}
-                          </div>
-                          <div style={{ fontSize: 11, color: "var(--muted)" }}>
-                            Ranked Points scoring (#1=4pts, #2=3pts, #3=2pts, #4=1pt) computed across all ballots.
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "center", marginTop: 10 }}>
+                        {(() => {
+                          const baselineRanked = {
+                            "⚡ Instant Realtime SSE Sync": { points: 34, firstChoices: 3 },
+                            "🛡️ Multi-Tier Fraud Defense": { points: 40, firstChoices: 5 },
+                            "📊 Interactive SVG Charts": { points: 26, firstChoices: 2 },
+                            "📱 Mobile Web Experience": { points: 16, firstChoices: 1 },
+                          };
+
+                          const rankedLeaderboard = Object.keys(baselineRanked).map((title) => {
+                            const base = baselineRanked[title as keyof typeof baselineRanked];
+                            const userRankIdx = rankedOrder.indexOf(title);
+                            const addedPoints = userRankIdx === 0 ? 4 : userRankIdx === 1 ? 3 : userRankIdx === 2 ? 2 : 1;
+                            const addedFirstChoice = userRankIdx === 0 ? 1 : 0;
+                            const totalPoints = base.points + addedPoints;
+                            const firstChoiceVotes = base.firstChoices + addedFirstChoice;
+                            return {
+                              title,
+                              totalPoints,
+                              firstChoiceVotes,
+                            };
+                          });
+
+                          const totalPointsAll = rankedLeaderboard.reduce((sum, item) => sum + item.totalPoints, 0);
+                          rankedLeaderboard.sort((a, b) => b.totalPoints - a.totalPoints);
+                          const itemsWithPct = rankedLeaderboard.map((item, idx) => ({
+                            ...item,
+                            rank: idx + 1,
+                            scorePct: Math.round((item.totalPoints / totalPointsAll) * 100),
+                          }));
+
+                          return (
+                            <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                <span>📊 Points Leaderboard</span>
+                              </div>
+
+                              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {itemsWithPct.map((item, idx) => {
+                                  const isTop = idx === 0;
+                                  const rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
+                                  const trackColor = isTop ? "var(--accent)" : idx === 1 ? "#8B5CF6" : idx === 2 ? "#EC4899" : "#F59E0B";
+
+                                  return (
+                                    <div
+                                      key={item.title}
+                                      style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 5,
+                                        padding: "8px 10px",
+                                        borderRadius: 6,
+                                        background: isTop ? "var(--accent-soft)" : "var(--surface)",
+                                        border: isTop ? "1px solid var(--accent)" : "1px solid var(--line)",
+                                      }}
+                                    >
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
+                                          <span style={{ fontSize: 13 }}>{rankIcon}</span>
+                                          <span style={{ fontWeight: isTop ? 700 : 600, color: isTop ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                            {item.title}
+                                          </span>
+                                        </div>
+                                        <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--ink)", whiteSpace: "nowrap" }}>
+                                          {item.totalPoints} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({item.scorePct}%)</span>
+                                        </span>
+                                      </div>
+
+                                      {/* Point Score Progress Bar */}
+                                      <div className="ledger-track" style={{ height: 6, borderRadius: 3 }}>
+                                        <div
+                                          className="ledger-fill"
+                                          style={{
+                                            width: `${item.scorePct}%`,
+                                            background: trackColor,
+                                            borderRadius: 3,
+                                          }}
+                                        />
+                                      </div>
+
+                                      {/* Stats Sub-row */}
+                                      <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 10, color: "var(--muted)" }}>
+                                        <span>{item.firstChoiceVotes} 1st-choice picks</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        <div style={{ textAlign: "center" }}>
                           <button
                             type="button"
                             onClick={() => setRankedSubmitted(false)}
@@ -467,6 +550,7 @@ export default function HomePage() {
                     )}
                   </div>
                 )}
+
 
 
                 {/* 3. Image Poll Format Interactive Body */}
