@@ -77,8 +77,10 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const isExpired = poll.expiresAt ? Date.now() > poll.expiresAt : false;
     const isInactive = poll.status === "inactive" || isExpired;
 
-    // Calculate unique ballots (distinct voterTokens or ballotIds)
-    const uniqueVoters = new Set(pollVotes.map((v) => v.voterToken)).size;
+    // Calculate unique ballots (distinct ballotIds for unlimited, or distinct voterTokens for single-vote)
+    const totalBallots = poll.securityMode === "unlimited"
+      ? new Set(pollVotes.map((v) => v.ballotId || v.id)).size
+      : new Set(pollVotes.map((v) => v.voterToken)).size;
 
     // Determine results visibility
     const visibility = poll.resultsVisibility || "always_public";
@@ -170,15 +172,16 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       rankedPointsResult,
       irvResult: rankedPointsResult,
 
-      totalVotes: canViewResults ? uniqueVoters : null,
+      totalVotes: canViewResults ? totalBallots : null,
       totalSelections: canViewResults ? pollVotes.length : null,
-      myVote,
-      myVotes: myVotesList,
+      myVote: poll.securityMode === "unlimited" ? null : myVote,
+      myVotes: poll.securityMode === "unlimited" ? [] : myVotesList,
       hasVoted,
       canViewResults,
       isAdmin,
       voters: voterList,
     }, {
+
 
       headers: {
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
