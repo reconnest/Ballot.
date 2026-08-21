@@ -27,6 +27,12 @@ const VISIBILITY_CHOICES = [
 
 const SECURITY_MODES = [
   {
+    value: "unlimited",
+    label: "Unlimited",
+    short: "Vote Any Number of Times",
+    desc: "No duplicate restrictions. Any voter can cast multiple votes freely. Perfect for informal polls, testing, or high-volume activities."
+  },
+  {
     value: "relaxed",
     label: "Relaxed",
     short: "Shared Wi-Fi Friendly",
@@ -40,11 +46,12 @@ const SECURITY_MODES = [
   },
   {
     value: "strict",
-    label: "Strict (Recommended)",
+    label: "Strict",
     short: "High Integrity",
     desc: "Browser fingerprinting + Cookie defense. Blocks private window voting."
   },
 ];
+
 
 const POLL_TYPES = [
   {

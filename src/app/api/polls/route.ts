@@ -70,8 +70,9 @@ export async function POST(req: NextRequest) {
     const validVisibilities = ["always_public", "after_vote", "after_deadline", "creator_only"];
     const resultsVisibility = validVisibilities.includes(body.resultsVisibility) ? body.resultsVisibility : "always_public";
 
-    const validSecurity = ["relaxed", "standard", "strict"];
-    const securityMode = validSecurity.includes(body.securityMode) ? body.securityMode : "standard";
+    const validSecurity = ["unlimited", "relaxed", "standard", "strict"];
+    const securityMode = validSecurity.includes(body.securityMode) ? body.securityMode : "relaxed";
+
     const allowVoteEdit = body.allowVoteEdit !== undefined ? (body.allowVoteEdit ? 1 : 0) : 1;
 
     if (!question) {

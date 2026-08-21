@@ -93,33 +93,41 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
     const { token: voterToken, isNew } = resolveVoterToken(req);
 
-    // Duplicate prevention based on securityMode:
-    // 'relaxed': checks voterToken only
-    // 'standard' / 'strict': checks voterToken OR ipHash
-    const checkDuplicateCondition =
-      poll.securityMode === "relaxed"
-        ? and(eq(votes.pollId, poll.id), eq(votes.voterToken, voterToken))
-        : and(
-            eq(votes.pollId, poll.id),
-            or(eq(votes.voterToken, voterToken), eq(votes.ipHash, ipHash))
-          );
+    const isUnlimited = poll.securityMode === "unlimited" || poll.securityMode === "none";
 
-    const [existingVote] = await db
-      .select({ id: votes.id, voterToken: votes.voterToken, voterName: votes.voterName, ipHash: votes.ipHash, ballotId: votes.ballotId })
-      .from(votes)
-      .where(checkDuplicateCondition)
-      .limit(1);
+    let existingVote = null;
+    if (!isUnlimited) {
+      // Duplicate prevention based on securityMode:
+      // 'relaxed': checks voterToken only
+      // 'standard' / 'strict': checks voterToken OR ipHash
+      const checkDuplicateCondition =
+        poll.securityMode === "relaxed"
+          ? and(eq(votes.pollId, poll.id), eq(votes.voterToken, voterToken))
+          : and(
+              eq(votes.pollId, poll.id),
+              or(eq(votes.voterToken, voterToken), eq(votes.ipHash, ipHash))
+            );
 
-    const isIpMatch = existingVote && existingVote.ipHash === ipHash && existingVote.voterToken !== voterToken;
+      const [foundVote] = await db
+        .select({ id: votes.id, voterToken: votes.voterToken, voterName: votes.voterName, ipHash: votes.ipHash, ballotId: votes.ballotId })
+        .from(votes)
+        .where(checkDuplicateCondition)
+        .limit(1);
 
-    if (isIpMatch) {
-      const res = NextResponse.json(
-        { error: "A vote was already recorded from this network / IP address." },
-        { status: 409 }
-      );
-      if (isNew) attachVoterCookie(res, voterToken);
-      return res;
+      existingVote = foundVote;
+
+      const isIpMatch = existingVote && existingVote.ipHash === ipHash && existingVote.voterToken !== voterToken;
+
+      if (isIpMatch) {
+        const res = NextResponse.json(
+          { error: "A vote was already recorded from this network / IP address." },
+          { status: 409 }
+        );
+        if (isNew) attachVoterCookie(res, voterToken);
+        return res;
+      }
     }
+
 
     const now = Date.now();
     let isVoteEdit = false;

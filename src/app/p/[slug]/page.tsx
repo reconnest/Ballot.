@@ -1430,7 +1430,19 @@ function PollContent() {
             {/* Voter Action: Change Vote Button or Creator Test Vote Button */}
             {!poll.isInactive && (
               <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>
-                {poll.hasVoted && poll.allowVoteEdit ? (
+                {poll.securityMode === "unlimited" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedIds([]);
+                      setIsEditingVote(true);
+                    }}
+                    className="btn-ghost"
+                    style={{ fontSize: 13, gap: 6 }}
+                  >
+                    🗳️ Cast Another Vote
+                  </button>
+                ) : poll.hasVoted && poll.allowVoteEdit ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -1443,6 +1455,7 @@ function PollContent() {
                     ↺ Change your vote
                   </button>
                 ) : poll.isAdmin && !poll.hasVoted ? (
+
                   <button
                     type="button"
                     onClick={() => {
