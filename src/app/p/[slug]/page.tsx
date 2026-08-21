@@ -1690,10 +1690,19 @@ function PollContent() {
                                     )}
                                     <span style={{ fontWeight: isLeader ? 700 : 500, color: isLeader ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                       {opt.label}
-                                      {isLeader && " 🏆 (leader)"}
-                                      {isMyPick && " ✓ (your pick)"}
                                     </span>
+                                    {isLeader && (
+                                      <span className="badge-leader" style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                                        <AnimatedTrophyIcon size={14} /> Leader
+                                      </span>
+                                    )}
+                                    {isMyPick && (
+                                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", background: "var(--line)", padding: "1px 4px", borderRadius: 3, flexShrink: 0 }}>
+                                        ✓ You
+                                      </span>
+                                    )}
                                   </div>
+
 
                                   <span style={{ fontFamily: "monospace", color: "var(--muted)", flexShrink: 0, marginLeft: 8 }}>
                                     {pct}% ({count})
