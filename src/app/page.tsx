@@ -493,12 +493,12 @@ export default function HomePage() {
                           }));
 
                           return (
-                            <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
-                              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                                 <span>📊 Points Leaderboard</span>
                               </div>
 
-                              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                                 {itemsWithPct.map((item, idx) => {
                                   const isTop = idx === 0;
                                   const rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
@@ -510,40 +510,40 @@ export default function HomePage() {
                                       style={{
                                         display: "flex",
                                         flexDirection: "column",
-                                        gap: 5,
-                                        padding: "8px 10px",
+                                        gap: 3,
+                                        padding: "5px 8px",
                                         borderRadius: 6,
                                         background: isTop ? "var(--accent-soft)" : "var(--surface)",
                                         border: isTop ? "1px solid var(--accent)" : "1px solid var(--line)",
                                       }}
                                     >
-                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
-                                        <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
-                                          <span style={{ fontSize: 13 }}>{rankIcon}</span>
+                                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11 }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden", maxWidth: "62%" }}>
+                                          <span style={{ fontSize: 12 }}>{rankIcon}</span>
                                           <span style={{ fontWeight: isTop ? 700 : 600, color: isTop ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {item.title}
                                           </span>
                                         </div>
-                                        <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--ink)", whiteSpace: "nowrap" }}>
-                                          {item.totalPoints} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({item.scorePct}%)</span>
-                                        </span>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+                                          <span style={{ fontSize: 10, color: "var(--muted)" }}>
+                                            {item.firstChoiceVotes} 1st picks
+                                          </span>
+                                          <span style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--ink)" }}>
+                                            {item.totalPoints} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({item.scorePct}%)</span>
+                                          </span>
+                                        </div>
                                       </div>
 
                                       {/* Point Score Progress Bar */}
-                                      <div className="ledger-track" style={{ height: 6, borderRadius: 3 }}>
+                                      <div className="ledger-track" style={{ height: 4, borderRadius: 2 }}>
                                         <div
                                           className="ledger-fill"
                                           style={{
                                             width: `${item.scorePct}%`,
                                             background: trackColor,
-                                            borderRadius: 3,
+                                            borderRadius: 2,
                                           }}
                                         />
-                                      </div>
-
-                                      {/* Stats Sub-row */}
-                                      <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 10, color: "var(--muted)" }}>
-                                        <span>{item.firstChoiceVotes} 1st-choice picks</span>
                                       </div>
                                     </div>
                                   );
@@ -553,7 +553,7 @@ export default function HomePage() {
                           );
                         })()}
 
-                        <div style={{ textAlign: "center" }}>
+                        <div style={{ textAlign: "center", marginTop: 8 }}>
                           <button
                             type="button"
                             onClick={() => setRankedSubmitted(false)}
@@ -565,6 +565,7 @@ export default function HomePage() {
                         </div>
                       </div>
                     )}
+
                   </div>
                 )}
 
