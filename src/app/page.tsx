@@ -7,6 +7,8 @@ import { Navbar, SessionUser } from "@/components/Navbar";
 import { BallotLogo } from "@/components/BallotLogo";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
 import { getCachedSessionUser } from "@/lib/session-cache";
+import { AnimatedTrophyIcon } from "@/components/icons/AnimatedTrophyIcon";
+import { AnimatedRefreshIcon } from "@/components/icons/AnimatedRefreshIcon";
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
@@ -370,8 +372,8 @@ export default function HomePage() {
                                         {opt.label}
                                       </span>
                                       {isLeader && (
-                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 5px", borderRadius: 3 }}>
-                                          🏆 Leader
+                                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                                          <AnimatedTrophyIcon size={12} /> Leader
                                         </span>
                                       )}
                                       {isMine && (
@@ -400,11 +402,13 @@ export default function HomePage() {
                               setStandardVoteSubmitted(false);
                             }}
                             className="btn-ghost"
-                            style={{ fontSize: 11, padding: "5px 10px" }}
+                            style={{ fontSize: 12, padding: "6px 12px", display: "inline-flex", alignItems: "center", gap: 6 }}
                           >
-                            🗳️ Cast Another Vote
+                            <AnimatedRefreshIcon size={13} />
+                            <span>Cast Another Vote</span>
                           </button>
                         </div>
+
                       </div>
                     )}
                   </div>

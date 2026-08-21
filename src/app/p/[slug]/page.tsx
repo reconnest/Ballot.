@@ -11,6 +11,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
 import { AuthModal } from "@/components/AuthModal";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
+import { AnimatedCopyIcon } from "@/components/icons/AnimatedCopyIcon";
+import { AnimatedTrophyIcon } from "@/components/icons/AnimatedTrophyIcon";
+import { AnimatedRefreshIcon } from "@/components/icons/AnimatedRefreshIcon";
 
 
 type OptionData = { id: string; label: string; imageUrl?: string | null; votes: number | null };
@@ -1627,10 +1630,11 @@ function PollContent() {
                                     </span>
                                     <div style={{ display: "flex", gap: 4, alignItems: "center", flexShrink: 0 }}>
                                       {isLeader && (
-                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 5px", borderRadius: 3 }}>
-                                          🏆 Leader
+                                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                          <AnimatedTrophyIcon size={13} /> Leader
                                         </span>
                                       )}
+
                                       {isMyPick && (
                                         <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", background: "var(--line)", padding: "1px 4px", borderRadius: 3 }}>
                                           ✓ You
@@ -1812,9 +1816,10 @@ function PollContent() {
                       setIsCastingAnotherVote(true);
                     }}
                     className="btn-ghost"
-                    style={{ fontSize: 13, gap: 6 }}
+                    style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
                   >
-                    🗳️ Cast Another Vote
+                    <AnimatedRefreshIcon size={14} />
+                    <span>Cast Another Vote</span>
                   </button>
                 ) : poll.hasVoted && poll.allowVoteEdit ? (
                   <button
@@ -1825,9 +1830,10 @@ function PollContent() {
                       setIsCastingAnotherVote(false);
                     }}
                     className="btn-ghost"
-                    style={{ fontSize: 13, gap: 6 }}
+                    style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
                   >
-                    ↺ Change your vote
+                    <AnimatedRefreshIcon size={14} />
+                    <span>Change your vote</span>
                   </button>
                 ) : poll.isAdmin ? (
                   <button
@@ -1856,18 +1862,10 @@ function PollContent() {
           <button type="button" onClick={copyPollingLink} className="action-text-btn" title="Copy public polling link">
             <span>Polling link</span>
             <span className={`action-tile ${copiedLink ? "copied" : ""}`}>
-              {copiedLink ? (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              ) : (
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
-              )}
+              <AnimatedCopyIcon copied={copiedLink} size={13} />
             </span>
           </button>
+
 
           {/* 2. QR Code */}
           <button type="button" onClick={() => setShowQR(true)} className="action-text-btn" title="Scan to vote QR code">
@@ -2322,10 +2320,12 @@ function PollContent() {
                 type="button"
                 onClick={copyPollingLink}
                 className="btn-ghost"
-                style={{ flex: 1, fontSize: 13 }}
+                style={{ flex: 1, fontSize: 13, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
               >
-                📋 Copy Invite
+                <AnimatedCopyIcon copied={copiedLink} size={15} />
+                <span>{copiedLink ? "Copied!" : "Copy Invite"}</span>
               </button>
+
             </div>
 
             <button type="button" onClick={() => setShowQR(false)} className="btn-ghost" style={{ width: "100%", fontSize: 12 }}>

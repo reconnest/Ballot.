@@ -1224,5 +1224,137 @@ textarea:focus {
   flex-wrap: wrap;
 }
 
+/* ==========================================================================
+   ✨ Its Hover Inspired Micro-interaction Animated Icons
+   ========================================================================== */
+
+/* 1. Theme Toggle Sun / Moon Animations */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 6px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
+}
+.theme-toggle-btn:hover {
+  border-color: var(--accent);
+  transform: scale(1.05);
+}
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+.icon-sun {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.theme-toggle-btn:hover .icon-sun {
+  transform: rotate(45deg);
+}
+.sun-ray {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform-origin: 12px 12px;
+}
+.theme-toggle-btn:hover .sun-ray {
+  animation: sun-rays-spin 3s linear infinite;
+}
+@keyframes sun-rays-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.icon-moon {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.theme-toggle-btn:hover .icon-moon {
+  transform: rotate(-15deg) scale(1.08);
+}
+.moon-sparkle {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform-origin: 19px 5px;
+}
+.theme-toggle-btn:hover .moon-sparkle {
+  animation: sparkle-twinkle 1.2s ease-in-out infinite alternate;
+}
+@keyframes sparkle-twinkle {
+  0% { opacity: 0.3; transform: scale(0.75); }
+  100% { opacity: 1; transform: scale(1.25); }
+}
+
+/* 2. Copy to Clipboard / Checkmark Pop Animation */
+.icon-clipboard {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+button:hover .icon-clipboard {
+  transform: scale(1.1);
+}
+.clipboard-flap {
+  transition: transform 0.2s ease;
+  transform-origin: 4px 4px;
+}
+button:hover .clipboard-flap {
+  transform: translateY(-1.5px);
+}
+.icon-check-animated {
+  animation: check-bounce 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes check-bounce {
+  0% { transform: scale(0.6) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.2) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* 3. Magnifier Search Icon Animation */
+.icon-magnifier {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: 11px 11px;
+}
+form:focus-within .icon-magnifier,
+form:hover .icon-magnifier {
+  transform: rotate(-12deg) scale(1.1);
+  color: var(--accent);
+}
+.magnifier-glass {
+  transition: stroke 0.2s ease;
+}
+
+/* 4. Leader Trophy Micro-animation */
+.icon-trophy {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: 12px 14px;
+}
+div:hover > .icon-trophy,
+.badge-leader:hover .icon-trophy,
+.icon-trophy:hover {
+  transform: translateY(-2px) scale(1.12);
+}
+.trophy-star {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform-origin: 12px 7px;
+}
+div:hover > .icon-trophy .trophy-star,
+.icon-trophy:hover .trophy-star {
+  animation: star-shine 1.4s ease-in-out infinite alternate;
+}
+@keyframes star-shine {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.25); opacity: 1; }
+}
+
+/* 5. Refresh / Cast Another Vote Icon Animation */
+.icon-refresh {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+button:hover .icon-refresh {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+button:active .icon-refresh {
+  transform: rotate(360deg);
+}
+
+
 
 

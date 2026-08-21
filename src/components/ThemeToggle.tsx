@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ThemeIcon } from "@/components/icons/ThemeIcon";
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -37,7 +38,8 @@ export function ThemeToggle() {
       title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
       aria-label="Toggle dark mode"
     >
-      {theme === "light" ? "🌙" : "☀️"}
+      <ThemeIcon theme={theme} size={18} />
     </button>
   );
 }
+

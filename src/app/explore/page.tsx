@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
+import { AnimatedSearchIcon } from "@/components/icons/AnimatedSearchIcon";
 
 
 type PollSummary = {
@@ -99,7 +100,10 @@ function ExploreContent() {
         <h1 className="poll-title" style={{ fontSize: 24, marginBottom: 16 }}>Explore & Discover</h1>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} style={{ marginBottom: 18 }}>
+        <form onSubmit={handleSearchSubmit} style={{ marginBottom: 18, position: "relative" }}>
+          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}>
+            <AnimatedSearchIcon size={18} />
+          </div>
           <input
             type="text"
             placeholder="Search questions or topics… (press Enter)"
@@ -107,14 +111,18 @@ function ExploreContent() {
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: "100%",
-              padding: "10px 14px",
+              padding: "11px 14px 11px 40px",
               border: "1px solid var(--line)",
               borderRadius: "var(--radius)",
               background: "var(--surface)",
               fontSize: 14,
+              color: "var(--ink)",
+              outline: "none",
+              transition: "border-color 0.2s ease, box-shadow 0.2s ease",
             }}
           />
         </form>
+
 
         {/* Categories Pills */}
         <div className="expiry-row" style={{ marginBottom: 16 }}>
