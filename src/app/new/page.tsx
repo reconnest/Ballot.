@@ -136,6 +136,11 @@ export default function NewPollPage() {
   const [previewRankedOrder, setPreviewRankedOrder] = useState<number[]>([]);
   const [previewSubmitted, setPreviewSubmitted] = useState(false);
 
+  // Option Drag & Drop Reordering State
+  const [draggedOptIdx, setDraggedOptIdx] = useState<number | null>(null);
+  const [dragOverOptIdx, setDragOverOptIdx] = useState<number | null>(null);
+
+
 
   useEffect(() => {
     async function checkAuth() {
@@ -332,6 +337,23 @@ export default function NewPollPage() {
       setOpts((prev) => prev.filter((_, idx) => idx !== i));
     }
   }
+
+  // Option Drag & Drop / Reordering Handlers
+  function handleReorderOptions(fromIdx: number, toIdx: number) {
+    if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0 || fromIdx >= opts.length || toIdx >= opts.length) return;
+    setOpts((prev) => {
+      const next = [...prev];
+      const [item] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, item);
+      return next;
+    });
+  }
+
+  function handleMoveOption(fromIdx: number, direction: "prev" | "next" | "up" | "down") {
+    const toIdx = (direction === "prev" || direction === "up") ? fromIdx - 1 : fromIdx + 1;
+    handleReorderOptions(fromIdx, toIdx);
+  }
+
 
   // Live Ballot Preview Handlers
   function handleOpenPreview() {
@@ -654,158 +676,238 @@ export default function NewPollPage() {
               </div>
 
               {pollType === "image" ? (
-                /* 🖼️ 3-COLUMN IMAGE POLL CREATION GRID */
+                /* 🖼️ 3-COLUMN IMAGE POLL CREATION GRID (DRAGGABLE & REORDERABLE) */
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
-                  {opts.map((opt, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        background: "var(--surface)",
-                        border: "1px solid var(--line)",
-                        borderRadius: 8,
-                        padding: 8,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 8,
-                        position: "relative",
-                        boxShadow: "var(--shadow-sm)",
-                      }}
-                    >
-                      {/* Card Header: Option Badge + Delete */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 11, color: "var(--accent)" }}>
-                          #{i + 1}
-                        </span>
-                        {opts.length > 2 && (
-                          <button
-                            type="button"
-                            className="remove-opt-btn"
-                            onClick={() => removeOpt(i)}
-                            title="Remove option"
-                            style={{ fontSize: 11, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
+                  {opts.map((opt, i) => {
+                    const isBeingDragged = draggedOptIdx === i;
+                    const isDragOver = dragOverOptIdx === i;
 
-                      {/* Image Dropzone / Preview */}
-                      {opt.imageUrl ? (
-                        <div style={{
-                          position: "relative",
-                          width: "100%",
-                          height: 110,
-                          borderRadius: 6,
-                          overflow: "hidden",
-                          border: "1px solid var(--line)",
-                          background: "var(--paper)",
+                    return (
+                      <div
+                        key={i}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", `${i}`);
+                          setDraggedOptIdx(i);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (dragOverOptIdx !== i) setDragOverOptIdx(i);
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverOptIdx === i) setDragOverOptIdx(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedOptIdx !== null && draggedOptIdx !== i) {
+                            handleReorderOptions(draggedOptIdx, i);
+                          }
+                          setDraggedOptIdx(null);
+                          setDragOverOptIdx(null);
+                        }}
+                        style={{
+                          background: "var(--surface)",
+                          border: isDragOver
+                            ? "2px dashed var(--accent)"
+                            : "1px solid var(--line)",
+                          borderRadius: 8,
+                          padding: 8,
                           display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}>
-                          <img
-                            src={opt.imageUrl}
-                            alt={`Option ${i + 1}`}
-                            style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                          />
-                          {/* Bottom Control Bar */}
-                          <div style={{
-                            position: "absolute",
-                            bottom: 4,
-                            left: 4,
-                            right: 4,
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: 4
-                          }}>
-                            <label
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: "var(--ink)",
-                                background: "var(--surface)",
-                                border: "1px solid var(--line)",
-                                padding: "2px 6px",
-                                borderRadius: 4,
-                                cursor: "pointer",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
-                              }}
-                            >
-                              Change
-                              <input
-                                type="file"
-                                accept="image/*"
-                                style={{ display: "none" }}
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0];
-                                  if (f) handleImageUpload(i, f);
-                                }}
-                              />
-                            </label>
+                          flexDirection: "column",
+                          gap: 8,
+                          position: "relative",
+                          boxShadow: isDragOver ? "0 4px 12px rgba(15, 118, 110, 0.2)" : "var(--shadow-sm)",
+                          opacity: isBeingDragged ? 0.4 : 1,
+                          transition: "border 0.15s ease, box-shadow 0.15s ease",
+                        }}
+                      >
+                        {/* Card Header: Reorder Grips, Index Badge, Shift Arrows + Delete */}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "grab" }} title="Drag to reorder">
+                            <span style={{ fontSize: 11, color: "var(--muted)" }}>⠿</span>
+                            <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 11, color: "var(--accent)" }}>
+                              #{i + 1}
+                            </span>
+                          </div>
+
+                          {/* Quick Shift Arrows & Remove */}
+                          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
                             <button
                               type="button"
-                              onClick={() => updateOptImage(i, "")}
+                              onClick={() => handleMoveOption(i, "prev")}
+                              disabled={i === 0}
+                              title="Move left"
                               style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: "#EF4444",
-                                background: "var(--surface)",
+                                width: 18,
+                                height: 18,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 9,
                                 border: "1px solid var(--line)",
-                                padding: "2px 6px",
-                                borderRadius: 4,
-                                cursor: "pointer",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
+                                background: i === 0 ? "transparent" : "var(--paper)",
+                                color: i === 0 ? "var(--faint)" : "var(--ink)",
+                                borderRadius: 3,
+                                cursor: i === 0 ? "not-allowed" : "pointer",
+                                padding: 0
                               }}
                             >
-                              ✕
+                              ◀
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveOption(i, "next")}
+                              disabled={i === opts.length - 1}
+                              title="Move right"
+                              style={{
+                                width: 18,
+                                height: 18,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 9,
+                                border: "1px solid var(--line)",
+                                background: i === opts.length - 1 ? "transparent" : "var(--paper)",
+                                color: i === opts.length - 1 ? "var(--faint)" : "var(--ink)",
+                                borderRadius: 3,
+                                cursor: i === opts.length - 1 ? "not-allowed" : "pointer",
+                                padding: 0
+                              }}
+                            >
+                              ▶
+                            </button>
+                            {opts.length > 2 && (
+                              <button
+                                type="button"
+                                className="remove-opt-btn"
+                                onClick={() => removeOpt(i)}
+                                title="Remove option"
+                                style={{ fontSize: 11, width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 2 }}
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                         </div>
-                      ) : (
-                        <label
-                          style={{
+
+                        {/* Image Dropzone / Preview */}
+                        {opt.imageUrl ? (
+                          <div style={{
+                            position: "relative",
                             width: "100%",
                             height: 110,
                             borderRadius: 6,
-                            border: "2px dashed var(--line)",
+                            overflow: "hidden",
+                            border: "1px solid var(--line)",
                             background: "var(--paper)",
                             display: "flex",
-                            flexDirection: "column",
                             alignItems: "center",
-                            justifyContent: "center",
-                            gap: 4,
-                            cursor: "pointer",
-                            transition: "all 0.15s ease",
-                            textAlign: "center",
-                            padding: 4
-                          }}
-                        >
-                          <span style={{ fontSize: 20 }}>📷</span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)" }}>Upload</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: "none" }}
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) handleImageUpload(i, f);
+                            justifyContent: "center"
+                          }}>
+                            <img
+                              src={opt.imageUrl}
+                              alt={`Option ${i + 1}`}
+                              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                            />
+                            {/* Bottom Control Bar */}
+                            <div style={{
+                              position: "absolute",
+                              bottom: 4,
+                              left: 4,
+                              right: 4,
+                              display: "flex",
+                              justifyContent: "space-between",
+                              gap: 4
+                            }}>
+                              <label
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  color: "var(--ink)",
+                                  background: "var(--surface)",
+                                  border: "1px solid var(--line)",
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  cursor: "pointer",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
+                                }}
+                              >
+                                Change
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  style={{ display: "none" }}
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (f) handleImageUpload(i, f);
+                                  }}
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => updateOptImage(i, "")}
+                                style={{
+                                  fontSize: 10,
+                                  fontWeight: 600,
+                                  color: "#EF4444",
+                                  background: "var(--surface)",
+                                  border: "1px solid var(--line)",
+                                  padding: "2px 6px",
+                                  borderRadius: 4,
+                                  cursor: "pointer",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <label
+                            style={{
+                              width: "100%",
+                              height: 110,
+                              borderRadius: 6,
+                              border: "2px dashed var(--line)",
+                              background: "var(--paper)",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 4,
+                              cursor: "pointer",
+                              transition: "all 0.15s ease",
+                              textAlign: "center",
+                              padding: 4
                             }}
-                          />
-                        </label>
-                      )}
+                          >
+                            <span style={{ fontSize: 20 }}>📷</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)" }}>Upload</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              style={{ display: "none" }}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleImageUpload(i, f);
+                              }}
+                            />
+                          </label>
+                        )}
 
-                      {/* Optional Text Label */}
-                      <input
-                        type="text"
-                        maxLength={100}
-                        placeholder={`Option ${i + 1}`}
-                        value={opt.label}
-                        onChange={(e) => updateOptLabel(i, e.target.value)}
-                        className="input-text"
-                        style={{ fontSize: 12, padding: "5px 8px" }}
-                      />
-                    </div>
-                  ))}
+                        {/* Optional Text Label */}
+                        <input
+                          type="text"
+                          maxLength={100}
+                          placeholder={`Option ${i + 1}`}
+                          value={opt.label}
+                          onChange={(e) => updateOptLabel(i, e.target.value)}
+                          className="input-text"
+                          style={{ fontSize: 12, padding: "5px 8px" }}
+                        />
+                      </div>
+                    );
+                  })}
 
                   {/* Add Option Card in Grid */}
                   {opts.length < 30 && (
@@ -839,33 +941,119 @@ export default function NewPollPage() {
                   )}
                 </div>
               ) : (
-                /* 📋 STANDARD & RANKED CHOICE VERTICAL LIST STACK */
+                /* 📋 STANDARD & RANKED CHOICE VERTICAL LIST STACK (DRAGGABLE & REORDERABLE) */
                 <div className="options-stack">
-                  {opts.map((opt, i) => (
-                    <div key={i} className="option-row">
-                      <span className="drag-handle">{i + 1}</span>
-                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-                        <input
-                          type="text"
-                          maxLength={100}
-                          placeholder={`Option ${i + 1}`}
-                          value={opt.label}
-                          onChange={(e) => updateOptLabel(i, e.target.value)}
-                          className="input-text"
-                        />
+                  {opts.map((opt, i) => {
+                    const isBeingDragged = draggedOptIdx === i;
+                    const isDragOver = dragOverOptIdx === i;
+
+                    return (
+                      <div
+                        key={i}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", `${i}`);
+                          setDraggedOptIdx(i);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (dragOverOptIdx !== i) setDragOverOptIdx(i);
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverOptIdx === i) setDragOverOptIdx(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedOptIdx !== null && draggedOptIdx !== i) {
+                            handleReorderOptions(draggedOptIdx, i);
+                          }
+                          setDraggedOptIdx(null);
+                          setDragOverOptIdx(null);
+                        }}
+                        className="option-row"
+                        style={{
+                          opacity: isBeingDragged ? 0.4 : 1,
+                          border: isDragOver ? "2px dashed var(--accent)" : undefined,
+                          transition: "border 0.15s ease",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "grab" }} title="Drag to reorder">
+                          <span style={{ color: "var(--muted)", fontSize: 13 }}>⠿</span>
+                          <span className="drag-handle">{i + 1}</span>
+                        </div>
+
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                          <input
+                            type="text"
+                            maxLength={100}
+                            placeholder={`Option ${i + 1}`}
+                            value={opt.label}
+                            onChange={(e) => updateOptLabel(i, e.target.value)}
+                            className="input-text"
+                          />
+                        </div>
+
+                        {/* Shift Up/Down buttons */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveOption(i, "up")}
+                            disabled={i === 0}
+                            title="Move up"
+                            style={{
+                              width: 22,
+                              height: 14,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 8,
+                              border: "1px solid var(--line)",
+                              background: i === 0 ? "transparent" : "var(--paper)",
+                              color: i === 0 ? "var(--faint)" : "var(--ink)",
+                              borderRadius: 3,
+                              cursor: i === 0 ? "not-allowed" : "pointer",
+                              padding: 0
+                            }}
+                          >
+                            ▲
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveOption(i, "down")}
+                            disabled={i === opts.length - 1}
+                            title="Move down"
+                            style={{
+                              width: 22,
+                              height: 14,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 8,
+                              border: "1px solid var(--line)",
+                              background: i === opts.length - 1 ? "transparent" : "var(--paper)",
+                              color: i === opts.length - 1 ? "var(--faint)" : "var(--ink)",
+                              borderRadius: 3,
+                              cursor: i === opts.length - 1 ? "not-allowed" : "pointer",
+                              padding: 0
+                            }}
+                          >
+                            ▼
+                          </button>
+                        </div>
+
+                        {opts.length > 2 && (
+                          <button
+                            type="button"
+                            className="remove-opt-btn"
+                            onClick={() => removeOpt(i)}
+                            title="Remove option"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
-                      {opts.length > 2 && (
-                        <button
-                          type="button"
-                          className="remove-opt-btn"
-                          onClick={() => removeOpt(i)}
-                          title="Remove option"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {opts.length < 30 && (
                     <button type="button" className="add-opt" onClick={addOpt}>
@@ -874,6 +1062,7 @@ export default function NewPollPage() {
                   )}
                 </div>
               )}
+
             </div>
           </div>
 
