@@ -255,9 +255,15 @@ export default function NewPollPage() {
 
   // Live Ballot Preview Handlers
   function handleOpenPreview() {
-    const validOpts = opts.filter((o) => o.label.trim().length > 0);
+    const validOpts = opts.filter(
+      (o, idx) => o.label.trim().length > 0 || (!!o.imageUrl && o.imageUrl.trim().length > 0)
+    );
     if (validOpts.length < 2) {
-      setError("Please provide at least 2 options with labels to preview.");
+      setError(
+        pollType === "image"
+          ? "Please add at least 2 images or options to preview."
+          : "Please provide at least 2 options with labels to preview."
+      );
       return;
     }
     setError("");
@@ -329,16 +335,27 @@ export default function NewPollPage() {
     }
 
     const cleanOpts = opts
-      .map((o) => ({
-        label: o.label.trim(),
-        imageUrl: o.imageUrl.trim() || undefined,
-      }))
-      .filter((o) => o.label.length > 0);
+      .map((o, idx) => {
+        const trimmedLabel = o.label.trim();
+        const hasImage = !!o.imageUrl && o.imageUrl.trim().length > 0;
+        // For Image Polls, if label is omitted, default to Option 1, Option 2, etc.
+        const finalLabel = trimmedLabel || (hasImage ? `Option ${idx + 1}` : "");
+        return {
+          label: finalLabel,
+          imageUrl: o.imageUrl.trim() || undefined,
+        };
+      })
+      .filter((o) => o.label.length > 0 || !!o.imageUrl);
 
     if (cleanOpts.length < 2) {
-      setError("Please provide at least 2 non-empty options.");
+      setError(
+        pollType === "image"
+          ? "Please add at least 2 images or options."
+          : "Please provide at least 2 non-empty options."
+      );
       return;
     }
+
 
     const finalCategory = isPublic
       ? (isAddingCustom ? customCategory.trim() : category) || "general"
@@ -513,107 +530,97 @@ export default function NewPollPage() {
                 <label className="field-label" style={{ marginBottom: 0 }}>
                   Options <span style={{ color: "var(--accent)" }}>*</span>
                 </label>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  style={{ fontSize: 12, padding: "3px 8px" }}
-                  onClick={() => setShowBulkModal(true)}
-                >
-                  ⚡ Bulk paste
-                </button>
+                {pollType !== "image" && (
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    style={{ fontSize: 12, padding: "3px 8px" }}
+                    onClick={() => setShowBulkModal(true)}
+                  >
+                    ⚡ Bulk paste
+                  </button>
+                )}
               </div>
 
-              <div className="options-stack">
-                {opts.map((opt, i) => (
-                  <div key={i} className="option-row">
-                    <span className="drag-handle">{i + 1}</span>
-                    <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-                      <input
-                        type="text"
-                        maxLength={100}
-                        placeholder={`Option ${i + 1}`}
-                        value={opt.label}
-                        onChange={(e) => updateOptLabel(i, e.target.value)}
-                        className="input-text"
-                      />
+              {pollType === "image" ? (
+                /* 🖼️ 2-COLUMN IMAGE POLL CREATION GRID */
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 14 }}>
+                  {opts.map((opt, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--line)",
+                        borderRadius: 10,
+                        padding: 12,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                        position: "relative",
+                        boxShadow: "var(--shadow-sm)",
+                      }}
+                    >
+                      {/* Card Header: Option Badge + Delete */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 12, color: "var(--accent)" }}>
+                          Option {i + 1}
+                        </span>
+                        {opts.length > 2 && (
+                          <button
+                            type="button"
+                            className="remove-opt-btn"
+                            onClick={() => removeOpt(i)}
+                            title="Remove option"
+                            style={{ fontSize: 12, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center" }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
 
-                      {/* Direct File Upload & Instant Thumbnail Preview for Image Polls */}
-                      {pollType === "image" && (
-                        <div>
-                          {opt.imageUrl ? (
-                            <div style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 12,
-                              background: "var(--paper)",
-                              border: "1px solid var(--line)",
-                              padding: "6px 10px",
-                              borderRadius: 6
-                            }}>
-                              <img
-                                src={opt.imageUrl}
-                                alt={`Option ${i + 1} preview`}
-                                style={{
-                                  width: 48,
-                                  height: 48,
-                                  objectFit: "cover",
-                                  borderRadius: 4,
-                                  border: "1px solid var(--line)",
-                                  background: "var(--surface)"
-                                }}
-                              />
-                              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                                <label
-                                  style={{
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    color: "var(--ink)",
-                                    background: "var(--surface)",
-                                    border: "1px solid var(--line)",
-                                    padding: "4px 8px",
-                                    borderRadius: 4,
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  Change Image
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    style={{ display: "none" }}
-                                    onChange={(e) => {
-                                      const f = e.target.files?.[0];
-                                      if (f) handleImageUpload(i, f);
-                                    }}
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() => updateOptImage(i, "")}
-                                  className="btn-ghost"
-                                  style={{ fontSize: 11, color: "#EF4444", padding: "4px 8px" }}
-                                >
-                                  ✕ Remove
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
+                      {/* Image Dropzone / Preview */}
+                      {opt.imageUrl ? (
+                        <div style={{
+                          position: "relative",
+                          width: "100%",
+                          height: 150,
+                          borderRadius: 6,
+                          overflow: "hidden",
+                          border: "1px solid var(--line)",
+                          background: "var(--paper)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center"
+                        }}>
+                          <img
+                            src={opt.imageUrl}
+                            alt={`Option ${i + 1}`}
+                            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                          />
+                          {/* Bottom Control Bar */}
+                          <div style={{
+                            position: "absolute",
+                            bottom: 6,
+                            left: 6,
+                            right: 6,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 6
+                          }}>
                             <label
                               style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: 600,
-                                color: "var(--accent-ink)",
-                                background: "var(--accent-soft)",
-                                border: "1px dashed var(--accent)",
-                                padding: "6px 12px",
-                                borderRadius: 6,
+                                color: "var(--ink)",
+                                background: "var(--surface)",
+                                border: "1px solid var(--line)",
+                                padding: "4px 8px",
+                                borderRadius: 4,
                                 cursor: "pointer",
-                                transition: "all 0.15s ease",
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
                               }}
                             >
-                              <span>📷 Upload Image</span>
+                              Change
                               <input
                                 type="file"
                                 accept="image/*"
@@ -624,32 +631,139 @@ export default function NewPollPage() {
                                 }}
                               />
                             </label>
-                          )}
+                            <button
+                              type="button"
+                              onClick={() => updateOptImage(i, "")}
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 600,
+                                color: "#EF4444",
+                                background: "var(--surface)",
+                                border: "1px solid var(--line)",
+                                padding: "4px 8px",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
+                              }}
+                            >
+                              ✕ Remove
+                            </button>
+                          </div>
                         </div>
+                      ) : (
+                        <label
+                          style={{
+                            width: "100%",
+                            height: 150,
+                            borderRadius: 6,
+                            border: "2px dashed var(--line)",
+                            background: "var(--paper)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <span style={{ fontSize: 28 }}>📷</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>Upload Image</span>
+                          <span style={{ fontSize: 11, color: "var(--muted)" }}>PNG, JPG, WEBP, GIF</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: "none" }}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleImageUpload(i, f);
+                            }}
+                          />
+                        </label>
+                      )}
+
+                      {/* Optional Text Label */}
+                      <input
+                        type="text"
+                        maxLength={100}
+                        placeholder={`Option ${i + 1} (optional label)`}
+                        value={opt.label}
+                        onChange={(e) => updateOptLabel(i, e.target.value)}
+                        className="input-text"
+                        style={{ fontSize: 13, padding: "8px 10px" }}
+                      />
+                    </div>
+                  ))}
+
+                  {/* Add Option Card in Grid */}
+                  {opts.length < 30 && (
+                    <button
+                      type="button"
+                      onClick={addOpt}
+                      style={{
+                        minHeight: 220,
+                        background: "var(--paper)",
+                        border: "2px dashed var(--line)",
+                        borderRadius: 10,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        color: "var(--muted)",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease",
+                      }}
+                    >
+                      <span style={{ fontSize: 26 }}>➕</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent-ink)" }}>
+                        + Add Image Option
+                      </span>
+                      <span style={{ fontSize: 11, color: "var(--muted)" }}>
+                        ({opts.length}/30 options)
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                /* 📋 STANDARD & RANKED CHOICE VERTICAL LIST STACK */
+                <div className="options-stack">
+                  {opts.map((opt, i) => (
+                    <div key={i} className="option-row">
+                      <span className="drag-handle">{i + 1}</span>
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                        <input
+                          type="text"
+                          maxLength={100}
+                          placeholder={`Option ${i + 1}`}
+                          value={opt.label}
+                          onChange={(e) => updateOptLabel(i, e.target.value)}
+                          className="input-text"
+                        />
+                      </div>
+                      {opts.length > 2 && (
+                        <button
+                          type="button"
+                          className="remove-opt-btn"
+                          onClick={() => removeOpt(i)}
+                          title="Remove option"
+                        >
+                          ✕
+                        </button>
                       )}
                     </div>
-                    {opts.length > 2 && (
-                      <button
-                        type="button"
-                        className="remove-opt-btn"
-                        onClick={() => removeOpt(i)}
-                        title="Remove option"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  ))}
 
-
-                {opts.length < 30 && (
-                  <button type="button" className="add-opt" onClick={addOpt}>
-                    + Add option ({opts.length}/30)
-                  </button>
-                )}
-              </div>
+                  {opts.length < 30 && (
+                    <button type="button" className="add-opt" onClick={addOpt}>
+                      + Add option ({opts.length}/30)
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+
 
           {/* Right Column: Visibility, Category, Mode & Advanced Settings */}
           <div>
@@ -1088,7 +1202,8 @@ export default function NewPollPage() {
                     </div>
                     {previewRankedOrder.map((optIdx, i) => {
                       const opt = opts[optIdx];
-                      if (!opt || !opt.label.trim()) return null;
+                      const labelText = opt?.label.trim() || `Option ${optIdx + 1}`;
+                      if (!opt || (!opt.label.trim() && !opt.imageUrl)) return null;
                       const pointsForThisRank = Math.max(1, previewRankedOrder.length - i);
 
                       return (
@@ -1125,7 +1240,7 @@ export default function NewPollPage() {
                               <img src={opt.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} />
                             )}
                             <span style={{ fontWeight: 600, color: "var(--ink)" }}>
-                              {opt.label}
+                              {labelText}
                             </span>
                           </div>
 
@@ -1178,8 +1293,67 @@ export default function NewPollPage() {
                       );
                     })}
                   </div>
+                ) : pollType === "image" ? (
+                  /* 2. Image Poll Interactive 2-Column Gallery Grid */
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
+                    {opts.map((opt, idx) => {
+                      const labelText = opt.label.trim() || `Option ${idx + 1}`;
+                      if (!opt.label.trim() && !opt.imageUrl) return null;
+                      const isSelected = previewSelectedIndices.includes(idx);
+
+                      return (
+                        <div
+                          key={`img-prev-${idx}`}
+                          onClick={() => handlePreviewToggleOption(idx)}
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            borderRadius: 10,
+                            overflow: "hidden",
+                            border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
+                            background: isSelected ? "var(--accent-soft)" : "var(--paper)",
+                            cursor: previewSubmitted ? "default" : "pointer",
+                            transition: "all 0.15s ease",
+                            boxShadow: isSelected ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "none",
+                          }}
+                        >
+                          {/* Image Box */}
+                          <div style={{ width: "100%", height: 140, background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--line)", overflow: "hidden" }}>
+                            {opt.imageUrl ? (
+                              <img src={opt.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                            ) : (
+                              <span style={{ fontSize: 28 }}>🖼️</span>
+                            )}
+                          </div>
+
+                          {/* Bottom Caption & Selection Indicator */}
+                          <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                            <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {labelText}
+                            </span>
+                            <div style={{
+                              width: 18,
+                              height: 18,
+                              minWidth: 18,
+                              borderRadius: allowMultiple ? 4 : "50%",
+                              border: isSelected ? "2px solid var(--accent)" : "2px solid var(--muted)",
+                              background: isSelected ? "var(--accent)" : "transparent",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#FFFFFF",
+                              fontSize: 10,
+                              fontWeight: 700,
+                            }}>
+                              {isSelected && (allowMultiple ? "✓" : "●")}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  /* 2. Standard & Image Poll Interactive Options */
+                  /* 3. Standard Choice List */
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
                     {opts.map((opt, idx) => {
                       if (!opt.label.trim()) return null;
@@ -1202,9 +1376,6 @@ export default function NewPollPage() {
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            {opt.imageUrl && (
-                              <img src={opt.imageUrl} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }} />
-                            )}
                             <span style={{ fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", fontSize: 14 }}>
                               {opt.label}
                             </span>
@@ -1230,6 +1401,7 @@ export default function NewPollPage() {
                     })}
                   </div>
                 )}
+
 
                 {/* Preview Mock Submit Button */}
                 {previewSubmitted ? (

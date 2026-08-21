@@ -828,6 +828,66 @@ function PollContent() {
                   );
                 })}
               </div>
+            ) : poll.pollType === "image" ? (
+              /* 🖼️ IMAGE POLL 2-COLUMN VISUAL VOTING GRID */
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 14, marginBottom: 20 }}>
+                {poll.options.map((opt) => {
+                  const isSelected = selectedIds.includes(opt.id);
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => handleSelect(opt.id)}
+                      style={{
+                        border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
+                        background: isSelected ? "var(--accent-soft)" : "var(--paper)",
+                        borderRadius: 10,
+                        overflow: "hidden",
+                        cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        transition: "all 0.15s ease",
+                        boxShadow: isSelected ? "0 4px 12px rgba(15, 118, 110, 0.15)" : "var(--shadow-sm)",
+                      }}
+                    >
+                      {/* Image Preview Box */}
+                      <div style={{ width: "100%", height: 160, background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: "1px solid var(--line)", overflow: "hidden" }}>
+                        {opt.imageUrl ? (
+                          <img
+                            src={opt.imageUrl}
+                            alt={opt.label}
+                            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: 32 }}>🖼️</span>
+                        )}
+                      </div>
+
+                      {/* Bottom Caption & Selection State */}
+                      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                        <span style={{ fontSize: 14, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {opt.label}
+                        </span>
+                        <div style={{
+                          width: 20,
+                          height: 20,
+                          minWidth: 20,
+                          borderRadius: poll.allowMultiple ? 4 : "50%",
+                          border: isSelected ? "2px solid var(--accent)" : "2px solid var(--muted)",
+                          background: isSelected ? "var(--accent)" : "transparent",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#FFFFFF",
+                          fontSize: 11,
+                          fontWeight: 700,
+                        }}>
+                          {isSelected && (poll.allowMultiple ? "✓" : "●")}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               /* Standard / Multi-Choice Voting UI */
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
@@ -870,6 +930,7 @@ function PollContent() {
                 })}
               </div>
             )}
+
 
             {/* Voter Name Field */}
             {poll.requireName && !poll.hasVoted && (
@@ -1251,14 +1312,20 @@ function PollContent() {
 
                       return (
                         <div key={opt.id}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
-                            <span style={{ fontWeight: isMyPick ? 700 : 500, color: isMyPick ? "var(--accent-ink)" : "var(--ink)" }}>
-                              {opt.label} {isMyPick && "✓ (your pick)"}
-                            </span>
-                            <span style={{ fontFamily: "monospace", color: "var(--muted)" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, marginBottom: 5 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
+                              {opt.imageUrl && (
+                                <img src={opt.imageUrl} alt="" style={{ width: 26, height: 26, borderRadius: 4, objectFit: "cover", flexShrink: 0 }} />
+                              )}
+                              <span style={{ fontWeight: isMyPick ? 700 : 500, color: isMyPick ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {opt.label} {isMyPick && "✓ (your pick)"}
+                              </span>
+                            </div>
+                            <span style={{ fontFamily: "monospace", color: "var(--muted)", flexShrink: 0, marginLeft: 8 }}>
                               {pct}% ({count})
                             </span>
                           </div>
+
                           <div className="ledger-track" style={{ height: 10, borderRadius: 5 }}>
                             <div
                               className="ledger-fill"
