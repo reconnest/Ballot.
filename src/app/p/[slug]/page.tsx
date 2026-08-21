@@ -6,6 +6,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { getQRCodeUrl } from "@/lib/qr-generator";
 import { calculateSlices, CHART_COLORS, exportToCSV, exportToJSON } from "@/lib/chart-utils";
 import type { RankedPointsResult } from "@/lib/ranking";
+import type { ResultsVisibility } from "@/types";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
 import { AuthModal } from "@/components/AuthModal";
@@ -40,7 +41,7 @@ type PollData = {
   allowMultiple: boolean;
   minChoices: number;
   maxChoices: number | null;
-  resultsVisibility: "after_vote" | "after_deadline" | "creator_only";
+  resultsVisibility: ResultsVisibility;
   securityMode: string;
   creator?: CreatorProfile | null;
   creatorName?: string | null;
@@ -230,8 +231,11 @@ function PollContent() {
         setEditVisibility(data.resultsVisibility || "after_vote");
         setEditAllowVoteEdit(data.allowVoteEdit ?? true);
       }
-    } catch {}
+    } catch (err) {
+      console.error("[fetchPoll] Failed to fetch poll details:", err);
+    }
   }
+
 
 
 
@@ -443,8 +447,14 @@ function PollContent() {
       if (res.ok) {
         showToast("✓ Poll status updated");
         fetchPoll();
+      } else {
+        const d = await res.json().catch(() => ({}));
+        showToast(d.error || "Could not update status.");
       }
-    } catch {}
+    } catch (err) {
+      console.error("[handleToggleStatus] Error:", err);
+      showToast("Network error updating status.");
+    }
     setAdminLoading(false);
   }
 
@@ -461,8 +471,13 @@ function PollContent() {
       if (res.ok && data.newSlug) {
         showToast(`✓ Started Round 2 as ${data.newSlug}`);
         router.push(`/p/${data.newSlug}?key=${data.adminKey}&created=1`);
+      } else {
+        showToast(data.error || "Could not create repoll.");
       }
-    } catch {}
+    } catch (err) {
+      console.error("[handleRepoll] Error:", err);
+      showToast("Network error creating repoll.");
+    }
     setAdminLoading(false);
   }
 
@@ -470,7 +485,7 @@ function PollContent() {
     setAdminLoading(true);
     const hasZeroVotes = (poll?.totalVotes || 0) === 0;
 
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       adminKey,
       description: editDesc,
       resultsVisibility: editVisibility,
@@ -500,7 +515,7 @@ function PollContent() {
             ...prev,
             question: hasZeroVotes && editQuestion.trim() ? editQuestion.trim() : prev.question,
             description: editDesc.trim() || null,
-            resultsVisibility: editVisibility as any,
+            resultsVisibility: editVisibility as ResultsVisibility,
             allowVoteEdit: editAllowVoteEdit,
             options: hasZeroVotes && editOptions.length >= 2
               ? editOptions.filter((o) => o.label.trim().length > 0).map((o, idx) => ({
@@ -513,12 +528,14 @@ function PollContent() {
           };
         });
 
+
         // Fetch fresh server state
         await fetchPoll();
       } else {
         showToast(data.error || "Could not save changes.");
       }
-    } catch {
+    } catch (err) {
+      console.error("[handleSaveAdminChanges] Error:", err);
       showToast("Network error while saving.");
     }
     setAdminLoading(false);
@@ -540,7 +557,8 @@ function PollContent() {
       } else {
         showToast(data.error || "Could not claim poll.");
       }
-    } catch {
+    } catch (err) {
+      console.error("[handleClaimAfterAuth] Error:", err);
       showToast("Network error while claiming poll.");
     }
   }
@@ -558,10 +576,17 @@ function PollContent() {
       if (res.ok) {
         alert("Poll deleted successfully.");
         router.push("/explore");
+      } else {
+        const d = await res.json().catch(() => ({}));
+        showToast(d.error || "Could not delete poll.");
       }
-    } catch {}
+    } catch (err) {
+      console.error("[handleDeletePoll] Error:", err);
+      showToast("Network error while deleting poll.");
+    }
     setAdminLoading(false);
   }
+
 
   if (notFound) {
     return (

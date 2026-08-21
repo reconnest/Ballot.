@@ -150,7 +150,9 @@ export default function HomePage() {
           const data = await res.json();
           setTrendingPolls((data.polls || []).slice(0, 3));
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[loadTrending] Failed to load trending polls:", err);
+      }
     }
     loadTrending();
   }, []);
@@ -161,7 +163,7 @@ export default function HomePage() {
       if (!sessionUser) {
         setPolls(null);
         setShowMyPolls(false);
-        try { localStorage.removeItem("ballot_my_polls"); } catch {}
+        try { localStorage.removeItem("ballot_my_polls"); } catch (e) { console.warn(e); }
         return;
       }
 
@@ -170,7 +172,7 @@ export default function HomePage() {
         if (res.ok) {
           const data = await res.json();
           if (data.polls && Array.isArray(data.polls)) {
-            const formatted: Summary[] = data.polls.map((p: any) => ({
+            const formatted: Summary[] = data.polls.map((p: { slug: string; question: string; createdAt: number; totalVotes?: number; isExpired?: boolean }) => ({
               slug: p.slug,
               question: p.question,
               createdAt: p.createdAt,
@@ -179,14 +181,17 @@ export default function HomePage() {
             }));
             setPolls(formatted);
             setShowMyPolls(formatted.length > 0);
-            try { localStorage.setItem("ballot_my_polls", JSON.stringify(formatted)); } catch {}
+            try { localStorage.setItem("ballot_my_polls", JSON.stringify(formatted)); } catch (e) { console.warn(e); }
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[loadCreatorPolls] Failed to load polls for user:", err);
+      }
     }
 
     loadCreatorPolls();
   }, [sessionUser]);
+
 
 
   return (

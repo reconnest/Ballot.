@@ -172,7 +172,6 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
         votes: canViewResults ? (counts[o.id] ?? 0) : null,
       })),
       rankedPointsResult,
-      irvResult: rankedPointsResult,
 
       totalVotes: canViewResults ? totalBallots : null,
       totalSelections: canViewResults ? pollVotes.length : null,

@@ -9,6 +9,7 @@ import { BallotLogo } from "@/components/BallotLogo";
 import { AuthModal } from "@/components/AuthModal";
 import { getCachedSessionUser, setCachedSessionUser } from "@/lib/session-cache";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
+import { compressImage } from "@/lib/image-utils";
 
 const EXPIRY_PRESETS = [
   { label: "No limit", ms: null },
@@ -160,8 +161,11 @@ export default function NewPollPage() {
             setIsPublic(false);
           }
         }
-      } catch {}
+      } catch (err) {
+        console.warn("[checkAuth] Auth verification failed or offline:", err);
+      }
     }
+
     checkAuth();
   }, []);
 
@@ -210,50 +214,23 @@ export default function NewPollPage() {
   function updateOptImage(i: number, val: string) {
     setOpts((prev) => prev.map((o, idx) => (idx === i ? { ...o, imageUrl: val } : o)));
   }
-  function handleImageUpload(i: number, file: File) {
+  async function handleImageUpload(i: number, file: File) {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Please select a valid image file (PNG, JPG, WEBP, GIF).");
       return;
     }
     setError("");
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      if (!result) return;
-
-      const img = new Image();
-      img.onload = () => {
-        const maxDim = 800;
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) {
-            h = Math.round((h * maxDim) / w);
-            w = maxDim;
-          } else {
-            w = Math.round((w * maxDim) / h);
-            h = maxDim;
-          }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, w, h);
-          const compressed = canvas.toDataURL("image/jpeg", 0.85);
-          updateOptImage(i, compressed);
-        } else {
-          updateOptImage(i, result);
-        }
-      };
-      img.onerror = () => {
-        updateOptImage(i, result);
-      };
-      img.src = result;
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImage(file, 800, 0.85);
+      updateOptImage(i, compressed);
+    } catch (err) {
+      console.error("[handleImageUpload] Compression error:", err);
+      // Fallback to reading file directly as base64
+      const reader = new FileReader();
+      reader.onload = (e) => updateOptImage(i, e.target?.result as string);
+      reader.readAsDataURL(file);
+    }
   }
 
   function formatFileNameToLabel(fileName: string): string {
@@ -273,49 +250,20 @@ export default function NewPollPage() {
     }
     setError("");
 
-    const processFile = (file: File): Promise<{ label: string; imageUrl: string }> => {
-      return new Promise((resolve) => {
-        const label = formatFileNameToLabel(file.name);
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          if (!result) {
-            resolve({ label, imageUrl: "" });
-            return;
-          }
-          const img = new Image();
-          img.onload = () => {
-            const maxDim = 800;
-            let w = img.width;
-            let h = img.height;
-            if (w > maxDim || h > maxDim) {
-              if (w > h) {
-                h = Math.round((h * maxDim) / w);
-                w = maxDim;
-              } else {
-                w = Math.round((w * maxDim) / h);
-                h = maxDim;
-              }
-            }
-            const canvas = document.createElement("canvas");
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
-              ctx.drawImage(img, 0, 0, w, h);
-              const compressed = canvas.toDataURL("image/jpeg", 0.85);
-              resolve({ label, imageUrl: compressed });
-            } else {
-              resolve({ label, imageUrl: result });
-            }
-          };
-          img.onerror = () => {
-            resolve({ label, imageUrl: result });
-          };
-          img.src = result;
-        };
-        reader.readAsDataURL(file);
-      });
+    const processFile = async (file: File): Promise<{ label: string; imageUrl: string }> => {
+      const label = formatFileNameToLabel(file.name);
+      try {
+        const compressed = await compressImage(file, 800, 0.85);
+        return { label, imageUrl: compressed };
+      } catch (err) {
+        console.error(`[handleBulkImageUpload] Failed to compress ${file.name}:`, err);
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve({ label, imageUrl: (e.target?.result as string) || "" });
+          reader.onerror = () => resolve({ label, imageUrl: "" });
+          reader.readAsDataURL(file);
+        });
+      }
     };
 
     const processed = await Promise.all(fileArr.map(processFile));
