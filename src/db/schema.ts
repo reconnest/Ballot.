@@ -76,6 +76,14 @@ export const votes = sqliteTable("votes", {
   createdAt: integer("created_at").notNull(),
 });
 
+// ── Fix 2.3: Persistent rate limits — works across all Vercel serverless instances ──
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key").primaryKey(),        // e.g. "create:ip:1.2.3.4"
+  count: integer("count").notNull().default(1),
+  resetAt: integer("reset_at").notNull(), // Unix ms timestamp when window resets
+});
+
+
 
 
 

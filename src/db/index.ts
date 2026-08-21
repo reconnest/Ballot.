@@ -86,10 +86,20 @@ export async function ensureDbSchema() {
       DELETE FROM polls WHERE slug NOT LIKE 'BPC-%' AND slug NOT LIKE 'BPP-%';
     `);
 
+    // 6. Create rate_limits table for persistent cross-instance rate limiting (Fix 2.3)
+    await client.execute(`
+      CREATE TABLE IF NOT EXISTS rate_limits (
+        key TEXT PRIMARY KEY,
+        count INTEGER NOT NULL DEFAULT 1,
+        reset_at INTEGER NOT NULL
+      );
+    `);
+
     schemaInitialized = true;
 
   } catch (err) {
     console.error("Schema init error:", err);
   }
 }
+
 

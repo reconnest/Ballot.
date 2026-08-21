@@ -41,6 +41,18 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     },
   });
 
+  // ── Fix 2.2: Guarantee cleanup via req.signal abort — reliable on all Vercel runtimes ──
+  req.signal.addEventListener("abort", () => {
+    if (cleanupSubscription) {
+      cleanupSubscription();
+      cleanupSubscription = null;
+    }
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+  }, { once: true });
+
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream; charset=utf-8",
@@ -50,3 +62,4 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     },
   });
 }
+

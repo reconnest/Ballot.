@@ -129,6 +129,21 @@ function PollContent() {
     setRankedOptions([]);
   }, [slug]);
 
+  // ── Fix 2.4: Inject noindex meta for private polls to prevent search engine indexing ──
+  useEffect(() => {
+    if (!slug) return;
+    if (slug.startsWith("BPP-")) {
+      let meta = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+      if (!meta) {
+        meta = document.createElement("meta");
+        meta.name = "robots";
+        document.head.appendChild(meta);
+      }
+      meta.content = "noindex, nofollow";
+      return () => { meta?.remove(); };
+    }
+  }, [slug]);
+
 
   // Initialize rankedOptions ONLY when first loading or explicitly entering edit mode
   useEffect(() => {
@@ -224,9 +239,21 @@ function PollContent() {
     fetchPoll();
 
     let eventSource: EventSource | null = null;
+    let sseConnected = false;
+
     try {
       eventSource = new EventSource(`/api/polls/${slug}/stream`);
-      eventSource.onopen = () => setIsLiveConnected(true);
+
+      eventSource.onopen = () => {
+        sseConnected = true;
+        setIsLiveConnected(true);
+        // ── Fix 2.1: Clear any fallback timer once SSE is established ──
+        if (pollTimer.current) {
+          clearInterval(pollTimer.current);
+          pollTimer.current = null;
+        }
+      };
+
       eventSource.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
@@ -237,15 +264,30 @@ function PollContent() {
           }
         } catch {}
       };
-    } catch {}
 
-    pollTimer.current = setInterval(() => fetchPoll(), 5000);
+      // ── Fix 2.1: Only start fallback polling if SSE fails/closes ──
+      eventSource.onerror = () => {
+        setIsLiveConnected(false);
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+        }
+        // Start fallback interval only if SSE never connected or dropped
+        if (!pollTimer.current) {
+          pollTimer.current = setInterval(() => fetchPoll(), 8000);
+        }
+      };
+    } catch {
+      // SSE not available — fall back to polling immediately
+      pollTimer.current = setInterval(() => fetchPoll(), 8000);
+    }
 
     return () => {
       if (eventSource) eventSource.close();
       if (pollTimer.current) clearInterval(pollTimer.current);
     };
   }, [slug, adminKey]);
+
 
   function showToast(msg: string) {
     setToast(msg);

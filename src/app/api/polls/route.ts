@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
+import { db, ensureDbSchema } from "@/db";
 import { polls, options } from "@/db/schema";
 import { nanoid, customAlphabet } from "nanoid";
 import { randomBytes, createHash } from "crypto";
@@ -10,8 +10,10 @@ const scopedCode = customAlphabet("23456789ABCDEFGHJKLMNPQRSTUVWXYZ", 6);
 
 export async function POST(req: NextRequest) {
   try {
+    await ensureDbSchema();
+
     const clientIp = getClientIp(req);
-    const rateCheck = checkPollCreationRateLimit(clientIp);
+    const rateCheck = await checkPollCreationRateLimit(clientIp);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         { error: `Too many polls created. Please wait ${rateCheck.retryAfterSeconds}s before creating another.` },
@@ -19,8 +21,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Fix 1.3: Guard against Vercel's 4.5 MB serverless payload limit ──
+    // ── Fix 1.3: Guard against Versal's 4.5 MB serverless payload limit ──
     const contentLength = parseInt(req.headers.get("content-length") || "0");
+
     if (contentLength > 4_000_000) {
       return NextResponse.json(
         { error: "Total upload size is too large (max ~4 MB). Please reduce the number or size of images." },
