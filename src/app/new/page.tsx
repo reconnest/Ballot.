@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { BallotLogo } from "@/components/BallotLogo";
 import { AuthModal } from "@/components/AuthModal";
 import { getCachedSessionUser, setCachedSessionUser } from "@/lib/session-cache";
+import { fireMotionSafeConfetti } from "@/lib/confetti";
 
 const EXPIRY_PRESETS = [
   { label: "No limit", ms: null },
@@ -121,6 +122,13 @@ export default function NewPollPage() {
   const [requireName, setRequireName] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Preview Modal State
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewSelectedIndices, setPreviewSelectedIndices] = useState<number[]>([]);
+  const [previewRankedOrder, setPreviewRankedOrder] = useState<number[]>([]);
+  const [previewSubmitted, setPreviewSubmitted] = useState(false);
+
 
   useEffect(() => {
     async function checkAuth() {
@@ -244,6 +252,50 @@ export default function NewPollPage() {
       setOpts((prev) => prev.filter((_, idx) => idx !== i));
     }
   }
+
+  // Live Ballot Preview Handlers
+  function handleOpenPreview() {
+    const validOpts = opts.filter((o) => o.label.trim().length > 0);
+    if (validOpts.length < 2) {
+      setError("Please provide at least 2 options with labels to preview.");
+      return;
+    }
+    setError("");
+    setPreviewSelectedIndices([]);
+    setPreviewRankedOrder(opts.map((_, idx) => idx));
+    setPreviewSubmitted(false);
+    setShowPreviewModal(true);
+  }
+
+  function handlePreviewToggleOption(idx: number) {
+    if (previewSubmitted) return;
+    if (allowMultiple) {
+      setPreviewSelectedIndices((prev) =>
+        prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+      );
+    } else {
+      setPreviewSelectedIndices([idx]);
+    }
+  }
+
+  function handlePreviewRankMove(fromIdx: number, direction: "up" | "down") {
+    if (previewSubmitted) return;
+    const toIdx = direction === "up" ? fromIdx - 1 : fromIdx + 1;
+    if (toIdx < 0 || toIdx >= previewRankedOrder.length) return;
+    setPreviewRankedOrder((prev) => {
+      const next = [...prev];
+      const temp = next[fromIdx];
+      next[fromIdx] = next[toIdx];
+      next[toIdx] = temp;
+      return next;
+    });
+  }
+
+  function handlePreviewSubmitVote() {
+    setPreviewSubmitted(true);
+    try { fireMotionSafeConfetti(); } catch {}
+  }
+
 
   // Calculate final expiration in MS
   function computeExpiresInMs(): number | null {
@@ -918,18 +970,321 @@ export default function NewPollPage() {
             {/* Error Message */}
             {error && <div className="error-box">{error}</div>}
 
-            {/* Create Button */}
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="btn-primary"
-              style={{ width: "100%", padding: "14px 24px", fontSize: 16, marginTop: 8 }}
-            >
-              {submitting ? "Creating poll..." : isPublic ? "Publish Public Poll →" : "Create Private Poll →"}
-            </button>
+            {/* Action Buttons: Preview Ballot & Publish */}
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 10, marginTop: 8 }}>
+              <button
+                type="button"
+                onClick={handleOpenPreview}
+                className="btn-ghost"
+                style={{
+                  padding: "12px 18px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  border: "1px solid var(--line)",
+                  background: "var(--surface)",
+                  borderRadius: "var(--radius)",
+                  cursor: "pointer",
+                }}
+                title="Test and preview the live ballot before creating"
+              >
+                <span>👁️</span>
+                <span>Preview Ballot</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="btn-primary"
+                style={{ width: "100%", padding: "12px 20px", fontSize: 15, fontWeight: 700 }}
+              >
+                {submitting ? "Creating poll..." : isPublic ? "Publish Public Poll →" : "Create Private Poll →"}
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* 👁️ Interactive Live Ballot Preview Modal */}
+        {showPreviewModal && (
+          <div className="modal-backdrop" style={{ zIndex: 1000 }}>
+            <div className="modal-box" style={{
+              background: "var(--surface)",
+              border: "1px solid var(--line)",
+              borderRadius: 12,
+              padding: 24,
+              maxWidth: 600,
+              width: "100%",
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.35)",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+            }}>
+              {/* Modal Top Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>👁️ Live Voter Ballot Preview</h2>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent-ink)", background: "var(--accent-soft)", border: "1px solid var(--accent)", padding: "2px 6px", borderRadius: 4, fontFamily: "monospace" }}>
+                      PREVIEW MODE
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                    This is an interactive simulation of what voters will experience.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn-link"
+                  onClick={() => setShowPreviewModal(false)}
+                  style={{ fontSize: 18, color: "var(--muted)", cursor: "pointer" }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Scrollable Ballot Card Content */}
+              <div style={{ overflowY: "auto", flex: 1, paddingRight: 4 }}>
+                {/* Meta Pills */}
+                <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 10 }}>
+                  <span className="badge-category">
+                    {isPublic ? (isAddingCustom ? customCategory || "custom" : category) : "private"}
+                  </span>
+                  {pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+                  {pollType === "image" && <span className="badge-type">Image Poll</span>}
+                  {pollType === "standard" && (
+                    <span className="badge-type">
+                      {allowMultiple ? `Multiple (${minChoices}-${maxChoices})` : "Single choice"}
+                    </span>
+                  )}
+                </div>
+
+                {/* Question */}
+                <h1 style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.3, color: "var(--ink)", marginBottom: 6 }}>
+                  {question.trim() || "What would you like to decide?"}
+                </h1>
+
+                {/* Description */}
+                {description.trim() && (
+                  <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 12 }}>
+                    {description.trim()}
+                  </p>
+                )}
+
+                {/* Creator Attribution */}
+                <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
+                  Created by @{sessionUser?.username || "creator"}
+                </div>
+
+                {/* Interactive Voter Options */}
+                {pollType === "ranked_choice" ? (
+                  /* 1. Ranked Choice Interactive Order */
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
+                      💡 Drag or use ▲ / ▼ to test ranking choices (1st gets max points):
+                    </div>
+                    {previewRankedOrder.map((optIdx, i) => {
+                      const opt = opts[optIdx];
+                      if (!opt || !opt.label.trim()) return null;
+                      const pointsForThisRank = Math.max(1, previewRankedOrder.length - i);
+
+                      return (
+                        <div
+                          key={`ranked-prev-${optIdx}`}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "10px 12px",
+                            borderRadius: "var(--radius)",
+                            border: "1px solid var(--line)",
+                            background: "var(--paper)",
+                            fontSize: 14,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
+                            <span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--accent)", fontSize: 13, minWidth: 24 }}>
+                              #{i + 1}
+                            </span>
+                            <span style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: "var(--accent-ink)",
+                              background: "var(--surface)",
+                              border: "1px solid var(--accent)",
+                              padding: "1px 6px",
+                              borderRadius: 4,
+                              fontFamily: "monospace"
+                            }}>
+                              +{pointsForThisRank} pts
+                            </span>
+                            {opt.imageUrl && (
+                              <img src={opt.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} />
+                            )}
+                            <span style={{ fontWeight: 600, color: "var(--ink)" }}>
+                              {opt.label}
+                            </span>
+                          </div>
+
+                          {/* Side-by-Side Up & Down Arrows */}
+                          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                            <button
+                              type="button"
+                              onClick={() => handlePreviewRankMove(i, "up")}
+                              disabled={i === 0 || previewSubmitted}
+                              style={{
+                                width: 28,
+                                height: 28,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: 4,
+                                border: "1px solid var(--line)",
+                                background: i === 0 ? "transparent" : "var(--surface)",
+                                color: i === 0 ? "var(--faint)" : "#10B981",
+                                cursor: i === 0 ? "not-allowed" : "pointer",
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handlePreviewRankMove(i, "down")}
+                              disabled={i === previewRankedOrder.length - 1 || previewSubmitted}
+                              style={{
+                                width: 28,
+                                height: 28,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                borderRadius: 4,
+                                border: "1px solid var(--line)",
+                                background: i === previewRankedOrder.length - 1 ? "transparent" : "var(--surface)",
+                                color: i === previewRankedOrder.length - 1 ? "var(--faint)" : "#EF4444",
+                                cursor: i === previewRankedOrder.length - 1 ? "not-allowed" : "pointer",
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}
+                            >
+                              ▼
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  /* 2. Standard & Image Poll Interactive Options */
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+                    {opts.map((opt, idx) => {
+                      if (!opt.label.trim()) return null;
+                      const isSelected = previewSelectedIndices.includes(idx);
+
+                      return (
+                        <div
+                          key={`opt-prev-${idx}`}
+                          onClick={() => handlePreviewToggleOption(idx)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "10px 14px",
+                            borderRadius: "var(--radius)",
+                            border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
+                            background: isSelected ? "var(--accent-soft)" : "var(--paper)",
+                            cursor: previewSubmitted ? "default" : "pointer",
+                            transition: "all 0.15s ease",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            {opt.imageUrl && (
+                              <img src={opt.imageUrl} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }} />
+                            )}
+                            <span style={{ fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", fontSize: 14 }}>
+                              {opt.label}
+                            </span>
+                          </div>
+
+                          <div style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: allowMultiple ? 4 : "50%",
+                            border: isSelected ? "2px solid var(--accent)" : "2px solid var(--muted)",
+                            background: isSelected ? "var(--accent)" : "transparent",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#FFFFFF",
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}>
+                            {isSelected && (allowMultiple ? "✓" : "●")}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Preview Mock Submit Button */}
+                {previewSubmitted ? (
+                  <div style={{
+                    background: "var(--accent-soft)",
+                    border: "1px solid var(--accent)",
+                    padding: "12px",
+                    borderRadius: 8,
+                    textAlign: "center",
+                    color: "var(--accent-ink)",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    marginBottom: 8
+                  }}>
+                    🎉 Vote Simulation Successful! Ready to publish.
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePreviewSubmitVote}
+                    className="btn-primary"
+                    style={{ width: "100%", padding: "12px", fontSize: 14, marginBottom: 8 }}
+                  >
+                    {pollType === "ranked_choice" ? "Submit Ranked Order →" : "Submit Vote →"}
+                  </button>
+                )}
+              </div>
+
+              {/* Modal Footer Controls */}
+              <div style={{ display: "flex", gap: 10, justifyContent: "space-between", borderTop: "1px solid var(--line)", paddingTop: 14, marginTop: 10 }}>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowPreviewModal(false)}
+                  style={{ fontSize: 13 }}
+                >
+                  ← Back to Editing
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    setShowPreviewModal(false);
+                    handleSubmit(e);
+                  }}
+                  disabled={submitting}
+                  className="btn-primary"
+                  style={{ padding: "8px 18px", fontSize: 13, fontWeight: 700 }}
+                >
+                  {submitting ? "Publishing..." : "🚀 Looks Good, Publish Poll →"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Bulk Paste Modal */}
         {showBulkModal && (
@@ -989,3 +1344,4 @@ export default function NewPollPage() {
     </div>
   );
 }
+
