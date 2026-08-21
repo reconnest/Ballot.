@@ -934,11 +934,15 @@ function PollContent() {
                           <img
                             src={opt.imageUrl}
                             alt={opt.label}
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
                             style={{ width: "100%", height: "100%", objectFit: "contain" }}
                           />
                         ) : (
                           <span style={{ fontSize: 28 }}>🖼️</span>
                         )}
+
                       </div>
 
                       {/* Bottom Caption & Selection State */}
@@ -1436,6 +1440,9 @@ function PollContent() {
                               <img
                                 src={opt.imageUrl}
                                 alt={opt.label}
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
                                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
                               />
                             ) : (
@@ -1505,12 +1512,20 @@ function PollContent() {
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, marginBottom: 5 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, overflow: "hidden" }}>
                               {opt.imageUrl && (
-                                <img src={opt.imageUrl} alt="" style={{ width: 26, height: 26, borderRadius: 4, objectFit: "cover", flexShrink: 0 }} />
+                                <img
+                                  src={opt.imageUrl}
+                                  alt=""
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display = "none";
+                                  }}
+                                  style={{ width: 26, height: 26, borderRadius: 4, objectFit: "cover", flexShrink: 0 }}
+                                />
                               )}
                               <span style={{ fontWeight: isMyPick ? 700 : 500, color: isMyPick ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                 {opt.label} {isMyPick && "✓ (your pick)"}
                               </span>
                             </div>
+
                             <span style={{ fontFamily: "monospace", color: "var(--muted)", flexShrink: 0, marginLeft: 8 }}>
                               {pct}% ({count})
                             </span>
