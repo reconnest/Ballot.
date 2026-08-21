@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
     const securityMode = validSecurity.includes(body.securityMode) ? body.securityMode : "relaxed";
 
     const allowVoteEdit = body.allowVoteEdit !== undefined ? (body.allowVoteEdit ? 1 : 0) : 1;
+    const creatorName = !sessionUser && body.creatorName ? body.creatorName.toString().trim().slice(0, 60) : null;
 
     if (!question) {
       return NextResponse.json({ error: "Question is required." }, { status: 400 });
@@ -111,9 +112,11 @@ export async function POST(req: NextRequest) {
       ipSalt,
       adminKeyHash,
       creatorUserId: sessionUser ? sessionUser.id : null,
+      creatorName,
       createdAt: now,
       expiresAt: expiresInMs ? now + expiresInMs : null,
     });
+
 
     await db.insert(options).values(
       cleanOptions.map((opt, i) => ({

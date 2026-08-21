@@ -98,7 +98,9 @@ export default function NewPollPage() {
   const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
   const [showDesc, setShowDesc] = useState(false);
+  const [guestCreatorName, setGuestCreatorName] = useState("");
   const [pollType, setPollType] = useState("standard");
+
   const [category, setCategory] = useState("general");
   const [customCategory, setCustomCategory] = useState("");
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -484,8 +486,10 @@ export default function NewPollPage() {
           allowVoteEdit: securityMode === "unlimited" ? false : allowVoteEdit,
           expiresInMs: computeExpiresInMs(),
           requireName,
+          creatorName: !sessionUser ? guestCreatorName.trim() || undefined : undefined,
         }),
       });
+
 
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
@@ -628,6 +632,28 @@ export default function NewPollPage() {
                 <span className="char-count">{description.length}/1000</span>
               </div>
             )}
+
+            {/* Guest Creator Attribution Name (Optional) */}
+            {!sessionUser && (
+              <div className="block">
+                <label className="field-label" htmlFor="guestName">
+                  Your Name / Organization <span style={{ fontSize: 11, fontWeight: 400, color: "var(--muted)" }}>(Optional)</span>
+                </label>
+                <input
+                  id="guestName"
+                  type="text"
+                  maxLength={60}
+                  placeholder="e.g. Alex, Team Design (or leave blank for Guest)"
+                  value={guestCreatorName}
+                  onChange={(e) => setGuestCreatorName(e.target.value)}
+                  className="input-text"
+                />
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+                  Displayed below your question as &ldquo;Created by {guestCreatorName.trim() || "Guest"}&rdquo;.
+                </div>
+              </div>
+            )}
+
 
             {/* Options */}
             <div className="block">

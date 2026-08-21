@@ -66,6 +66,10 @@ export async function ensureDbSchema() {
     if (!existingCols.has("creator_user_id")) {
       await client.execute("ALTER TABLE polls ADD COLUMN creator_user_id TEXT;");
     }
+    if (!existingCols.has("creator_name")) {
+      await client.execute("ALTER TABLE polls ADD COLUMN creator_name TEXT;");
+    }
+
 
     // 5. Purge all legacy/seeded polls that do not follow the agreed BPC- or BPP- prefix
     await client.execute(`

@@ -47,9 +47,11 @@ export const polls = sqliteTable("polls", {
   ipSalt: text("ip_salt"),
   adminKeyHash: text("admin_key_hash"),
   creatorUserId: text("creator_user_id"), // FK to users.id
+  creatorName: text("creator_name"), // Optional attribution name for guest creators
   createdAt: integer("created_at").notNull(),
   expiresAt: integer("expires_at"),
 });
+
 
 export const options = sqliteTable("options", {
   id: text("id").primaryKey(),

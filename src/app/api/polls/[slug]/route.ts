@@ -163,7 +163,9 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
       resultsVisibility: visibility,
       securityMode: poll.securityMode || "standard",
       creator: creatorProfile,
+      creatorName: poll.creatorName || (poll.creatorUserId ? null : "Guest"),
       options: pollOptions.map((o) => ({
+
         id: o.id,
         label: o.label,
         imageUrl: o.imageUrl,

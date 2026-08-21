@@ -43,7 +43,9 @@ type PollData = {
   resultsVisibility: "after_vote" | "after_deadline" | "creator_only";
   securityMode: string;
   creator?: CreatorProfile | null;
+  creatorName?: string | null;
   options: OptionData[];
+
   rankedPointsResult?: RankedPointsResult | null;
   totalVotes: number | null;
   totalSelections: number | null;
@@ -717,8 +719,8 @@ function PollContent() {
           )}
 
           {/* Creator Attribution */}
-          {poll.creator && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
+          {poll.creator ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
               <span>Created by</span>
               <Link
                 href={`/u/${poll.creator.username}`}
@@ -727,8 +729,19 @@ function PollContent() {
                 @{poll.creator.username}
               </Link>
             </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--muted)", marginTop: 8 }}>
+              <span>Created by</span>
+              <span style={{ fontWeight: 600, color: "var(--ink)" }}>
+                {poll.creatorName || "Guest"}
+              </span>
+              <span style={{ fontSize: 10, fontWeight: 700, background: "var(--paper)", border: "1px solid var(--line)", padding: "1px 6px", borderRadius: 4, color: "var(--muted)" }}>
+                Guest
+              </span>
+            </div>
           )}
         </div>
+
 
         {/* 1. VOTING FORM */}
         {showVotingUI ? (
