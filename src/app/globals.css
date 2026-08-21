@@ -403,7 +403,11 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
   background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
   padding: 24px; text-align: left; width: 100%; max-width: 500px; margin: 0 auto;
   box-shadow: var(--shadow-md); position: relative;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
 }
+
 
 .sandbox-header {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;
