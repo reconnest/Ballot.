@@ -1376,6 +1376,105 @@ button:active .icon-refresh {
   transform: rotate(360deg);
 }
 
+/* ==========================================================================
+   📢 Responsive Google AdSense Sidebar System
+   ========================================================================== */
+
+.ad-layout-root {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  position: relative;
+  gap: 24px;
+}
+
+.ad-layout-content {
+  width: 100%;
+  max-width: 680px;
+  min-width: 0;
+}
+
+.ad-sidebar {
+  display: none;
+  width: 160px;
+  min-width: 160px;
+  max-width: 160px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.ad-sticky-wrapper {
+  position: sticky;
+  top: 80px;
+  width: 160px;
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ad-placeholder-box {
+  width: 160px;
+  height: 600px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  gap: 10px;
+  user-select: none;
+}
+
+.ad-placeholder-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--line);
+  color: var(--faint);
+  font-family: monospace;
+}
+
+.ad-placeholder-title {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--faint);
+  font-weight: 500;
+}
+
+.ad-placeholder-dim {
+  font-size: 10px;
+  color: var(--faint);
+  font-family: monospace;
+  margin-top: 4px;
+}
+
+/* Strictly visible only on wide desktop viewports (>= 1200px) */
+@media (min-width: 1200px) {
+  .ad-sidebar {
+    display: block;
+  }
+}
+
+/* Below 1200px (Tablets, Laptops, Mobile), ads are completely removed with 0 margin disruption */
+@media (max-width: 1199px) {
+  .ad-sidebar {
+    display: none !important;
+  }
+  .ad-layout-root {
+    gap: 0;
+  }
+}
+
+
 
 
 

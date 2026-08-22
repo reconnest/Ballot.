@@ -9,6 +9,8 @@ import { fireMotionSafeConfetti } from "@/lib/confetti";
 import { getCachedSessionUser } from "@/lib/session-cache";
 import { AnimatedTrophyIcon } from "@/components/icons/AnimatedTrophyIcon";
 import { AnimatedRefreshIcon } from "@/components/icons/AnimatedRefreshIcon";
+import { Footer } from "@/components/Footer";
+
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
@@ -1239,7 +1241,7 @@ export default function HomePage() {
           <div className="frictionless-box">
             <div>
               <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
-                No signup. No ads. No friction.
+                No signup. Instant voting. Zero friction.
               </h2>
               <p style={{ fontSize: 14, color: "var(--muted)", maxWidth: 520, lineHeight: 1.5 }}>
                 Create a poll, share the link, and let people vote without forcing them through an account-creation process.
@@ -1304,24 +1306,10 @@ export default function HomePage() {
         </section>
 
         {/* 10. FOOTER */}
-        <footer className="landing-footer">
-          <div className="footer-top">
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <BallotLogo size={22} />
-              <span style={{ fontSize: 13, color: "var(--muted)" }}>— Fast, ad-free polling engine.</span>
-            </div>
-            <div className="footer-links">
-              <Link href="/new" className="footer-link">New Poll</Link>
-              <Link href="/explore" className="footer-link">Explore</Link>
-              <a href="https://github.com/reconnest/Ballot.git" target="_blank" rel="noopener noreferrer" className="footer-link">GitHub</a>
-            </div>
-          </div>
-          <div style={{ lineHeight: 1.5, fontSize: 11, color: "var(--faint)" }}>
-            🔒 <strong>Privacy Disclosure:</strong> Ballot uses private session cookies and one-way salted IP digests solely to deter duplicate votes. No personal browsing activity is tracked, profiled, or sold.
-          </div>
-        </footer>
+        <Footer />
       </main>
     </div>
   );
 }
+
 

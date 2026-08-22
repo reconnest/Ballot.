@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+import { AdSidebarContainer } from "@/components/AdSlot";
 import { AnimatedSearchIcon } from "@/components/icons/AnimatedSearchIcon";
+
 
 
 type PollSummary = {
@@ -95,7 +98,9 @@ function ExploreContent() {
     <div className="wrap">
       <Navbar />
 
-      <main>
+      <AdSidebarContainer>
+        <main>
+
         <div className="section-label">Public Polls</div>
         <h1 className="poll-title" style={{ fontSize: 24, marginBottom: 16 }}>Explore & Discover</h1>
 
@@ -253,9 +258,13 @@ function ExploreContent() {
             )}
           </>
         )}
+
+        <Footer />
       </main>
-    </div>
-  );
+    </AdSidebarContainer>
+  </div>
+);
+
 }
 
 

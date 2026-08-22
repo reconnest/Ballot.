@@ -10,10 +10,13 @@ import type { ResultsVisibility } from "@/types";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
 import { AuthModal } from "@/components/AuthModal";
+import { Footer } from "@/components/Footer";
+import { AdSidebarContainer } from "@/components/AdSlot";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
 import { AnimatedCopyIcon } from "@/components/icons/AnimatedCopyIcon";
 import { AnimatedTrophyIcon } from "@/components/icons/AnimatedTrophyIcon";
 import { AnimatedRefreshIcon } from "@/components/icons/AnimatedRefreshIcon";
+
 
 
 type OptionData = { id: string; label: string; imageUrl?: string | null; votes: number | null };
@@ -694,7 +697,9 @@ function PollContent() {
         </div>
       )}
 
-      <main style={{ maxWidth: 920, margin: "0 auto", paddingBottom: 60, width: "100%" }}>
+      <AdSidebarContainer>
+        <main style={{ maxWidth: 920, margin: "0 auto", paddingBottom: 60, width: "100%" }}>
+
 
         {/* ⚠️ Guest Creator Temporary Setup & Account Security Callout Banner */}
         {showAdminKeyBanner && adminKey && !poll.creator && (
@@ -1993,7 +1998,10 @@ function PollContent() {
           </div>
         </section>
 
+        <Footer />
       </main>
+    </AdSidebarContainer>
+
 
 
 

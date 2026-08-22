@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
+
 
 type CreatorProfile = {
   id: string;
@@ -247,8 +249,11 @@ export default function CreatorProfilePage() {
 
           </div>
         )}
+
+        <Footer />
       </main>
     </div>
   );
 }
+
 
