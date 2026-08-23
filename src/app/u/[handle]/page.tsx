@@ -149,18 +149,20 @@ export default function CreatorProfilePage() {
                 </div>
               </div>
 
-              {/* Stats Badge */}
-              <div style={{ display: "flex", gap: 16, flexShrink: 0 }}>
-                <div style={{ textAlign: "center", background: "var(--paper)", padding: "10px 16px", borderRadius: 8, border: "1px solid var(--line)" }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--accent)" }}>{polls.length}</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Polls</div>
+              {/* Compact Hairline Stats Strip */}
+              <div className="profile-stats-strip">
+                <div className="profile-stat-item">
+                  <div className="profile-stat-num">{polls.length}</div>
+                  <div className="profile-stat-label">polls</div>
                 </div>
-                <div style={{ textAlign: "center", background: "var(--paper)", padding: "10px 16px", borderRadius: 8, border: "1px solid var(--line)" }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "var(--accent)" }}>{totalVotes}</div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Votes Cast</div>
+                <div className="profile-stat-divider" aria-hidden="true" />
+                <div className="profile-stat-item">
+                  <div className="profile-stat-num">{totalVotes}</div>
+                  <div className="profile-stat-label">votes</div>
                 </div>
               </div>
             </div>
+
 
             {/* Polls List */}
             <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
