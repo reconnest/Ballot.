@@ -175,7 +175,35 @@ export default function NewPollPage() {
 
 
   useEffect(() => {
+    try {
+      const cloneRaw = sessionStorage.getItem("ballot_clone_poll");
+      if (cloneRaw) {
+        sessionStorage.removeItem("ballot_clone_poll");
+        const data = JSON.parse(cloneRaw);
+        if (data.question) setQuestion(data.question);
+        if (data.description) {
+          setDescription(data.description);
+          setShowDesc(true);
+        }
+        if (data.pollType) setPollType(data.pollType);
+        if (data.category) setCategory(data.category);
+        if (Array.isArray(data.options) && data.options.length >= 2) {
+          setOpts(data.options.map((o: any) => ({ label: o.label || "", imageUrl: o.imageUrl || "" })));
+        }
+        if (typeof data.allowMultiple === "boolean") setAllowMultiple(data.allowMultiple);
+        if (typeof data.minChoices === "number") setMinChoices(data.minChoices);
+        if (typeof data.maxChoices === "number") setMaxChoices(data.maxChoices);
+        if (data.resultsVisibility) setResultsVisibility(data.resultsVisibility);
+        if (data.securityMode) setSecurityMode(data.securityMode);
+        if (typeof data.requireName === "boolean") setRequireName(data.requireName);
+        if (typeof data.allowVoteEdit === "boolean") setAllowVoteEdit(data.allowVoteEdit);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
     async function checkAuth() {
+
       try {
         const res = await fetch(`/api/auth/me?_t=${Date.now()}`);
         if (res.ok) {

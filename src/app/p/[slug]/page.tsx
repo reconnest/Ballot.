@@ -49,7 +49,11 @@ import {
   Infinity as InfinityIcon,
   Vote,
   Edit3,
+  PlayCircle,
+  RotateCcw,
+  CopyPlus,
 } from "lucide-react";
+
 
 
 
@@ -144,7 +148,15 @@ function PollContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showIRVSteps, setShowIRVSteps] = useState(false);
 
+  // Reactivation Modal State
+  const [showReactivateModal, setShowReactivateModal] = useState(false);
+  const [reactivateChoice, setReactivateChoice] = useState<"resume" | "reset" | "clone">("resume");
+  const [reactivateDeadlineMs, setReactivateDeadlineMs] = useState<number | null>(24 * 60 * 60 * 1000);
+  const [reactivateVisibility, setReactivateVisibility] = useState<string>("after_vote");
+  const [reactivating, setReactivating] = useState(false);
+
   const [activeViewers, setActiveViewers] = useState<number>(1);
+
   const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
   const [isCastingAnotherVote, setIsCastingAnotherVote] = useState<boolean>(false);
 
@@ -482,8 +494,88 @@ function PollContent() {
     }
   }
 
+  function openReactivateModal() {
+    if (!poll) return;
+    setReactivateChoice("resume");
+    setReactivateDeadlineMs(24 * 60 * 60 * 1000);
+    setReactivateVisibility(poll.resultsVisibility || "after_vote");
+    setShowReactivateModal(true);
+  }
+
+  async function handleConfirmReactivate() {
+    if (!poll) return;
+
+    // Choice 3: Duplicate / Clone as New Poll
+    if (reactivateChoice === "clone") {
+      const cloneData = {
+        question: poll.question,
+        description: poll.description || "",
+        pollType: poll.pollType,
+        category: poll.category,
+        options: poll.options.map((o) => ({ label: o.label, imageUrl: o.imageUrl || "" })),
+        allowMultiple: poll.allowMultiple,
+        minChoices: poll.minChoices,
+        maxChoices: poll.maxChoices,
+        resultsVisibility: poll.resultsVisibility,
+        securityMode: poll.securityMode,
+        requireName: poll.requireName,
+        allowVoteEdit: poll.allowVoteEdit,
+      };
+      sessionStorage.setItem("ballot_clone_poll", JSON.stringify(cloneData));
+      setShowReactivateModal(false);
+      router.push("/new");
+      return;
+    }
+
+    // Choice 2: Reset & Fresh Start confirmation
+    if (reactivateChoice === "reset") {
+      const confirmReset = confirm(
+        `Are you sure you want to reset and clear all ${poll.totalVotes || 0} existing votes? This action cannot be undone.`
+      );
+      if (!confirmReset) return;
+    }
+
+    setReactivating(true);
+    try {
+      const newExpiresAt = reactivateDeadlineMs === null ? null : Date.now() + reactivateDeadlineMs;
+      const action = reactivateChoice === "reset" ? "reactivate_reset" : "reactivate_resume";
+
+      const res = await fetch(`/api/polls/${slug}/admin`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          adminKey,
+          action,
+          expiresAt: newExpiresAt,
+          resultsVisibility: reactivateVisibility,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        showToast(
+          reactivateChoice === "reset"
+            ? "✓ Poll reset and restarted with 0 votes!"
+            : "✓ Poll reactivated and accepting new votes!"
+        );
+        setShowReactivateModal(false);
+        fetchPoll();
+      } else {
+        showToast(data.error || "Could not reactivate poll.");
+      }
+    } catch (err) {
+      console.error("[handleConfirmReactivate] Error:", err);
+      showToast("Network error reactivating poll.");
+    }
+    setReactivating(false);
+  }
+
   // Admin Actions
   async function handleToggleStatus() {
+    if (poll?.status === "inactive" || poll?.isExpired) {
+      openReactivateModal();
+      return;
+    }
     setAdminLoading(true);
     try {
       const res = await fetch(`/api/polls/${slug}/admin`, {
@@ -492,7 +584,7 @@ function PollContent() {
         body: JSON.stringify({ adminKey, action: "toggle_status" }),
       });
       if (res.ok) {
-        showToast("✓ Poll status updated");
+        showToast("✓ Poll paused");
         fetchPoll();
       } else {
         const d = await res.json().catch(() => ({}));
@@ -504,6 +596,7 @@ function PollContent() {
     }
     setAdminLoading(false);
   }
+
 
   async function handleRepoll() {
     if (!confirm("Start a new round (Repoll)? Current round results will be finalized and preserved.")) return;
@@ -722,7 +815,7 @@ function PollContent() {
           {poll.isAdmin && (
             <button
               type="button"
-              onClick={handleToggleStatus}
+              onClick={openReactivateModal}
               disabled={adminLoading}
               className="btn-ghost"
               style={{ fontSize: 12 }}
@@ -730,6 +823,7 @@ function PollContent() {
               Reactivate Poll
             </button>
           )}
+
         </div>
       )}
 
@@ -2382,6 +2476,279 @@ function PollContent() {
         </div>
       )}
 
+      {/* Reactivation 3-Option Modal */}
+      {showReactivateModal && poll && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 16,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowReactivateModal(false);
+          }}
+        >
+          <div
+            style={{
+              background: "var(--surface)",
+              border: "1px solid var(--line)",
+              borderRadius: 14,
+              padding: "24px 24px 20px",
+              width: "100%",
+              maxWidth: 540,
+              boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              animation: "fadeIn 0.2s ease",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--accent-soft)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <RotateCcw size={18} color="var(--accent)" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: "var(--ink)" }}>
+                    Reactivate Poll
+                  </h3>
+                  <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>
+                    Choose how you want to reopen or reuse this poll:
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReactivateModal(false)}
+                style={{ background: "transparent", border: "none", color: "var(--muted)", cursor: "pointer", padding: 4 }}
+                aria-label="Close modal"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* 3 Interactive Option Cards */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              
+              {/* Option 1: Resume Polling */}
+              <div
+                onClick={() => setReactivateChoice("resume")}
+                style={{
+                  border: reactivateChoice === "resume" ? "2px solid var(--accent)" : "1px solid var(--line)",
+                  background: reactivateChoice === "resume" ? "var(--paper)" : "var(--surface)",
+                  borderRadius: 10,
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  boxShadow: reactivateChoice === "resume" ? "0 2px 12px 0 var(--accent-soft)" : "none",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    border: reactivateChoice === "resume" ? "6px solid var(--accent)" : "2px solid var(--muted)",
+                    background: "var(--paper)",
+                    flexShrink: 0,
+                    marginTop: 2,
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)" }}>1. Resume Polling</span>
+                      <span style={{ fontSize: 11, background: "var(--accent-soft)", color: "var(--accent-ink)", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>
+                        Keep Old Votes + Accept New
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, lineHeight: 1.4 }}>
+                      Preserve all <strong>{poll.totalVotes || 0}</strong> existing votes and immediately open the ballot for new incoming responses on this link.
+                    </div>
+
+                    {/* Nested Deadline Selector when Resume is active */}
+                    {reactivateChoice === "resume" && (
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--line)" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                          Select New Deadline:
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {[
+                            { label: "No limit", ms: null },
+                            { label: "+1 hour", ms: 60 * 60 * 1000 },
+                            { label: "+24 hours", ms: 24 * 60 * 60 * 1000 },
+                            { label: "+7 days", ms: 7 * 24 * 60 * 60 * 1000 },
+                            { label: "+30 days", ms: 30 * 24 * 60 * 60 * 1000 },
+                          ].map((preset) => (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() => setReactivateDeadlineMs(preset.ms)}
+                              style={{
+                                fontSize: 12,
+                                padding: "5px 10px",
+                                borderRadius: 6,
+                                border: reactivateDeadlineMs === preset.ms ? "1px solid var(--accent)" : "1px solid var(--line)",
+                                background: reactivateDeadlineMs === preset.ms ? "var(--accent)" : "var(--surface)",
+                                color: reactivateDeadlineMs === preset.ms ? "#FFF" : "var(--ink)",
+                                fontWeight: reactivateDeadlineMs === preset.ms ? 700 : 500,
+                                cursor: "pointer",
+                              }}
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Option 2: Reset & Start Fresh */}
+              <div
+                onClick={() => setReactivateChoice("reset")}
+                style={{
+                  border: reactivateChoice === "reset" ? "2px solid #F59E0B" : "1px solid var(--line)",
+                  background: reactivateChoice === "reset" ? "var(--paper)" : "var(--surface)",
+                  borderRadius: 10,
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  boxShadow: reactivateChoice === "reset" ? "0 2px 12px 0 rgba(245, 158, 11, 0.2)" : "none",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    border: reactivateChoice === "reset" ? "6px solid #F59E0B" : "2px solid var(--muted)",
+                    background: "var(--paper)",
+                    flexShrink: 0,
+                    marginTop: 2,
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)" }}>2. Reset & Start Fresh</span>
+                      <span style={{ fontSize: 11, background: "#FEF3C7", color: "#B45309", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>
+                        Same URL & QR · Wipe Past Votes
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, lineHeight: 1.4 }}>
+                      Keep your existing share link and QR code, but wipe the <strong>{poll.totalVotes || 0}</strong> previous votes to restart fresh from 0.
+                    </div>
+
+                    {/* Nested Deadline Selector when Reset is active */}
+                    {reactivateChoice === "reset" && (
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--line)" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#D97706", marginBottom: 6 }}>
+                          ⚠️ Previous {poll.totalVotes || 0} votes will be cleared. Select New Deadline:
+                        </div>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          {[
+                            { label: "No limit", ms: null },
+                            { label: "+1 hour", ms: 60 * 60 * 1000 },
+                            { label: "+24 hours", ms: 24 * 60 * 60 * 1000 },
+                            { label: "+7 days", ms: 7 * 24 * 60 * 60 * 1000 },
+                            { label: "+30 days", ms: 30 * 24 * 60 * 60 * 1000 },
+                          ].map((preset) => (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() => setReactivateDeadlineMs(preset.ms)}
+                              style={{
+                                fontSize: 12,
+                                padding: "5px 10px",
+                                borderRadius: 6,
+                                border: reactivateDeadlineMs === preset.ms ? "1px solid #D97706" : "1px solid var(--line)",
+                                background: reactivateDeadlineMs === preset.ms ? "#D97706" : "var(--surface)",
+                                color: reactivateDeadlineMs === preset.ms ? "#FFF" : "var(--ink)",
+                                fontWeight: reactivateDeadlineMs === preset.ms ? 700 : 500,
+                                cursor: "pointer",
+                              }}
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Option 3: Duplicate as New Poll */}
+              <div
+                onClick={() => setReactivateChoice("clone")}
+                style={{
+                  border: reactivateChoice === "clone" ? "2px solid #3B82F6" : "1px solid var(--line)",
+                  background: reactivateChoice === "clone" ? "var(--paper)" : "var(--surface)",
+                  borderRadius: 10,
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  boxShadow: reactivateChoice === "clone" ? "0 2px 12px 0 rgba(59, 130, 246, 0.2)" : "none",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                  <div style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    border: reactivateChoice === "clone" ? "6px solid #3B82F6" : "2px solid var(--muted)",
+                    background: "var(--paper)",
+                    flexShrink: 0,
+                    marginTop: 2,
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)" }}>3. Duplicate as New Poll</span>
+                      <span style={{ fontSize: 11, background: "#DBEAFE", color: "#1E40AF", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>
+                        Brand New URL · Fully Editable
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4, lineHeight: 1.4 }}>
+                      Keep this poll archived with all results. Opens the poll creation wizard with questions and options pre-filled so you can edit and launch a new poll.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Actions */}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)" }}>
+              <button
+                type="button"
+                onClick={() => setShowReactivateModal(false)}
+                className="btn-ghost"
+                disabled={reactivating}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReactivate}
+                className="btn-primary"
+                disabled={reactivating}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                {reactivating ? "Processing..." : reactivateChoice === "clone" ? "Open in Creation Wizard →" : "✓ Confirm & Reactivate"}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* Auth Modal for claiming poll and securing account */}
       <AuthModal
         isOpen={showAuthModal}
@@ -2389,6 +2756,7 @@ function PollContent() {
         initialMessage="Sign in or register to secure this poll and its results to your permanent creator profile."
         onSuccess={handleClaimAfterAuth}
       />
+
 
       {/* Toast Notification */}
       {toast && (

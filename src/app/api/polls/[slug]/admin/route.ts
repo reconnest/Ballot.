@@ -148,12 +148,51 @@ export async function PATCH(req: NextRequest, { params }: { params: { slug: stri
       });
     }
 
-    // 2. TOGGLE STATUS (Live <-> Inactive)
+    // 2a. REACTIVATE RESUME (Accept new votes, keep existing votes, set new deadline & live status)
+    if (body.action === "reactivate_resume") {
+      const updateData: Record<string, any> = {
+        status: "live",
+        expiresAt: typeof body.expiresAt === "number" || body.expiresAt === null ? body.expiresAt : null,
+      };
+      if (typeof body.resultsVisibility === "string") {
+        const valid = ["after_vote", "after_deadline", "creator_only"];
+        if (valid.includes(body.resultsVisibility)) {
+          updateData.resultsVisibility = body.resultsVisibility;
+        }
+      }
+      await db.update(polls).set(updateData).where(eq(polls.id, poll.id));
+      return NextResponse.json({ ok: true, status: "live", message: "Poll reactivated and accepting new votes." });
+    }
+
+    // 2b. REACTIVATE RESET (Wipe past votes, reset to 0, start fresh on same slug)
+    if (body.action === "reactivate_reset") {
+      await db.delete(votes).where(eq(votes.pollId, poll.id));
+      
+      const updateData: Record<string, any> = {
+        status: "live",
+        expiresAt: typeof body.expiresAt === "number" || body.expiresAt === null ? body.expiresAt : null,
+      };
+      if (typeof body.resultsVisibility === "string") {
+        const valid = ["after_vote", "after_deadline", "creator_only"];
+        if (valid.includes(body.resultsVisibility)) {
+          updateData.resultsVisibility = body.resultsVisibility;
+        }
+      }
+      await db.update(polls).set(updateData).where(eq(polls.id, poll.id));
+      return NextResponse.json({ ok: true, status: "live", reset: true, message: "Poll reset and restarted." });
+    }
+
+    // 2c. TOGGLE STATUS (Live <-> Inactive)
     if (body.action === "toggle_status") {
       const newStatus = poll.status === "live" ? "inactive" : "live";
-      await db.update(polls).set({ status: newStatus }).where(eq(polls.id, poll.id));
+      const updateData: { status: string; expiresAt?: number | null } = { status: newStatus };
+      if (newStatus === "live" && poll.expiresAt && Date.now() > poll.expiresAt) {
+        updateData.expiresAt = null;
+      }
+      await db.update(polls).set(updateData).where(eq(polls.id, poll.id));
       return NextResponse.json({ ok: true, status: newStatus });
     }
+
 
     // 3. CHECK VOTE COUNT FOR STRUCTURAL LOCK
     const existingVotes = await db.select().from(votes).where(eq(votes.pollId, poll.id)).limit(1);
