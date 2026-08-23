@@ -7,8 +7,7 @@ import { BallotLogo } from "./BallotLogo";
 import { ThemeToggle } from "./ThemeToggle";
 import { AuthModal } from "./AuthModal";
 import { getCachedSessionUser, setCachedSessionUser } from "@/lib/session-cache";
-import { User, BarChart3, Settings, LogOut, X } from "lucide-react";
-
+import { User, BarChart3, Settings, LogOut, X, Menu, LogIn, ChevronRight } from "lucide-react";
 
 export type SessionUser = {
   id: string;
@@ -32,6 +31,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
   
   // Modals & Dropdown State
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMessage, setAuthMessage] = useState<string | undefined>();
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -43,12 +43,22 @@ export function Navbar({ onUserChange }: NavbarProps) {
   const [settingsSuccess, setSettingsSuccess] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navHeaderRef = useRef<HTMLElement>(null);
+
+  // Close menus on route change
+  useEffect(() => {
+    setShowDropdown(false);
+    setShowMobileMenu(false);
+  }, [pathname]);
 
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false);
+      }
+      if (navHeaderRef.current && !navHeaderRef.current.contains(event.target as Node)) {
+        setShowMobileMenu(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -90,6 +100,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
       setUser(null);
       setCachedSessionUser(null);
       setShowDropdown(false);
+      setShowMobileMenu(false);
       if (onUserChange) onUserChange(null);
       router.push("/explore");
       router.refresh();
@@ -98,6 +109,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
 
 
   function handleOpenSignIn(msg?: string) {
+    setShowMobileMenu(false);
     setAuthMessage(msg || "Sign in with your email to access your creator dashboard.");
     setShowAuthModal(true);
   }
@@ -139,7 +151,7 @@ export function Navbar({ onUserChange }: NavbarProps) {
 
   return (
     <>
-      <header className="navbar-container">
+      <header ref={navHeaderRef} className="navbar-container">
         {/* 1. Left Section: Brand Logo */}
         <Link href={logoHref} style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
           <BallotLogo size={32} />
@@ -162,103 +174,239 @@ export function Navbar({ onUserChange }: NavbarProps) {
         </nav>
 
 
-        {/* 3. Right Section: Theme Toggle, Create Poll & Auth State */}
+        {/* 3. Right Section: Create Poll, Menu / Profile & Theme Toggle */}
         <div style={{ display: "flex", gap: 8, alignItems: "center", position: "relative" }}>
-          <ThemeToggle />
-
           {loading ? (
             <div style={{ width: 60, height: 34 }} />
-          ) : user ? (
-            /* Logged-In Creator Navigation */
+          ) : (
             <>
+              {/* Primary Action: Create Poll */}
               {pathname !== "/new" && (
                 <Link href="/new" className="navbar-btn-primary">
                   + Create poll
                 </Link>
               )}
 
-              {/* Profile User ID Dropdown Trigger */}
-              <div ref={dropdownRef} style={{ position: "relative" }}>
+              {/* Desktop Only: Profile Dropdown or Sign In */}
+              {user ? (
+                <div ref={dropdownRef} className="navbar-desktop-only" style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowDropdown((prev) => !prev)}
+                    className="creator-dropdown-trigger"
+                    aria-expanded={showDropdown}
+                    title={`Creator ID: @${user.username}`}
+                  >
+                    <User size={13} color="var(--accent)" />
+                    <span>@{user.username}</span>
+                    <span style={{ fontSize: 10, marginLeft: 2 }}>▼</span>
+                  </button>
+
+                  {/* Dropdown Menu (Dashboard, Settings, Sign out) */}
+                  {showDropdown && (
+                    <div className="creator-dropdown-menu" role="menu">
+                      <Link
+                        href={`/u/${user.username}`}
+                        className="creator-dropdown-item"
+                        onClick={() => setShowDropdown(false)}
+                        role="menuitem"
+                        style={{ display: "flex", alignItems: "center", gap: 8 }}
+                      >
+                        <BarChart3 size={14} color="var(--accent)" />
+                        <span>Dashboard</span>
+                      </Link>
+
+                      <button
+                        type="button"
+                        className="creator-dropdown-item"
+                        onClick={() => {
+                          setShowDropdown(false);
+                          setEditDisplayName(user.displayName || user.username);
+                          setShowSettingsModal(true);
+                        }}
+                        role="menuitem"
+                        style={{ display: "flex", alignItems: "center", gap: 8 }}
+                      >
+                        <Settings size={14} color="var(--muted)" />
+                        <span>Settings</span>
+                      </button>
+
+                      <div className="creator-dropdown-divider" />
+
+                      <button
+                        type="button"
+                        className="creator-dropdown-item"
+                        onClick={handleLogout}
+                        style={{ color: "#EF4444", display: "flex", alignItems: "center", gap: 8 }}
+                        role="menuitem"
+                      >
+                        <LogOut size={14} />
+                        <span>Sign out</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
                 <button
                   type="button"
-                  onClick={() => setShowDropdown((prev) => !prev)}
-                  className="creator-dropdown-trigger"
-                  aria-expanded={showDropdown}
-                  title={`Creator ID: @${user.username}`}
+                  onClick={() => handleOpenSignIn()}
+                  className="navbar-btn-ghost navbar-desktop-only"
                 >
-                  <User size={13} color="var(--accent)" />
-                  <span>@{user.username}</span>
-                  <span style={{ fontSize: 10, marginLeft: 2 }}>▼</span>
+                  Sign in
                 </button>
+              )}
 
-                {/* Dropdown Menu (Dashboard, Settings, Sign out) */}
-                {showDropdown && (
-                  <div className="creator-dropdown-menu" role="menu">
+              {/* Mobile Only: Three Lines Menu Button */}
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu((prev) => !prev)}
+                className="navbar-mobile-menu-btn"
+                aria-label="Toggle mobile menu"
+                aria-expanded={showMobileMenu}
+                title={showMobileMenu ? "Close menu" : "Open menu"}
+              >
+                {showMobileMenu ? <X size={17} /> : <Menu size={17} />}
+              </button>
+
+              {/* Theme Switcher */}
+              <ThemeToggle />
+            </>
+          )}
+        </div>
+
+        {/* 4. Full-Width Mobile Dropdown Menu */}
+        {showMobileMenu && (
+          <div className="navbar-mobile-dropdown">
+            {/* Section: Navigation */}
+            <div>
+              <div className="navbar-mobile-section-title">Navigation</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+                {isLandingPage ? (
+                  <>
+                    <a
+                      href="#how-it-works"
+                      className="navbar-mobile-nav-link"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <span>How It Works</span>
+                      <ChevronRight size={15} color="var(--muted)" />
+                    </a>
+                    <a
+                      href="#why-ballot"
+                      className="navbar-mobile-nav-link"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <span>Why Ballot</span>
+                      <ChevronRight size={15} color="var(--muted)" />
+                    </a>
+                    <Link
+                      href="/explore"
+                      className="navbar-mobile-nav-link"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <span>Explore Community Polls</span>
+                      <ChevronRight size={15} color="var(--muted)" />
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/"
+                      className="navbar-mobile-nav-link"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <span>Home</span>
+                      <ChevronRight size={15} color="var(--muted)" />
+                    </Link>
+                    <Link
+                      href="/explore"
+                      className="navbar-mobile-nav-link"
+                      onClick={() => setShowMobileMenu(false)}
+                    >
+                      <span>Explore Community Polls</span>
+                      <ChevronRight size={15} color="var(--muted)" />
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="navbar-mobile-divider" />
+
+            {/* Section: Account / Creator Actions */}
+            <div>
+              <div className="navbar-mobile-section-title">Account</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
+                {user ? (
+                  <>
+                    {/* User info card */}
+                    <div className="navbar-mobile-user-card">
+                      <div className="navbar-mobile-avatar">
+                        {user.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ overflow: "hidden" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {user.displayName}
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--muted)", fontFamily: "monospace" }}>
+                          @{user.username}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dashboard */}
                     <Link
                       href={`/u/${user.username}`}
-                      className="creator-dropdown-item"
-                      onClick={() => setShowDropdown(false)}
-                      role="menuitem"
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                      className="navbar-mobile-item-btn"
+                      onClick={() => setShowMobileMenu(false)}
                     >
-                      <BarChart3 size={14} color="var(--accent)" />
+                      <BarChart3 size={15} color="var(--accent)" />
                       <span>Dashboard</span>
                     </Link>
 
+                    {/* Settings */}
                     <button
                       type="button"
-                      className="creator-dropdown-item"
+                      className="navbar-mobile-item-btn"
                       onClick={() => {
-                        setShowDropdown(false);
+                        setShowMobileMenu(false);
                         setEditDisplayName(user.displayName || user.username);
                         setShowSettingsModal(true);
                       }}
-                      role="menuitem"
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
-                      <Settings size={14} color="var(--muted)" />
+                      <Settings size={15} color="var(--muted)" />
                       <span>Settings</span>
                     </button>
 
-                    <div className="creator-dropdown-divider" />
-
+                    {/* Sign Out */}
                     <button
                       type="button"
-                      className="creator-dropdown-item"
+                      className="navbar-mobile-item-btn danger"
                       onClick={handleLogout}
-                      style={{ color: "#EF4444", display: "flex", alignItems: "center", gap: 8 }}
-                      role="menuitem"
                     >
-                      <LogOut size={14} />
+                      <LogOut size={15} />
                       <span>Sign out</span>
                     </button>
-                  </div>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="navbar-mobile-item-btn"
+                    onClick={() => handleOpenSignIn()}
+                    style={{ justifyContent: "center", background: "var(--surface)", border: "1px solid var(--accent)", color: "var(--accent-ink)" }}
+                  >
+                    <LogIn size={15} color="var(--accent)" />
+                    <span>Sign in as Creator</span>
+                  </button>
                 )}
               </div>
-            </>
-          ) : (
-            /* Logged-Out Guest Navigation */
-            <>
-              <button
-                type="button"
-                onClick={() => handleOpenSignIn()}
-                className="navbar-btn-ghost"
-              >
-                Sign in
-              </button>
-
-              {pathname !== "/new" && (
-                <Link href="/new" className="navbar-btn-primary">
-                  + Create poll
-                </Link>
-              )}
-            </>
-          )}
-
-        </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Auth Modal with Automatic Redirect to Profile */}
+
       <AuthModal
         isOpen={showAuthModal}
         initialMessage={authMessage}
