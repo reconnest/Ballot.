@@ -11,27 +11,27 @@ import { AnimatedTrophyIcon } from "@/components/icons/AnimatedTrophyIcon";
 import { AnimatedRefreshIcon } from "@/components/icons/AnimatedRefreshIcon";
 import { Footer } from "@/components/Footer";
 import {
-  Lightning,
+  Zap,
   Trophy,
   Image as ImageIcon,
   ShieldCheck,
-  ChartBar,
-  Link as LinkIcon,
+  BarChart3,
+  Link2,
   QrCode,
   Laptop,
-  CheckCircle,
+  CheckCircle2,
   Crown,
   Medal,
-  Certificate,
-  GlobeHemisphereWest,
-  ClipboardText,
-  Sparkle,
-  TreePalm,
-  TreeEvergreen,
-  Buildings,
-  Campfire,
-  ArrowsClockwise,
-} from "@phosphor-icons/react";
+  Award,
+  Globe,
+  ClipboardList,
+  Sparkles,
+  Palmtree,
+  Trees,
+  Building2,
+  Tent,
+  RefreshCw,
+} from "lucide-react";
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
@@ -68,16 +68,15 @@ export default function HomePage() {
   const [sandboxFormat, setSandboxFormat] = useState<"standard" | "ranked" | "image">("standard");
   const [workflowStep, setWorkflowStep] = useState<"create" | "share" | "decide">("create");
 
-  
   // Standard format state
   const [selectedStandard, setSelectedStandard] = useState<number | null>(null);
   const [standardVoteSubmitted, setStandardVoteSubmitted] = useState<boolean>(false);
   const [standardTallies, setStandardTallies] = useState<number[]>([48, 56, 32, 25]);
   const standardOptions = [
-    { label: "Beachside Resort", icon: TreePalm },
-    { label: "Mountain Cabin Retreat", icon: TreeEvergreen },
-    { label: "Downtown Loft & City Tour", icon: Buildings },
-    { label: "National Park Glamping", icon: Campfire },
+    { label: "Beachside Resort", icon: Palmtree },
+    { label: "Mountain Cabin Retreat", icon: Trees },
+    { label: "Downtown Loft & City Tour", icon: Building2 },
+    { label: "National Park Glamping", icon: Tent },
   ];
 
   // Ranked format state
@@ -97,22 +96,23 @@ export default function HomePage() {
     {
       label: "Minimal Logo",
       subtitle: "Geometric Monogram",
-      iconComponent: Sparkle,
+      iconComponent: Sparkles,
       color: "#0f766e",
     },
     {
       label: "Dynamic Slit",
       subtitle: "High Energy Motion",
-      iconComponent: Lightning,
+      iconComponent: Zap,
       color: "#2563eb",
     },
     {
       label: "Ballot Box",
       subtitle: "Clean & Modern",
-      iconComponent: CheckCircle,
+      iconComponent: CheckCircle2,
       color: "#7c3aed",
     },
   ];
+
 
 
   function handleStandardSubmit() {
@@ -229,13 +229,13 @@ export default function HomePage() {
             <div>
               <div className="hero-badge-row">
                 <span className="hero-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <Trophy size={14} weight="duotone" color="var(--accent)" /> Ranked Choice (Points)
+                  <Trophy size={13} color="var(--accent)" /> Ranked Choice (Points)
                 </span>
                 <span className="hero-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <ShieldCheck size={14} weight="duotone" color="var(--accent)" /> Anti-Fraud Defense
+                  <ShieldCheck size={13} color="var(--accent)" /> Anti-Fraud Defense
                 </span>
                 <span className="hero-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <ChartBar size={14} weight="duotone" color="var(--accent)" /> Live Analytics
+                  <BarChart3 size={13} color="var(--accent)" /> Live Analytics
                 </span>
               </div>
 
@@ -277,7 +277,7 @@ export default function HomePage() {
                     onClick={() => setSandboxFormat("standard")}
                     style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   >
-                    <Lightning size={16} weight="duotone" />
+                    <Zap size={14} />
                     <span>Standard Poll</span>
                   </button>
                   <button
@@ -288,7 +288,7 @@ export default function HomePage() {
                     onClick={() => setSandboxFormat("ranked")}
                     style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   >
-                    <Trophy size={16} weight="duotone" />
+                    <Trophy size={14} />
                     <span>Ranked Choice</span>
                   </button>
                   <button
@@ -299,7 +299,7 @@ export default function HomePage() {
                     onClick={() => setSandboxFormat("image")}
                     style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   >
-                    <ImageIcon size={16} weight="duotone" />
+                    <ImageIcon size={14} />
                     <span>Image Poll</span>
                   </button>
                 </div>
@@ -355,11 +355,12 @@ export default function HomePage() {
                                 }}
                               >
                                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                  <IconComponent size={16} weight="duotone" color={isSelected ? "var(--accent)" : "var(--muted)"} />
+                                  <IconComponent size={15} color={isSelected ? "var(--accent)" : "var(--muted)"} />
                                   <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)" }}>
                                     {opt.label}
                                   </span>
                                 </div>
+
 
 
                                 <span style={{
@@ -548,7 +549,7 @@ export default function HomePage() {
                           return (
                             <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                <ChartBar size={14} weight="duotone" color="var(--accent)" />
+                                <BarChart3 size={13} color="var(--accent)" />
                                 <span>Points Leaderboard</span>
                               </div>
 
@@ -556,11 +557,11 @@ export default function HomePage() {
                                 {itemsWithPct.map((item, idx) => {
                                   const isTop = idx === 0;
                                   const rankIcon = idx === 0 ? (
-                                    <Crown size={15} weight="duotone" color="var(--accent)" />
+                                    <Crown size={13} color="var(--accent)" />
                                   ) : idx === 1 ? (
-                                    <Medal size={15} weight="duotone" color="#8B5CF6" />
+                                    <Medal size={13} color="#8B5CF6" />
                                   ) : idx === 2 ? (
-                                    <Certificate size={15} weight="duotone" color="#EC4899" />
+                                    <Award size={13} color="#EC4899" />
                                   ) : (
                                     <span style={{ fontSize: 10, fontFamily: "monospace", color: "var(--muted)" }}>#{idx + 1}</span>
                                   );
@@ -620,11 +621,20 @@ export default function HomePage() {
                         <div style={{ textAlign: "center", marginTop: 8 }}>
                           <button
                             type="button"
-                            onClick={() => setRankedSubmitted(false)}
+                            onClick={() => {
+                              setRankedOrder([
+                                "Instant Realtime SSE Sync",
+                                "Multi-Tier Fraud Defense",
+                                "Interactive SVG Charts",
+                                "Mobile Web Experience",
+                              ]);
+                              setRankedSubmitted(false);
+                            }}
                             className="btn-ghost"
-                            style={{ fontSize: 11, padding: "5px 10px" }}
+                            style={{ fontSize: 11, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 6, margin: "0 auto" }}
                           >
-                            ↺ Re-rank & Vote Again
+                            <RefreshCw size={12} />
+                            <span>Rank Again</span>
                           </button>
                         </div>
                       </div>
@@ -638,13 +648,14 @@ export default function HomePage() {
                 {/* 3. Image Poll Format Interactive Body */}
                 {sandboxFormat === "image" && (
                   <div>
-                    <div className="sandbox-title">Which logo mark concept works best for Ballot?</div>
+                    <div className="sandbox-title">Which design direction for the brand redesign?</div>
 
                     {!imageVoteSubmitted ? (
                       <div>
-                        <div className="sandbox-image-grid" role="radiogroup" aria-label="Image poll demo options" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 12 }}>
+                        <div role="radiogroup" aria-label="Image demo options" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 14 }}>
                           {imageOptions.map((opt, i) => {
                             const isSelected = selectedImage === i;
+                            const IconComponent = opt.iconComponent;
                             return (
                               <div
                                 key={i}
@@ -659,9 +670,9 @@ export default function HomePage() {
                                   }
                                 }}
                                 style={{
+                                  borderRadius: 8,
                                   border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
                                   background: isSelected ? "var(--accent-soft)" : "var(--paper)",
-                                  borderRadius: 8,
                                   overflow: "hidden",
                                   cursor: "pointer",
                                   display: "flex",
@@ -678,7 +689,7 @@ export default function HomePage() {
                                   justifyContent: "center",
                                   borderBottom: "1px solid var(--line)",
                                 }}>
-                                  <opt.iconComponent size={26} weight="duotone" color={opt.color} />
+                                  <IconComponent size={24} color={opt.color} />
                                 </div>
                                 <div style={{ padding: "8px 6px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                                   <div style={{ fontWeight: 700, fontSize: 11, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>
@@ -749,7 +760,7 @@ export default function HomePage() {
                                     borderBottom: "1px solid var(--line)",
                                     position: "relative",
                                   }}>
-                                    <IconComponent size={26} weight="duotone" color={opt.color} />
+                                    <IconComponent size={24} color={opt.color} />
                                     <div style={{
                                       position: "absolute",
                                       top: 4,
@@ -773,7 +784,7 @@ export default function HomePage() {
                                       </div>
                                       {isLeader && (
                                         <span style={{ display: "inline-flex", alignItems: "center", padding: "1px 4px", borderRadius: 2, background: "var(--accent-soft)", flexShrink: 0 }}>
-                                          <Trophy size={11} weight="duotone" color="var(--accent)" />
+                                          <Trophy size={11} color="var(--accent)" />
                                         </span>
                                       )}
                                     </div>
@@ -802,7 +813,7 @@ export default function HomePage() {
                             className="btn-ghost"
                             style={{ fontSize: 11, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 6, margin: "0 auto" }}
                           >
-                            <ArrowsClockwise size={13} weight="duotone" />
+                            <RefreshCw size={12} />
                             <span>Cast Another Vote</span>
                           </button>
                         </div>
@@ -823,7 +834,7 @@ export default function HomePage() {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <ClipboardText size={18} weight="duotone" color="var(--accent)" />
+                <ClipboardList size={18} color="var(--accent)" />
                 <h2 style={{ fontSize: 16, fontWeight: 700 }}>Your Created Polls ({polls.length})</h2>
               </div>
 
@@ -1001,7 +1012,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <Lightning size={20} weight="duotone" color="var(--accent)" />
+                          <Zap size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1019,7 +1030,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <Trophy size={20} weight="duotone" color="var(--accent)" />
+                          <Trophy size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1037,7 +1048,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <ImageIcon size={20} weight="duotone" color="var(--accent)" />
+                          <ImageIcon size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1078,7 +1089,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <LinkIcon size={20} weight="duotone" color="var(--accent)" />
+                          <Link2 size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1096,7 +1107,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <QrCode size={20} weight="duotone" color="var(--accent)" />
+                          <QrCode size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1114,7 +1125,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <Laptop size={20} weight="duotone" color="var(--accent)" />
+                          <Laptop size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1156,7 +1167,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <CheckCircle size={20} weight="duotone" color="var(--accent)" />
+                          <CheckCircle2 size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1174,7 +1185,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <Crown size={20} weight="duotone" color="var(--accent)" />
+                          <Crown size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1192,7 +1203,7 @@ export default function HomePage() {
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
                         <span className="stepper-row-icon">
-                          <ChartBar size={20} weight="duotone" color="var(--accent)" />
+                          <BarChart3 size={18} color="var(--accent)" />
                         </span>
                         <div>
                           <div>
@@ -1237,7 +1248,7 @@ export default function HomePage() {
               <div className="pillar-card">
                 <div>
                   <div className="pillar-icon">
-                    <ShieldCheck size={28} weight="duotone" color="var(--accent)" />
+                    <ShieldCheck size={26} color="var(--accent)" />
                   </div>
                   <div className="pillar-title">Smart Fraud Defense</div>
                   <div className="pillar-desc">
@@ -1250,7 +1261,7 @@ export default function HomePage() {
               <div className="pillar-card">
                 <div>
                   <div className="pillar-icon">
-                    <Lightning size={28} weight="duotone" color="var(--accent)" />
+                    <Zap size={26} color="var(--accent)" />
                   </div>
                   <div className="pillar-title">Adaptive Realtime Stream</div>
                   <div className="pillar-desc">
@@ -1267,7 +1278,7 @@ export default function HomePage() {
               <div className="pillar-card">
                 <div>
                   <div className="pillar-icon">
-                    <Trophy size={28} weight="duotone" color="var(--accent)" />
+                    <Trophy size={26} color="var(--accent)" />
                   </div>
                   <div className="pillar-title">Ranked Choice (Points)</div>
                   <div className="pillar-desc">
@@ -1281,7 +1292,7 @@ export default function HomePage() {
               <div className="pillar-card">
                 <div>
                   <div className="pillar-icon">
-                    <ChartBar size={28} weight="duotone" color="var(--accent)" />
+                    <BarChart3 size={26} color="var(--accent)" />
                   </div>
                   <div className="pillar-title">Interactive SVG Charts & Data Exports</div>
                   <div className="pillar-desc">
@@ -1296,7 +1307,7 @@ export default function HomePage() {
               <div className="pillar-card">
                 <div>
                   <div className="pillar-icon">
-                    <GlobeHemisphereWest size={28} weight="duotone" color="var(--accent)" />
+                    <Globe size={26} color="var(--accent)" />
                   </div>
                   <div className="pillar-title">Zero-Friction Voting</div>
                   <div className="pillar-desc">
@@ -1308,6 +1319,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
 
 
 
