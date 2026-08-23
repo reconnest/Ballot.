@@ -34,8 +34,8 @@ import {
   RefreshCw,
   ChevronUp,
   ChevronDown,
-  Vote,
 } from "lucide-react";
+
 
 
 
@@ -1399,59 +1399,31 @@ export default function HomePage() {
 
 
 
-        {/* 6. LIVE PLATFORM ACTIVITY & METRICS */}
-        <section className="live-activity-section" aria-labelledby="live-activity-heading">
-          <div className="live-activity-box">
-            <div className="live-activity-header">
-              <div>
-                <div className="live-beacon-badge">
-                  <span className="live-beacon-dot" />
-                  <span>LIVE PLATFORM ACTIVITY</span>
-                </div>
-                <h2 id="live-activity-heading" style={{ fontSize: 20, fontWeight: 800, marginTop: 8, color: "var(--ink)" }}>
-                  Real-Time Decisions Across Ballot
-                </h2>
+        {/* 6. LIVE PLATFORM ACTIVITY */}
+        <section className="stats-strip" aria-labelledby="stats-strip-heading">
+          <div className="stats-strip-head">
+            <span className="stats-strip-dot" aria-hidden="true" />
+            <span id="stats-strip-heading" className="stats-strip-label">
+              Live platform activity
+            </span>
+          </div>
+          <div className="stats-strip-row">
+            <div className="stats-strip-item">
+              <div className="stats-strip-num">
+                <RollingCounter value={globalStats.totalVotes} />
               </div>
-              <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'JetBrains Mono', monospace" }}>
-                Auto-syncing live
-              </div>
+              <div className="stats-strip-sub">Total votes cast</div>
             </div>
-
-            <div className="live-activity-grid">
-              {/* Metric 1: Total Votes Cast */}
-              <div className="live-metric-card">
-                <div className="live-metric-top">
-                  <span className="live-metric-label">Total Votes Cast</span>
-                  <div className="live-metric-icon-wrap">
-                    <Vote size={18} color="var(--accent-ink)" />
-                  </div>
-                </div>
-                <div className="live-metric-number">
-                  <RollingCounter value={globalStats.totalVotes} />
-                </div>
-                <div className="live-metric-desc">
-                  Live ballots cast across all community, team, and private decision polls.
-                </div>
+            <div className="stats-strip-divider" aria-hidden="true" />
+            <div className="stats-strip-item">
+              <div className="stats-strip-num">
+                <RollingCounter value={globalStats.totalPolls} />
               </div>
-
-              {/* Metric 2: Polls Created */}
-              <div className="live-metric-card">
-                <div className="live-metric-top">
-                  <span className="live-metric-label">Polls Created</span>
-                  <div className="live-metric-icon-wrap">
-                    <Sparkles size={18} color="var(--accent-ink)" />
-                  </div>
-                </div>
-                <div className="live-metric-number">
-                  <RollingCounter value={globalStats.totalPolls} />
-                </div>
-                <div className="live-metric-desc">
-                  Single-choice, multi-select, and ranked consensus polls launched globally.
-                </div>
-              </div>
+              <div className="stats-strip-sub">Polls created</div>
             </div>
           </div>
         </section>
+
 
 
 
