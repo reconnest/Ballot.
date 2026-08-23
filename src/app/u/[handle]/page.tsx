@@ -2,12 +2,21 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { Search, Lock } from "lucide-react";
-
-
+import {
+  Search,
+  Lock,
+  Globe,
+  Settings,
+  LogOut,
+  X,
+  Plus,
+  Sparkles,
+  Check,
+} from "lucide-react";
+import { AnimatedSearchIcon } from "@/components/icons/AnimatedSearchIcon";
 
 
 type CreatorProfile = {
@@ -34,10 +43,9 @@ type UserPoll = {
   createdAt: number;
 };
 
-
-
 export default function CreatorProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const rawHandle = (params.handle as string) || "";
   const handle = rawHandle.replace(/^@/, "").toLowerCase();
 
@@ -47,6 +55,23 @@ export default function CreatorProfilePage() {
   const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  // Search & Filter State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "live" | "closed">("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<"all" | "public" | "unlisted">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "standard" | "ranked_choice" | "image">("all");
+
+  // Settings Modal State
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  // Sign out State
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     async function loadProfile() {
@@ -59,6 +84,10 @@ export default function CreatorProfilePage() {
           setPolls(data.polls || []);
           setTotalVotes(data.totalVotes || 0);
           setIsOwner(!!data.isOwner);
+          if (data.creator) {
+            setEditDisplayName(data.creator.displayName || "");
+            setEditBio(data.creator.bio || "");
+          }
         } else {
           setNotFound(true);
         }
@@ -70,18 +99,97 @@ export default function CreatorProfilePage() {
     if (handle) loadProfile();
   }, [handle]);
 
+  // Handle Profile Save
+  async function handleSaveProfile(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editDisplayName.trim()) return;
+    setSavingProfile(true);
+    setSaveError("");
+    try {
+      const res = await fetch("/api/auth/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          displayName: editDisplayName.trim(),
+          bio: editBio.trim(),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user && creator) {
+          setCreator({
+            ...creator,
+            displayName: data.user.displayName,
+            bio: data.user.bio,
+          });
+        }
+        setSaveSuccess(true);
+        setTimeout(() => {
+          setSaveSuccess(false);
+          setShowSettingsModal(false);
+        }, 1200);
+      } else {
+        const err = await res.json();
+        setSaveError(err.error || "Failed to update profile.");
+      }
+    } catch {
+      setSaveError("Network error. Please try again.");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  // Handle Logout
+  async function handleSignOut() {
+    if (!confirm("Are you sure you want to sign out?")) return;
+    setSigningOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/");
+      router.refresh();
+    } catch (e) {
+      console.error("Sign out failed", e);
+      setSigningOut(false);
+    }
+  }
+
+  // Filter and Sort Polls (Latest to Oldest)
+  const filteredPolls = polls.filter((p) => {
+    const isLive = p.status === "live" && !p.isExpired && (!p.expiresAt || Date.now() <= p.expiresAt);
+
+    // Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      const cleanSlug = p.slug.replace(/^(BPC|BPP)-/, "").toLowerCase();
+      const matchQuestion = p.question.toLowerCase().includes(q);
+      const matchSlug = p.slug.toLowerCase().includes(q) || cleanSlug.includes(q);
+      const matchCategory = (p.category || "").toLowerCase().includes(q);
+      if (!matchQuestion && !matchSlug && !matchCategory) return false;
+    }
+
+    // Status filter
+    if (statusFilter === "live" && !isLive) return false;
+    if (statusFilter === "closed" && isLive) return false;
+
+    // Visibility / Type filter
+    if (isOwner) {
+      if (visibilityFilter === "public" && p.isPublic === 0) return false;
+      if (visibilityFilter === "unlisted" && p.isPublic !== 0) return false;
+    } else {
+      if (typeFilter !== "all" && p.pollType !== typeFilter) return false;
+    }
+
+    return true;
+  });
 
   return (
     <div className="wrap">
-      {/* Top Header */}
       <Navbar />
 
       <main style={{ maxWidth: 920, margin: "0 auto", paddingBottom: 60, width: "100%" }}>
-
-
         {loading ? (
-          <div style={{ padding: "80px 0", textAlign: "center", color: "var(--muted)", fontFamily: "monospace" }}>
-            Loading creator profile...
+          <div style={{ padding: "80px 0", textAlign: "center", color: "var(--muted)", fontFamily: "'JetBrains Mono', monospace" }}>
+            Loading creator dashboard...
           </div>
         ) : notFound || !creator ? (
           <div style={{ padding: "80px 0", textAlign: "center" }}>
@@ -98,19 +206,9 @@ export default function CreatorProfilePage() {
           </div>
         ) : (
           <div>
-            {/* Creator Hero Card */}
-            <div style={{
-              background: "var(--surface)",
-              border: "1px solid var(--line)",
-              borderRadius: 12,
-              padding: "28px",
-              marginBottom: 32,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              flexWrap: "wrap",
-              gap: 20
-            }}>
+            {/* 1. CREATOR HERO CARD */}
+            <div className="profile-hero-card">
+              {/* Left Identity Block */}
               <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: "1 1 320px", minWidth: 0 }}>
                 <div style={{
                   width: 64,
@@ -142,127 +240,299 @@ export default function CreatorProfilePage() {
                     @{creator.username}
                   </div>
                   {creator.bio && (
-                    <p style={{ fontSize: 13, color: "var(--ink)", marginTop: 4, maxWidth: 500, lineHeight: 1.4, wordBreak: "break-word" }}>
+                    <p style={{ fontSize: 13, color: "var(--ink)", marginTop: 4, maxWidth: 520, lineHeight: 1.45, wordBreak: "break-word" }}>
                       {creator.bio}
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Compact Hairline Stats Strip */}
-              <div className="profile-stats-strip">
-                <div className="profile-stat-item">
-                  <div className="profile-stat-num">{polls.length}</div>
-                  <div className="profile-stat-label">polls</div>
+              {/* Right Stats & Owner Actions */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12, flexShrink: 0 }}>
+                <div className="profile-stats-strip">
+                  <div className="profile-stat-item">
+                    <div className="profile-stat-num">{polls.length}</div>
+                    <div className="profile-stat-label">polls</div>
+                  </div>
+                  <div className="profile-stat-divider" aria-hidden="true" />
+                  <div className="profile-stat-item">
+                    <div className="profile-stat-num">{totalVotes}</div>
+                    <div className="profile-stat-label">votes</div>
+                  </div>
                 </div>
-                <div className="profile-stat-divider" aria-hidden="true" />
-                <div className="profile-stat-item">
-                  <div className="profile-stat-num">{totalVotes}</div>
-                  <div className="profile-stat-label">votes</div>
-                </div>
+
+                {/* Owner Quick Actions (Settings & Sign Out) */}
+                {isOwner && (
+                  <div className="profile-owner-actions">
+                    <button
+                      type="button"
+                      onClick={() => setShowSettingsModal(true)}
+                      className="profile-action-btn"
+                      title="Edit Profile and Bio"
+                    >
+                      <Settings size={13} />
+                      <span>Settings</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      disabled={signingOut}
+                      className="profile-action-btn danger"
+                      title="Sign out of account"
+                    >
+                      <LogOut size={13} />
+                      <span>{signingOut ? "Signing out…" : "Sign out"}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* 2. STICKY SEARCH & FILTER CONTROL STRIP (60/40 Split) */}
+            <div className="profile-control-bar">
+              {/* 60% Search Input */}
+              <div className="profile-search-wrap">
+                <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}>
+                  <AnimatedSearchIcon size={16} />
+                </div>
+                <input
+                  type="text"
+                  placeholder={isOwner ? "Search your polls by question, category, or poll ID…" : `Search @${creator.username}'s polls…`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "9px 36px 9px 36px",
+                    border: "1px solid var(--line)",
+                    borderRadius: 6,
+                    background: "var(--paper)",
+                    fontSize: 13,
+                    color: "var(--ink)",
+                    outline: "none",
+                    transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    aria-label="Clear search"
+                    style={{
+                      position: "absolute",
+                      right: 10,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "var(--muted)",
+                      padding: 2,
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
 
-            {/* Polls List */}
-            <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700 }}>
-                {isOwner ? "Your Created Polls" : `Community Polls by @${creator.username}`}
-              </h2>
+              {/* 40% Filter Dropdowns */}
+              <div className="profile-filters-wrap">
+                {/* Status Dropdown */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="profile-select"
+                  aria-label="Filter by poll status"
+                >
+                  <option value="all">All Status</option>
+                  <option value="live">🟢 Live</option>
+                  <option value="closed">⚪ Closed</option>
+                </select>
+
+                {/* Visibility / Type Dropdown */}
+                {isOwner ? (
+                  <select
+                    value={visibilityFilter}
+                    onChange={(e) => setVisibilityFilter(e.target.value as any)}
+                    className="profile-select"
+                    aria-label="Filter by visibility"
+                  >
+                    <option value="all">All Visibility</option>
+                    <option value="public">🌐 Public</option>
+                    <option value="unlisted">🔒 Unlisted</option>
+                  </select>
+                ) : (
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value as any)}
+                    className="profile-select"
+                    aria-label="Filter by poll format"
+                  >
+                    <option value="all">All Types</option>
+                    <option value="standard">Standard</option>
+                    <option value="ranked_choice">Ranked</option>
+                    <option value="image">Image</option>
+                  </select>
+                )}
+
+                {/* Quick Create New Poll button for Owner */}
+                {isOwner && (
+                  <Link
+                    href="/new"
+                    className="btn-primary"
+                    style={{
+                      padding: "8px 12px",
+                      fontSize: 12,
+                      textDecoration: "none",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      whiteSpace: "nowrap",
+                      borderRadius: 6,
+                    }}
+                    title="Create a new poll"
+                  >
+                    <Plus size={13} />
+                    <span>New Poll</span>
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* 3. POLLS LIST HEADER */}
+            <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                <Sparkles size={14} color="var(--accent)" />
+                <span>
+                  {isOwner ? "Your Polls" : `Polls by @${creator.username}`}
+                </span>
+              </div>
               <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'JetBrains Mono', monospace" }}>
-                {polls.length} {polls.length === 1 ? "poll" : "polls"}
+                Showing {filteredPolls.length} of {polls.length} poll{polls.length === 1 ? "" : "s"}
               </span>
             </div>
 
-            {polls.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 16px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8 }}>
-                <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: isOwner ? 16 : 0 }}>
-                  {isOwner ? "You haven't created any polls yet." : "No public polls published yet."}
+            {/* 4. SCROLLABLE POLLS LEDGER LIST */}
+            {filteredPolls.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 16px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10 }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                  <Search size={32} color="var(--muted)" />
+                </div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>No matching polls found</h3>
+                <p style={{ color: "var(--muted)", fontSize: 13, maxWidth: 420, margin: "0 auto 16px" }}>
+                  {searchQuery || statusFilter !== "all" || visibilityFilter !== "all" || typeFilter !== "all"
+                    ? "Try clearing your search query or reset your status/type filters."
+                    : isOwner
+                    ? "You haven't published any polls yet. Launch your first question in seconds!"
+                    : "This creator hasn't published any matching public polls."}
                 </p>
-                {isOwner && (
-                  <Link href="/new" className="btn-primary" style={{ display: "inline-flex", fontSize: 13 }}>
+                {(searchQuery || statusFilter !== "all" || visibilityFilter !== "all" || typeFilter !== "all") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setStatusFilter("all");
+                      setVisibilityFilter("all");
+                      setTypeFilter("all");
+                    }}
+                    className="btn-ghost"
+                    style={{ fontSize: 12, padding: "6px 14px" }}
+                  >
+                    Reset all filters
+                  </button>
+                )}
+                {isOwner && !searchQuery && polls.length === 0 && (
+                  <Link href="/new" className="btn-primary" style={{ display: "inline-flex", fontSize: 13, textDecoration: "none" }}>
                     + Create Your First Poll
                   </Link>
                 )}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {polls.map((p) => {
+                {filteredPolls.map((p) => {
                   const isLive = p.status === "live" && !p.isExpired && (!p.expiresAt || Date.now() <= p.expiresAt);
 
                   return (
                     <Link
                       href={`/p/${p.slug}`}
                       key={p.id}
-                      className="poll-row"
-                      style={{
-                        background: "var(--surface)",
-                        border: "1px solid var(--line)",
-                        borderRadius: 8,
-                        padding: 16,
-                        textDecoration: "none",
-                        color: "inherit",
-                        display: "block",
-                        transition: "border-color 0.15s ease",
-                      }}
+                      className="profile-poll-card"
+                      role="listitem"
                     >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap", alignItems: "center" }}>
-                            <span className="badge-category">{p.category || "general"}</span>
-                            {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
-                            {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
-                            {isOwner && p.isPublic === 0 && (
-                              <span style={{
-                                fontSize: 10,
-                                fontFamily: "'JetBrains Mono', monospace",
-                                padding: "2px 6px",
-                                borderRadius: 4,
-                                background: "var(--paper)",
-                                border: "1px solid var(--line)",
-                                color: "var(--muted)",
-                                fontWeight: 600,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4
-                              }}>
-                                <Lock size={10} />
-                                <span>Unlisted</span>
-                              </span>
-                            )}
+                      {/* Left: Poll Details */}
+                      <div className="profile-card-main">
+                        <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap", alignItems: "center" }}>
+                          <span className="badge-category">{p.category || "general"}</span>
+                          {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+                          {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
+                          {isOwner && p.isPublic === 0 && (
                             <span style={{
                               fontSize: 10,
                               fontFamily: "'JetBrains Mono', monospace",
                               padding: "2px 6px",
                               borderRadius: 4,
-                              background: isLive ? "var(--accent-soft)" : "var(--line)",
-                              color: isLive ? "var(--accent-ink)" : "var(--muted)",
+                              background: "var(--paper)",
+                              border: "1px solid var(--line)",
+                              color: "var(--muted)",
                               fontWeight: 600,
-                              letterSpacing: "0.03em"
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4
                             }}>
-                              {isLive ? "LIVE" : "CLOSED"}
+                              <Lock size={10} />
+                              <span>Unlisted</span>
                             </span>
-                          </div>
-                          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "var(--faint)", marginBottom: 4 }}>
-                            Poll ID: {p.slug.replace(/^(BPC|BPP)-/, "")}
-                          </div>
-                          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)", marginBottom: 4, wordBreak: "break-word" }} title={p.question}>
-                            {p.question}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", fontFamily: "'JetBrains Mono', monospace" }}>
-                            {p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}
+                          )}
+                          <span style={{
+                            fontSize: 10,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            background: isLive ? "var(--accent-soft)" : "var(--line)",
+                            color: isLive ? "var(--accent-ink)" : "var(--muted)",
+                            fontWeight: 600,
+                            letterSpacing: "0.03em"
+                          }}>
+                            {isLive ? "LIVE" : "CLOSED"}
                           </span>
-                          <div style={{ fontSize: 11, color: isLive ? "var(--accent)" : "var(--muted)", marginTop: 4, fontWeight: 600 }}>
-                            {isOwner
-                              ? "Manage & Results →"
-                              : !isLive
-                              ? "Results Finalized →"
-                              : p.hasVoted
-                              ? "Voted · Results →"
-                              : "Vote now →"}
-                          </div>
+                        </div>
+
+                        <div className="explore-card-id" style={{ marginBottom: 4 }}>
+                          Poll ID: {p.slug.replace(/^(BPC|BPP)-/, "")}
+                        </div>
+
+                        <div
+                          style={{
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: "var(--ink)",
+                            lineHeight: 1.35,
+                            wordBreak: "break-word",
+                            fontFamily: "'Space Grotesk', sans-serif"
+                          }}
+                          title={p.question}
+                        >
+                          {p.question}
+                        </div>
+                      </div>
+
+                      {/* Hairline Divider */}
+                      <div className="profile-card-divider" aria-hidden="true" />
+
+                      {/* Right: Votes & Action Button */}
+                      <div className="profile-card-side">
+                        <div className="profile-card-votes">
+                          {p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}
+                        </div>
+                        <div className={`profile-card-action ${!isLive && !isOwner ? "closed" : ""}`}>
+                          {isOwner
+                            ? "Manage & Results →"
+                            : !isLive
+                            ? "Results Finalized →"
+                            : p.hasVoted
+                            ? "Voted · Results →"
+                            : "Vote now →"}
                         </div>
                       </div>
                     </Link>
@@ -270,9 +540,138 @@ export default function CreatorProfilePage() {
                 })}
               </div>
             )}
+          </div>
+        )}
 
+        {/* 5. EDIT PROFILE SETTINGS MODAL */}
+        {showSettingsModal && (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0, 0, 0, 0.6)",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+              padding: 16,
+            }}
+            onClick={() => setShowSettingsModal(false)}
+          >
+            <div
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--line)",
+                borderRadius: 12,
+                padding: "24px",
+                width: "100%",
+                maxWidth: 460,
+                boxShadow: "0 16px 36px rgba(0,0,0,0.18)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+                  <Settings size={18} color="var(--accent)" />
+                  <span>Edit Profile</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowSettingsModal(false)}
+                  style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer" }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
 
+              {saveError && (
+                <div style={{ padding: "8px 12px", background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", borderRadius: 6, fontSize: 12, marginBottom: 14 }}>
+                  {saveError}
+                </div>
+              )}
 
+              {saveSuccess && (
+                <div style={{ padding: "8px 12px", background: "var(--accent-soft)", color: "var(--accent-ink)", borderRadius: 6, fontSize: 12, marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Check size={14} />
+                  <span>Profile updated successfully!</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveProfile} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--ink)", marginBottom: 4 }}>
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editDisplayName}
+                    onChange={(e) => setEditDisplayName(e.target.value)}
+                    maxLength={50}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: 6,
+                      border: "1px solid var(--line)",
+                      background: "var(--paper)",
+                      color: "var(--ink)",
+                      fontSize: 14,
+                      outline: "none",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--ink)", marginBottom: 4 }}>
+                    Bio
+                  </label>
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    maxLength={300}
+                    rows={3}
+                    placeholder="Tell your voters about your organization, community, or polling topics…"
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: 6,
+                      border: "1px solid var(--line)",
+                      background: "var(--paper)",
+                      color: "var(--ink)",
+                      fontSize: 13,
+                      outline: "none",
+                      resize: "vertical",
+                    }}
+                  />
+                  <div style={{ fontSize: 11, color: "var(--muted)", textAlign: "right", marginTop: 2 }}>
+                    {editBio.length} / 300
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowSettingsModal(false)}
+                    className="btn-ghost"
+                    style={{ padding: "8px 16px", fontSize: 13 }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingProfile || saveSuccess}
+                    className="btn-primary"
+                    style={{ padding: "8px 18px", fontSize: 13 }}
+                  >
+                    {savingProfile ? "Saving…" : "Save Changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 
@@ -281,5 +680,6 @@ export default function CreatorProfilePage() {
     </div>
   );
 }
+
 
 

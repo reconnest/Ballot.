@@ -37,12 +37,26 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
     const displayName = typeof body.displayName === "string" ? body.displayName.trim() : null;
+    const bio = typeof body.bio === "string" ? body.bio.trim() : null;
+
+    const updateData: Record<string, any> = {};
 
     if (displayName !== null) {
       if (displayName.length < 2 || displayName.length > 50) {
         return NextResponse.json({ error: "Display name must be between 2 and 50 characters." }, { status: 400 });
       }
-      await db.update(users).set({ displayName }).where(eq(users.id, user.id));
+      updateData.displayName = displayName;
+    }
+
+    if (bio !== null) {
+      if (bio.length > 300) {
+        return NextResponse.json({ error: "Bio cannot exceed 300 characters." }, { status: 400 });
+      }
+      updateData.bio = bio;
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      await db.update(users).set(updateData).where(eq(users.id, user.id));
     }
 
     const [updatedUser] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
@@ -55,8 +69,10 @@ export async function PATCH(req: NextRequest) {
         username: updatedUser.username,
         displayName: updatedUser.displayName,
         avatarUrl: updatedUser.avatarUrl,
+        bio: updatedUser.bio,
       }
     });
+
   } catch (err) {
     console.error("Update profile error:", err);
     return NextResponse.json({ error: "Could not update settings." }, { status: 500 });
