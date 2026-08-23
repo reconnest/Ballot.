@@ -33,8 +33,11 @@ type PollSummary = {
   allowMultiple: boolean;
   voteCount: number;
   isExpired: boolean;
+  status: string;
+  expiresAt?: number | null;
   createdAt: number;
 };
+
 
 const CATEGORIES = [
   { id: "all", label: "All", icon: Globe },
@@ -298,6 +301,8 @@ function ExploreContent() {
                       ? "availability"
                       : null;
 
+                  const isLive = p.status === "live" && !p.isExpired;
+
                   return (
                     <Link href={`/p/${p.slug}`} key={p.id} className="explore-poll-card" role="listitem">
                       <div>
@@ -319,12 +324,13 @@ function ExploreContent() {
                         <span className="explore-card-votes">
                           {p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}
                         </span>
-                        <span className={`explore-card-action ${p.isExpired ? "closed" : ""}`}>
-                          {p.isExpired ? "closed" : "vote →"}
+                        <span className={`explore-card-action ${!isLive ? "closed" : ""}`}>
+                          {!isLive ? "closed" : "vote →"}
                         </span>
                       </div>
                     </Link>
                   );
+
                 })}
 
                 {/* Sparse State Fallback: for Trending / Active when under 4 polls */}

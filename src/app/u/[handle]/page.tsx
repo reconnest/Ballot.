@@ -29,9 +29,11 @@ type UserPoll = {
   isPublic?: number;
   voteCount: number;
   isExpired: boolean;
+  expiresAt?: number | null;
   hasVoted?: boolean;
   createdAt: number;
 };
+
 
 
 export default function CreatorProfilePage() {
@@ -109,7 +111,7 @@ export default function CreatorProfilePage() {
               flexWrap: "wrap",
               gap: 20
             }}>
-              <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flex: "1 1 320px", minWidth: 0 }}>
                 <div style={{
                   width: 64,
                   height: 64,
@@ -122,22 +124,25 @@ export default function CreatorProfilePage() {
                   fontSize: 24,
                   fontWeight: 700,
                   border: "2px solid var(--accent)",
-                  fontFamily: "Space Grotesk, sans-serif"
+                  fontFamily: "Space Grotesk, sans-serif",
+                  flexShrink: 0
                 }}>
                   {creator.displayName.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <h1 style={{ fontSize: 22, fontWeight: 700 }}>{creator.displayName}</h1>
-                    <span style={{ fontSize: 11, background: "var(--accent-soft)", color: "var(--accent-ink)", padding: "2px 8px", borderRadius: 12, fontWeight: 600 }}>
+                <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, lineHeight: 1.25, wordBreak: "break-word" }}>
+                      {creator.displayName}
+                    </h1>
+                    <span style={{ fontSize: 11, background: "var(--accent-soft)", color: "var(--accent-ink)", padding: "2px 8px", borderRadius: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
                       Verified Creator
                     </span>
                   </div>
-                  <div style={{ fontSize: 14, color: "var(--muted)", fontFamily: "monospace", marginTop: 2 }}>
+                  <div style={{ fontSize: 14, color: "var(--muted)", fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.4 }}>
                     @{creator.username}
                   </div>
                   {creator.bio && (
-                    <p style={{ fontSize: 13, color: "var(--ink)", marginTop: 8, maxWidth: 440, lineHeight: 1.4 }}>
+                    <p style={{ fontSize: 13, color: "var(--ink)", marginTop: 4, maxWidth: 500, lineHeight: 1.4, wordBreak: "break-word" }}>
                       {creator.bio}
                     </p>
                   )}
@@ -145,7 +150,7 @@ export default function CreatorProfilePage() {
               </div>
 
               {/* Stats Badge */}
-              <div style={{ display: "flex", gap: 20 }}>
+              <div style={{ display: "flex", gap: 16, flexShrink: 0 }}>
                 <div style={{ textAlign: "center", background: "var(--paper)", padding: "10px 16px", borderRadius: 8, border: "1px solid var(--line)" }}>
                   <div style={{ fontSize: 20, fontWeight: 700, color: "var(--accent)" }}>{polls.length}</div>
                   <div style={{ fontSize: 11, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Polls</div>
@@ -162,7 +167,7 @@ export default function CreatorProfilePage() {
               <h2 style={{ fontSize: 18, fontWeight: 700 }}>
                 {isOwner ? "Your Created Polls" : `Community Polls by @${creator.username}`}
               </h2>
-              <span style={{ fontSize: 12, color: "var(--muted)" }}>
+              <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'JetBrains Mono', monospace" }}>
                 {polls.length} {polls.length === 1 ? "poll" : "polls"}
               </span>
             </div>
@@ -180,84 +185,90 @@ export default function CreatorProfilePage() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {polls.map((p) => (
-                  <Link
-                    href={`/p/${p.slug}`}
-                    key={p.id}
-                    className="poll-row"
-                    style={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--line)",
-                      borderRadius: 8,
-                      padding: 16,
-                      textDecoration: "none",
-                      color: "inherit",
-                      display: "block",
-                      transition: "border-color 0.15s ease",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-                      <div>
-                        <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap", alignItems: "center" }}>
-                          <span className="badge-category">{p.category || "general"}</span>
-                          {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
-                          {isOwner && p.isPublic === 0 && (
+                {polls.map((p) => {
+                  const isLive = p.status === "live" && !p.isExpired && (!p.expiresAt || Date.now() <= p.expiresAt);
+
+                  return (
+                    <Link
+                      href={`/p/${p.slug}`}
+                      key={p.id}
+                      className="poll-row"
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--line)",
+                        borderRadius: 8,
+                        padding: 16,
+                        textDecoration: "none",
+                        color: "inherit",
+                        display: "block",
+                        transition: "border-color 0.15s ease",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap", alignItems: "center" }}>
+                            <span className="badge-category">{p.category || "general"}</span>
+                            {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+                            {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
+                            {isOwner && p.isPublic === 0 && (
+                              <span style={{
+                                fontSize: 10,
+                                fontFamily: "'JetBrains Mono', monospace",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                background: "var(--paper)",
+                                border: "1px solid var(--line)",
+                                color: "var(--muted)",
+                                fontWeight: 600,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4
+                              }}>
+                                <Lock size={10} />
+                                <span>Unlisted</span>
+                              </span>
+                            )}
                             <span style={{
                               fontSize: 10,
-                              fontFamily: "monospace",
+                              fontFamily: "'JetBrains Mono', monospace",
                               padding: "2px 6px",
                               borderRadius: 4,
-                              background: "var(--paper)",
-                              border: "1px solid var(--line)",
-                              color: "var(--muted)",
+                              background: isLive ? "var(--accent-soft)" : "var(--line)",
+                              color: isLive ? "var(--accent-ink)" : "var(--muted)",
                               fontWeight: 600,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4
+                              letterSpacing: "0.03em"
                             }}>
-                              <Lock size={10} />
-                              <span>Unlisted</span>
+                              {isLive ? "LIVE" : "CLOSED"}
                             </span>
-                          )}
-                          <span style={{
-                            fontSize: 10,
-                            fontFamily: "monospace",
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            background: p.status === "inactive" ? "var(--line)" : "var(--accent-soft)",
-                            color: p.status === "inactive" ? "var(--muted)" : "var(--accent-ink)",
-                            fontWeight: 600
-                          }}>
-                            {p.status === "inactive" ? "FINALIZED" : "LIVE"}
+                          </div>
+                          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "var(--faint)", marginBottom: 4 }}>
+                            Poll ID: {p.slug.replace(/^(BPC|BPP)-/, "")}
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)", marginBottom: 4, wordBreak: "break-word" }} title={p.question}>
+                            {p.question}
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right", whiteSpace: "nowrap", flexShrink: 0 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)", fontFamily: "'JetBrains Mono', monospace" }}>
+                            {p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}
                           </span>
-                        </div>
-                        <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "var(--faint)", marginBottom: 4 }}>
-                          Poll ID: {p.slug.replace(/^(BPC|BPP)-/, "")}
-                        </div>
-                        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)", marginBottom: 4 }} title={p.question}>
-                          {p.question}
-                        </div>
-
-                      </div>
-                      <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>
-                          {p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}
-                        </span>
-                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, fontWeight: isOwner ? 600 : 500 }}>
-                          {isOwner
-                            ? "Manage & Results →"
-                            : p.status === "inactive" || p.isExpired
-                            ? "Results Finalized →"
-                            : p.hasVoted
-                            ? "Voted · Results →"
-                            : "Vote now →"}
+                          <div style={{ fontSize: 11, color: isLive ? "var(--accent)" : "var(--muted)", marginTop: 4, fontWeight: 600 }}>
+                            {isOwner
+                              ? "Manage & Results →"
+                              : !isLive
+                              ? "Results Finalized →"
+                              : p.hasVoted
+                              ? "Voted · Results →"
+                              : "Vote now →"}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             )}
+
 
 
           </div>
