@@ -7,6 +7,8 @@ import { BallotLogo } from "./BallotLogo";
 import { ThemeToggle } from "./ThemeToggle";
 import { AuthModal } from "./AuthModal";
 import { getCachedSessionUser, setCachedSessionUser } from "@/lib/session-cache";
+import { User, BarChart3, Settings, LogOut, X } from "lucide-react";
+
 
 export type SessionUser = {
   id: string;
@@ -183,8 +185,9 @@ export function Navbar({ onUserChange }: NavbarProps) {
                   className="creator-dropdown-trigger"
                   aria-expanded={showDropdown}
                   title={`Creator ID: @${user.username}`}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                 >
-                  <span>👤</span>
+                  <User size={13} color="var(--accent)" />
                   <span>@{user.username}</span>
                   <span style={{ fontSize: 10, marginLeft: 2 }}>▼</span>
                 </button>
@@ -197,8 +200,9 @@ export function Navbar({ onUserChange }: NavbarProps) {
                       className="creator-dropdown-item"
                       onClick={() => setShowDropdown(false)}
                       role="menuitem"
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
-                      <span>📊</span>
+                      <BarChart3 size={14} color="var(--accent)" />
                       <span>Dashboard</span>
                     </Link>
 
@@ -211,8 +215,9 @@ export function Navbar({ onUserChange }: NavbarProps) {
                         setShowSettingsModal(true);
                       }}
                       role="menuitem"
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
-                      <span>⚙️</span>
+                      <Settings size={14} color="var(--muted)" />
                       <span>Settings</span>
                     </button>
 
@@ -222,10 +227,10 @@ export function Navbar({ onUserChange }: NavbarProps) {
                       type="button"
                       className="creator-dropdown-item"
                       onClick={handleLogout}
-                      style={{ color: "#EF4444" }}
+                      style={{ color: "#EF4444", display: "flex", alignItems: "center", gap: 8 }}
                       role="menuitem"
                     >
-                      <span>🚪</span>
+                      <LogOut size={14} />
                       <span>Sign out</span>
                     </button>
                   </div>
@@ -272,9 +277,15 @@ export function Navbar({ onUserChange }: NavbarProps) {
         <div className="modal-backdrop">
           <div className="modal-box" style={{ maxWidth: 440 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h2 style={{ fontSize: 18, fontWeight: 700 }}>⚙️ Creator Settings</h2>
-              <button type="button" className="btn-link" onClick={() => setShowSettingsModal(false)}>✕</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Settings size={17} color="var(--accent)" />
+                <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Creator Settings</h2>
+              </div>
+              <button type="button" className="btn-link" onClick={() => setShowSettingsModal(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <X size={18} />
+              </button>
             </div>
+
 
             <form onSubmit={handleSaveSettings}>
               {settingsError && (

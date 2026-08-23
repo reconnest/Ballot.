@@ -3,17 +3,25 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AdSidebarContainer } from "@/components/AdSlot";
 import { AnimatedSearchIcon } from "@/components/icons/AnimatedSearchIcon";
-
-
+import {
+  Globe,
+  Terminal,
+  Gamepad2,
+  Clapperboard,
+  Trophy,
+  Utensils,
+  MessageSquare,
+  Flame,
+  Sparkles,
+  Zap,
+  Search,
+} from "lucide-react";
 
 type PollSummary = {
-
-
   id: string;
   slug: string;
   question: string;
@@ -27,13 +35,13 @@ type PollSummary = {
 };
 
 const CATEGORIES = [
-  { id: "all", label: "🌐 All" },
-  { id: "tech", label: "💻 Tech" },
-  { id: "gaming", label: "🎮 Gaming" },
-  { id: "entertainment", label: "🎬 Entertainment" },
-  { id: "sports", label: "⚽ Sports" },
-  { id: "food", label: "🍕 Food" },
-  { id: "general", label: "💬 General" },
+  { id: "all", label: "All", icon: Globe },
+  { id: "tech", label: "Tech", icon: Terminal },
+  { id: "gaming", label: "Gaming", icon: Gamepad2 },
+  { id: "entertainment", label: "Entertainment", icon: Clapperboard },
+  { id: "sports", label: "Sports", icon: Trophy },
+  { id: "food", label: "Food", icon: Utensils },
+  { id: "general", label: "General", icon: MessageSquare },
 ];
 
 function ExploreContent() {
@@ -59,7 +67,7 @@ function ExploreContent() {
       if (category !== "all") params.set("category", category);
       if (search) params.set("q", search);
       params.set("filter", filter);
-      params.set("page", targetPage.toString());
+      params.set("page", String(targetPage));
       params.set("limit", "24");
 
       const res = await fetch(`/api/explore?${params.toString()}`, { cache: "no-store" });
@@ -73,14 +81,14 @@ function ExploreContent() {
       }
     } catch (err) {
       console.error("[loadPolls] Failed to load explore feed:", err);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    setLoading(false);
-    setLoadingMore(false);
   }
 
   useEffect(() => {
     loadPolls(1, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, filter]);
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -100,173 +108,181 @@ function ExploreContent() {
 
       <AdSidebarContainer>
         <main>
+          <div className="section-label">Public Polls</div>
+          <h1 className="poll-title" style={{ fontSize: 24, marginBottom: 16 }}>Explore & Discover</h1>
 
-        <div className="section-label">Public Polls</div>
-        <h1 className="poll-title" style={{ fontSize: 24, marginBottom: 16 }}>Explore & Discover</h1>
-
-        {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} style={{ marginBottom: 18, position: "relative" }}>
-          <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}>
-            <AnimatedSearchIcon size={18} />
-          </div>
-          <input
-            type="text"
-            placeholder="Search questions or topics… (press Enter)"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "11px 14px 11px 40px",
-              border: "1px solid var(--line)",
-              borderRadius: "var(--radius)",
-              background: "var(--surface)",
-              fontSize: 14,
-              color: "var(--ink)",
-              outline: "none",
-              transition: "border-color 0.2s ease, box-shadow 0.2s ease",
-            }}
-          />
-        </form>
-
-
-        {/* Categories Pills */}
-        <div className="expiry-row" style={{ marginBottom: 16 }}>
-          {CATEGORIES.map((c) => (
-            <button
-              type="button"
-              key={c.id}
-              className={`expiry-chip ${category === c.id ? "active" : ""}`}
-              onClick={() => setCategory(c.id)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="chart-toolbar" style={{ marginBottom: 20 }}>
-          <div className="chart-type-toggle">
-            <button
-              type="button"
-              className={`chart-btn ${filter === "trending" ? "active" : ""}`}
-              onClick={() => setFilter("trending")}
-            >
-              🔥 Trending
-            </button>
-            <button
-              type="button"
-              className={`chart-btn ${filter === "recent" ? "active" : ""}`}
-              onClick={() => setFilter("recent")}
-            >
-              ✨ Recent
-            </button>
-            <button
-              type="button"
-              className={`chart-btn ${filter === "active" ? "active" : ""}`}
-              onClick={() => setFilter("active")}
-            >
-              ⚡ Active
-            </button>
-          </div>
-          <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "monospace" }}>
-            {totalCount} poll{totalCount === 1 ? "" : "s"}
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="explore-cards-grid" aria-label="Loading explore feed">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div key={n} className="skeleton-card" style={{ gap: 12 }}>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <div className="skeleton-box" style={{ width: 64, height: 20, borderRadius: 10 }} />
-                  <div className="skeleton-box" style={{ width: 80, height: 20, borderRadius: 10 }} />
-                </div>
-                <div className="skeleton-box" style={{ width: "90%", height: 22, marginTop: 4 }} />
-                <div className="skeleton-box" style={{ width: "70%", height: 16 }} />
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--line)" }}>
-                  <div className="skeleton-box" style={{ width: 50, height: 14 }} />
-                  <div className="skeleton-box" style={{ width: 60, height: 14 }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : polls.length === 0 ? (
-          <div className="empty" style={{ padding: "48px 16px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10 }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>No matching polls found</h3>
-            <p style={{ color: "var(--muted)", fontSize: 14, maxWidth: 400, margin: "0 auto 20px" }}>
-              We couldn&apos;t find any polls matching &ldquo;{search || category}&rdquo;. Try another keyword or create the first one!
-            </p>
-            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => { setSearch(""); setCategory("all"); }}
-                style={{ padding: "8px 16px", fontSize: 13 }}
-              >
-                Reset filters
-              </button>
-              <Link
-                href="/new"
-                className="btn-primary"
-                style={{ padding: "8px 18px", fontSize: 13, textDecoration: "none" }}
-              >
-                + Create a Poll
-              </Link>
+          {/* Search Bar */}
+          <form onSubmit={handleSearchSubmit} style={{ marginBottom: 18, position: "relative" }}>
+            <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}>
+              <AnimatedSearchIcon size={18} />
             </div>
-          </div>
-        ) : (
+            <input
+              type="text"
+              placeholder="Search questions or topics… (press Enter)"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "11px 14px 11px 40px",
+                border: "1px solid var(--line)",
+                borderRadius: "var(--radius)",
+                background: "var(--surface)",
+                fontSize: 14,
+                color: "var(--ink)",
+                outline: "none",
+                transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+              }}
+            />
+          </form>
 
-          <>
-            <div className="explore-cards-grid" role="list" aria-label="Public polls list">
-              {polls.map((p) => (
-                <Link href={`/p/${p.slug}`} key={p.id} className="poll-row" role="listitem" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
-                      <span className="badge-category">{p.category || "general"}</span>
-                      {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
-                      {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
-                    </div>
-                    <div className="poll-q" style={{ fontSize: 15 }}>{p.question}</div>
-                    {p.description && (
-                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>
-                        {p.description}
-                      </div>
-                    )}
-                  </div>
-                  <div className="poll-meta" style={{ marginTop: 14, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}</span>
-                    <span>{p.isExpired ? "closed" : "active · vote →"}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* Pagination / Load More Button */}
-            {hasMore && (
-              <div style={{ marginTop: 24, textAlign: "center" }}>
+          {/* Categories Pills */}
+          <div className="expiry-row" style={{ marginBottom: 16 }}>
+            {CATEGORIES.map((c) => {
+              const IconComp = c.icon;
+              return (
                 <button
                   type="button"
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="btn-ghost"
-                  style={{ padding: "10px 24px", fontSize: 13 }}
+                  key={c.id}
+                  className={`expiry-chip ${category === c.id ? "active" : ""}`}
+                  onClick={() => setCategory(c.id)}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                 >
-                  {loadingMore ? "Loading more polls…" : "↓ Load More Polls"}
+                  <IconComp size={13} color={category === c.id ? "var(--accent)" : "currentColor"} />
+                  <span>{c.label}</span>
                 </button>
+              );
+            })}
+          </div>
+
+          {/* Filter Tabs */}
+          <div className="chart-toolbar" style={{ marginBottom: 20 }}>
+            <div className="chart-type-toggle">
+              <button
+                type="button"
+                className={`chart-btn ${filter === "trending" ? "active" : ""}`}
+                onClick={() => setFilter("trending")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+              >
+                <Flame size={13} color={filter === "trending" ? "var(--accent)" : "currentColor"} />
+                <span>Trending</span>
+              </button>
+              <button
+                type="button"
+                className={`chart-btn ${filter === "recent" ? "active" : ""}`}
+                onClick={() => setFilter("recent")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+              >
+                <Sparkles size={13} color={filter === "recent" ? "var(--accent)" : "currentColor"} />
+                <span>Recent</span>
+              </button>
+              <button
+                type="button"
+                className={`chart-btn ${filter === "active" ? "active" : ""}`}
+                onClick={() => setFilter("active")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+              >
+                <Zap size={13} color={filter === "active" ? "var(--accent)" : "currentColor"} />
+                <span>Active</span>
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "monospace" }}>
+              {totalCount} poll{totalCount === 1 ? "" : "s"}
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="explore-cards-grid" aria-label="Loading explore feed">
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <div key={n} className="skeleton-card" style={{ gap: 12 }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <div className="skeleton-box" style={{ width: 64, height: 20, borderRadius: 10 }} />
+                    <div className="skeleton-box" style={{ width: 80, height: 20, borderRadius: 10 }} />
+                  </div>
+                  <div className="skeleton-box" style={{ width: "90%", height: 22, marginTop: 4 }} />
+                  <div className="skeleton-box" style={{ width: "70%", height: 16 }} />
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+                    <div className="skeleton-box" style={{ width: 50, height: 14 }} />
+                    <div className="skeleton-box" style={{ width: 60, height: 14 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : polls.length === 0 ? (
+            <div className="empty" style={{ padding: "48px 16px", background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10 }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+                <Search size={36} color="var(--muted)" />
               </div>
-            )}
-          </>
-        )}
+              <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>No matching polls found</h3>
+              <p style={{ color: "var(--muted)", fontSize: 14, maxWidth: 400, margin: "0 auto 20px" }}>
+                We couldn&apos;t find any polls matching &ldquo;{search || category}&rdquo;. Try another keyword or create the first one!
+              </p>
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => { setSearch(""); setCategory("all"); }}
+                  style={{ padding: "8px 16px", fontSize: 13 }}
+                >
+                  Reset filters
+                </button>
+                <Link
+                  href="/new"
+                  className="btn-primary"
+                  style={{ padding: "8px 18px", fontSize: 13, textDecoration: "none" }}
+                >
+                  + Create a Poll
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="explore-cards-grid" role="list" aria-label="Public polls list">
+                {polls.map((p) => (
+                  <Link href={`/p/${p.slug}`} key={p.id} className="poll-row" role="listitem" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                    <div>
+                      <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
+                        <span className="badge-category">{p.category || "general"}</span>
+                        {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+                        {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
+                      </div>
+                      <div className="poll-q" style={{ fontSize: 15 }}>{p.question}</div>
+                      {p.description && (
+                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>
+                          {p.description}
+                        </div>
+                      )}
+                    </div>
+                    <div className="poll-meta" style={{ marginTop: 14, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ fontWeight: 600, color: "var(--ink)" }}>{p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}</span>
+                      <span>{p.isExpired ? "closed" : "active · vote →"}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
 
-        <Footer />
-      </main>
-    </AdSidebarContainer>
-  </div>
-);
+              {/* Pagination / Load More Button */}
+              {hasMore && (
+                <div style={{ marginTop: 24, textAlign: "center" }}>
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="btn-ghost"
+                    style={{ padding: "10px 24px", fontSize: 13 }}
+                  >
+                    {loadingMore ? "Loading more polls…" : "↓ Load More Polls"}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
 
+          <Footer />
+        </main>
+      </AdSidebarContainer>
+    </div>
+  );
 }
-
 
 export default function ExplorePage() {
   return (
@@ -275,3 +291,4 @@ export default function ExplorePage() {
     </Suspense>
   );
 }
+

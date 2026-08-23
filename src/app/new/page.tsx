@@ -10,6 +10,29 @@ import { AuthModal } from "@/components/AuthModal";
 import { getCachedSessionUser, setCachedSessionUser } from "@/lib/session-cache";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
 import { compressImage } from "@/lib/image-utils";
+import {
+  Zap,
+  Trophy,
+  Image as ImageIcon,
+  UploadCloud,
+  ClipboardPaste,
+  Camera,
+  Plus,
+  X,
+  Globe,
+  Lock,
+  Settings,
+  Eye,
+  ChevronUp,
+  ChevronDown,
+  Sparkles,
+  ArrowRight,
+  GripVertical,
+  Check,
+  ShieldCheck,
+  CheckCircle2,
+  Trash2,
+} from "lucide-react";
 
 const EXPIRY_PRESETS = [
   { label: "No limit", ms: null },
@@ -59,18 +82,22 @@ const POLL_TYPES = [
     value: "standard",
     label: "Standard Poll",
     hint: "Single choice or multiple selections",
+    icon: Zap,
   },
   {
     value: "ranked_choice",
     label: "Ranked Choice (Points)",
     hint: "Voters rank choices in order of preference (1st gets max points)",
+    icon: Trophy,
   },
   {
     value: "image",
     label: "Image Poll",
     hint: "Include image previews with each choice",
+    icon: ImageIcon,
   },
 ];
+
 
 
 
@@ -514,17 +541,23 @@ export default function NewPollPage() {
         <div className="block" style={{ marginBottom: 32 }}>
           <label className="field-label">Poll Format</label>
           <div className="format-grid-3">
-            {POLL_TYPES.map((pt) => (
-              <button
-                type="button"
-                key={pt.value}
-                className={`visibility-card ${pollType === pt.value ? "active" : ""}`}
-                onClick={() => setPollType(pt.value)}
-              >
-                <div className="vis-title">{pt.label}</div>
-                <div className="vis-hint">{pt.hint}</div>
-              </button>
-            ))}
+            {POLL_TYPES.map((pt) => {
+              const IconComp = pt.icon;
+              return (
+                <button
+                  type="button"
+                  key={pt.value}
+                  className={`visibility-card ${pollType === pt.value ? "active" : ""}`}
+                  onClick={() => setPollType(pt.value)}
+                >
+                  <div className="vis-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <IconComp size={15} color={pollType === pt.value ? "var(--accent)" : "currentColor"} />
+                    <span>{pt.label}</span>
+                  </div>
+                  <div className="vis-hint">{pt.hint}</div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -636,7 +669,8 @@ export default function NewPollPage() {
                     }}
                     title="Select multiple images at once to auto-create options & labels"
                   >
-                    <span>📁 Bulk Upload Images</span>
+                    <UploadCloud size={14} />
+                    <span>Bulk Upload Images</span>
                     <input
                       type="file"
                       multiple
@@ -652,11 +686,11 @@ export default function NewPollPage() {
                 ) : (
                   <button
                     type="button"
-                    className="btn-ghost"
-                    style={{ fontSize: 12, padding: "3px 8px" }}
+                    className="btn-link"
+                    style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }}
                     onClick={() => setShowBulkModal(true)}
                   >
-                    ⚡ Bulk paste
+                    <ClipboardPaste size={13} /> Bulk paste
                   </button>
                 )}
               </div>
@@ -845,10 +879,13 @@ export default function NewPollPage() {
                                   padding: "2px 6px",
                                   borderRadius: 4,
                                   cursor: "pointer",
-                                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center"
                                 }}
                               >
-                                ✕
+                                <X size={12} />
                               </button>
                             </div>
                           </div>
@@ -864,14 +901,14 @@ export default function NewPollPage() {
                               flexDirection: "column",
                               alignItems: "center",
                               justifyContent: "center",
-                              gap: 4,
+                              gap: 6,
                               cursor: "pointer",
                               transition: "all 0.15s ease",
                               textAlign: "center",
                               padding: 4
                             }}
                           >
-                            <span style={{ fontSize: 20 }}>📷</span>
+                            <Camera size={20} color="var(--muted)" />
                             <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)" }}>Upload</span>
                             <input
                               type="file"
@@ -920,7 +957,7 @@ export default function NewPollPage() {
                         padding: 8
                       }}
                     >
-                      <span style={{ fontSize: 20 }}>➕</span>
+                      <Plus size={20} color="var(--accent)" />
                       <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>
                         + Add Image
                       </span>
@@ -967,8 +1004,8 @@ export default function NewPollPage() {
                           transition: "border 0.15s ease",
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "grab" }} title="Drag to reorder">
-                          <span style={{ color: "var(--muted)", fontSize: 13 }}>⠿</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "grab" }} title="Drag to reorder">
+                          <GripVertical size={14} color="var(--muted)" />
                           <span className="drag-handle">{i + 1}</span>
                         </div>
 
@@ -1006,7 +1043,7 @@ export default function NewPollPage() {
                               padding: 0
                             }}
                           >
-                            ▲
+                            <ChevronUp size={12} />
                           </button>
                           <button
                             type="button"
@@ -1029,7 +1066,7 @@ export default function NewPollPage() {
                               padding: 0
                             }}
                           >
-                            ▼
+                            <ChevronDown size={12} />
                           </button>
                         </div>
 
@@ -1042,7 +1079,7 @@ export default function NewPollPage() {
                             aria-label={`Remove option ${i + 1}`}
                             style={{ fontSize: 13, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}
                           >
-                            ✕
+                            <X size={14} />
                           </button>
                         )}
 
@@ -1077,8 +1114,9 @@ export default function NewPollPage() {
                   onClick={handleSelectCommunity}
                   style={{ padding: "14px 16px", textAlign: "left" }}
                 >
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4 }}>
-                    🌐 Public Poll
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <Globe size={15} color={isPublic ? "var(--accent)" : "currentColor"} />
+                    <span>Public Poll</span>
                   </div>
                   <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
                     Discoverable in Explore. Requires sign in.
@@ -1092,8 +1130,9 @@ export default function NewPollPage() {
                   onClick={() => setIsPublic(false)}
                   style={{ padding: "14px 16px", textAlign: "left" }}
                 >
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4 }}>
-                    🔒 Private Poll
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <Lock size={15} color={!isPublic ? "var(--accent)" : "currentColor"} />
+                    <span>Private Poll</span>
                   </div>
                   <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
                     Direct link only. No sign in required.
@@ -1101,6 +1140,7 @@ export default function NewPollPage() {
                 </button>
               </div>
             </div>
+
 
             {/* Category: Only for Public Community Polls */}
             {isPublic && (
@@ -1256,12 +1296,16 @@ export default function NewPollPage() {
               <button
                 type="button"
                 className="btn-ghost"
-                style={{ width: "100%", justifyContent: "space-between", display: "flex", fontSize: 13 }}
+                style={{ width: "100%", justifyContent: "space-between", display: "flex", alignItems: "center", fontSize: 13 }}
                 onClick={() => setShowAdvanced(!showAdvanced)}
               >
-                <span>⚙️ More Settings (Deadline, Security, Results)</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Settings size={14} color="var(--accent)" />
+                  <span>More Settings (Deadline, Security, Results)</span>
+                </span>
                 <span>{showAdvanced ? "▲" : "▼"}</span>
               </button>
+
 
               {showAdvanced && (
                 <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1396,14 +1440,15 @@ export default function NewPollPage() {
             {error && <div className="error-box">{error}</div>}
 
             {/* Action Buttons: Preview Ballot & Publish */}
-            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 10, marginTop: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
               <button
                 type="button"
                 onClick={handleOpenPreview}
                 className="btn-ghost"
                 style={{
-                  padding: "12px 18px",
-                  fontSize: 14,
+                  width: "100%",
+                  padding: "10px 16px",
+                  fontSize: 13,
                   fontWeight: 600,
                   display: "flex",
                   alignItems: "center",
@@ -1416,7 +1461,7 @@ export default function NewPollPage() {
                 }}
                 title="Test and preview the live ballot before creating"
               >
-                <span>👁️</span>
+                <Eye size={15} color="var(--accent)" />
                 <span>Preview Ballot</span>
               </button>
 
@@ -1452,7 +1497,8 @@ export default function NewPollPage() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>👁️ Live Voter Ballot Preview</h2>
+                    <Eye size={17} color="var(--accent)" />
+                    <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>Live Voter Ballot Preview</h2>
                     <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent-ink)", background: "var(--accent-soft)", border: "1px solid var(--accent)", padding: "2px 6px", borderRadius: 4, fontFamily: "monospace" }}>
                       PREVIEW MODE
                     </span>
@@ -1465,9 +1511,9 @@ export default function NewPollPage() {
                   type="button"
                   className="btn-link"
                   onClick={() => setShowPreviewModal(false)}
-                  style={{ fontSize: 18, color: "var(--muted)", cursor: "pointer" }}
+                  style={{ fontSize: 18, color: "var(--muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
-                  ✕
+                  <X size={18} />
                 </button>
               </div>
 
@@ -1508,8 +1554,9 @@ export default function NewPollPage() {
                 {pollType === "ranked_choice" ? (
                   /* 1. Ranked Choice Interactive Order */
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>
-                      💡 Drag or use ▲ / ▼ to test ranking choices (1st gets max points):
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                      <Sparkles size={13} color="var(--accent)" />
+                      <span>Drag or use arrows to test ranking choices (1st gets max points):</span>
                     </div>
                     {previewRankedOrder.map((optIdx, i) => {
                       const opt = opts[optIdx];
@@ -1576,7 +1623,7 @@ export default function NewPollPage() {
                                 fontWeight: 700,
                               }}
                             >
-                              ▲
+                              <ChevronUp size={14} />
                             </button>
                             <button
                               type="button"
@@ -1597,7 +1644,7 @@ export default function NewPollPage() {
                                 fontWeight: 700,
                               }}
                             >
-                              ▼
+                              <ChevronDown size={14} />
                             </button>
                           </div>
                         </div>
@@ -1633,7 +1680,7 @@ export default function NewPollPage() {
                             {opt.imageUrl ? (
                               <img src={opt.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                             ) : (
-                              <span style={{ fontSize: 24 }}>🖼️</span>
+                              <ImageIcon size={24} color="var(--muted)" />
                             )}
                           </div>
 
@@ -1656,7 +1703,7 @@ export default function NewPollPage() {
                               fontSize: 9,
                               fontWeight: 700,
                             }}>
-                              {isSelected && (allowMultiple ? "✓" : "●")}
+                              {isSelected && (allowMultiple ? <Check size={10} strokeWidth={3} /> : "●")}
                             </div>
                           </div>
                         </div>
@@ -1706,7 +1753,7 @@ export default function NewPollPage() {
                             fontSize: 12,
                             fontWeight: 700,
                           }}>
-                            {isSelected && (allowMultiple ? "✓" : "●")}
+                            {isSelected && (allowMultiple ? <Check size={12} strokeWidth={3} /> : "●")}
                           </div>
                         </div>
                       );
@@ -1726,9 +1773,14 @@ export default function NewPollPage() {
                     color: "var(--accent-ink)",
                     fontSize: 13,
                     fontWeight: 700,
-                    marginBottom: 8
+                    marginBottom: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6
                   }}>
-                    🎉 Vote Simulation Successful! Ready to publish.
+                    <CheckCircle2 size={16} color="var(--accent)" />
+                    <span>Vote Simulation Successful! Ready to publish.</span>
                   </div>
                 ) : (
                   <button
@@ -1761,10 +1813,12 @@ export default function NewPollPage() {
                   }}
                   disabled={submitting}
                   className="btn-primary"
-                  style={{ padding: "8px 18px", fontSize: 13, fontWeight: 700 }}
+                  style={{ padding: "8px 18px", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}
                 >
-                  {submitting ? "Publishing..." : "🚀 Looks Good, Publish Poll →"}
+                  <span>{submitting ? "Publishing..." : "Looks Good, Publish Poll"}</span>
+                  {!submitting && <ArrowRight size={14} />}
                 </button>
+
               </div>
             </div>
           </div>
@@ -1780,9 +1834,9 @@ export default function NewPollPage() {
                   type="button"
                   className="btn-link"
                   onClick={() => setShowBulkModal(false)}
-                  style={{ fontSize: 18, color: "var(--muted)" }}
+                  style={{ fontSize: 18, color: "var(--muted)", display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
-                  ✕
+                  <X size={18} />
                 </button>
               </div>
               <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>

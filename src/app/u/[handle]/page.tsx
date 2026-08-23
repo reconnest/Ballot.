@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { Search, Lock } from "lucide-react";
+
+
 
 
 type CreatorProfile = {
@@ -81,7 +83,9 @@ export default function CreatorProfilePage() {
           </div>
         ) : notFound || !creator ? (
           <div style={{ padding: "80px 0", textAlign: "center" }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🔍</div>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+              <Search size={36} color="var(--muted)" />
+            </div>
             <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Creator not found</h1>
             <p style={{ color: "var(--muted)", marginBottom: 24, fontSize: 14 }}>
               The handle @{handle} does not exist or has not published any public polls yet.
@@ -206,9 +210,13 @@ export default function CreatorProfilePage() {
                               background: "var(--paper)",
                               border: "1px solid var(--line)",
                               color: "var(--muted)",
-                              fontWeight: 600
+                              fontWeight: 600,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4
                             }}>
-                              🔒 Unlisted
+                              <Lock size={10} />
+                              <span>Unlisted</span>
                             </span>
                           )}
                           <span style={{
@@ -237,7 +245,7 @@ export default function CreatorProfilePage() {
                             : p.status === "inactive" || p.isExpired
                             ? "Results Finalized →"
                             : p.hasVoted
-                            ? "Voted ✓ · Results →"
+                            ? "Voted · Results →"
                             : "Vote now →"}
                         </div>
                       </div>
@@ -246,6 +254,7 @@ export default function CreatorProfilePage() {
                 ))}
               </div>
             )}
+
 
           </div>
         )}

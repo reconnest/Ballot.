@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { ShieldCheck, X } from "lucide-react";
 
 type AuthModalProps = {
   isOpen: boolean;
@@ -129,19 +130,25 @@ export function AuthModal({ isOpen, onClose, onSuccess, initialMessage }: AuthMo
             border: "none",
             fontSize: 20,
             cursor: "pointer",
-            color: "var(--muted)"
+            color: "var(--muted)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
           }}
         >
-          ✕
+          <X size={18} />
         </button>
 
         <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>🔐</div>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+            <ShieldCheck size={32} color="var(--accent)" />
+          </div>
           <h2 style={{ fontSize: 20, fontWeight: 700 }}>
             {step === "email" && "Creator Sign In"}
             {step === "otp" && "Enter Verification Code"}
             {step === "handle" && "Claim Your Creator Handle"}
           </h2>
+
           <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>
             {step === "email" && (initialMessage || "Public community polls require a creator profile to prevent spam.")}
             {step === "otp" && `We sent a 6-digit code to ${email}`}

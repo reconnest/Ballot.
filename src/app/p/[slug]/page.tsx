@@ -16,6 +16,41 @@ import { fireMotionSafeConfetti } from "@/lib/confetti";
 import { AnimatedCopyIcon } from "@/components/icons/AnimatedCopyIcon";
 import { AnimatedTrophyIcon } from "@/components/icons/AnimatedTrophyIcon";
 import { AnimatedRefreshIcon } from "@/components/icons/AnimatedRefreshIcon";
+import {
+  Zap,
+  Trophy,
+  Image as ImageIcon,
+  Crown,
+  Medal,
+  Award,
+  ShieldCheck,
+  Lock,
+  AlertTriangle,
+  Key,
+  Copy,
+  Download,
+  RefreshCw,
+  Trash2,
+  Settings,
+  Share2,
+  Code2,
+  QrCode,
+  Check,
+  CheckCircle2,
+  X,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  Sparkles,
+  Lightbulb,
+  BarChart3,
+  LayoutGrid,
+  PieChart,
+  Infinity as InfinityIcon,
+  Vote,
+  Edit3,
+} from "lucide-react";
+
 
 
 
@@ -651,8 +686,9 @@ function PollContent() {
           alignItems: "center",
           fontSize: 13
         }}>
-          <span style={{ color: "var(--accent-ink)", fontWeight: 600 }}>
-            🔄 Round 2 Consensus · Linked from previous round
+          <span style={{ color: "var(--accent-ink)", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <RefreshCw size={13} color="var(--accent)" />
+            <span>Round 2 Consensus · Linked from previous round</span>
           </span>
           <Link href={`/p/${poll.repolledFrom}`} style={{ color: "var(--accent-ink)", fontWeight: 700, textDecoration: "underline" }}>
             View Round 1 Results →
@@ -673,7 +709,7 @@ function PollContent() {
           alignItems: "center"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 16 }}>🔒</span>
+            <Lock size={16} color="var(--muted)" />
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "var(--ink)" }}>
                 Results Finalized
@@ -701,7 +737,7 @@ function PollContent() {
         <main style={{ maxWidth: 920, margin: "0 auto", paddingBottom: 60, width: "100%" }}>
 
 
-        {/* ⚠️ Guest Creator Temporary Setup & Account Security Callout Banner */}
+        {/* Guest Creator Temporary Setup & Account Security Callout Banner */}
         {showAdminKeyBanner && adminKey && !poll.creator && (
           <div style={{
             background: "var(--surface)",
@@ -716,7 +752,7 @@ function PollContent() {
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                <span style={{ fontSize: 22, lineHeight: 1 }}>⚠️</span>
+                <AlertTriangle size={20} color="var(--accent)" style={{ flexShrink: 0, marginTop: 2 }} />
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--accent-ink)", display: "flex", alignItems: "center", gap: 6 }}>
                     Temporary Guest Poll · Secure Your Results
@@ -729,10 +765,10 @@ function PollContent() {
               <button
                 type="button"
                 onClick={() => setShowAdminKeyBanner(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 14, padding: "2px 6px" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", fontSize: 14, padding: "2px 6px", display: "flex", alignItems: "center", justifyContent: "center" }}
                 title="Dismiss notice"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
@@ -744,7 +780,8 @@ function PollContent() {
                 className="btn-primary"
                 style={{ fontSize: 12, padding: "8px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}
               >
-                🔐 Sign In to Secure & Claim This Poll
+                <Lock size={13} />
+                <span>Sign In to Secure & Claim This Poll</span>
               </button>
 
               <button
@@ -757,9 +794,10 @@ function PollContent() {
                   }
                 }}
                 className="btn-ghost"
-                style={{ fontSize: 12, padding: "8px 14px", whiteSpace: "nowrap" }}
+                style={{ fontSize: 12, padding: "8px 14px", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 6 }}
               >
-                {adminLinkCopied ? "✓ Link Copied!" : "📋 Copy Secret Admin Link"}
+                {adminLinkCopied ? <Check size={13} color="var(--accent)" /> : <Key size={13} />}
+                <span>{adminLinkCopied ? "Link Copied!" : "Copy Secret Admin Link"}</span>
               </button>
             </div>
           </div>
@@ -776,11 +814,13 @@ function PollContent() {
               {poll.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
               {poll.pollType === "standard" && poll.allowMultiple && <span className="badge-type">Multiple Choice</span>}
               {poll.securityMode === "unlimited" && (
-                <span className="badge-type" style={{ background: "var(--accent-soft)", color: "var(--accent-ink)", border: "1px solid var(--accent)" }}>
-                  ♾️ Unlimited
+                <span className="badge-type" style={{ background: "var(--accent-soft)", color: "var(--accent-ink)", border: "1px solid var(--accent)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <InfinityIcon size={12} />
+                  <span>Unlimited</span>
                 </span>
               )}
             </div>
+
 
             {/* Live Spectator Indicator */}
             <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
@@ -840,13 +880,17 @@ function PollContent() {
                 justifyContent: "space-between",
                 alignItems: "center"
               }}>
-                <span>🗳️ Casting a new ballot</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Vote size={13} color="var(--accent)" />
+                  <span>Casting a new ballot</span>
+                </span>
                 <button
                   type="button"
                   onClick={() => setIsCastingAnotherVote(false)}
-                  style={{ background: "none", border: "none", color: "var(--accent-ink)", cursor: "pointer", fontSize: 11, fontWeight: 600 }}
+                  style={{ background: "none", border: "none", color: "var(--accent-ink)", cursor: "pointer", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}
                 >
-                  ✕ Back to Results
+                  <X size={12} />
+                  <span>Back to Results</span>
                 </button>
               </div>
             )}
@@ -864,7 +908,10 @@ function PollContent() {
                 justifyContent: "space-between",
                 alignItems: "center"
               }}>
-                <span>↺ Editing your vote</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Edit3 size={13} color="var(--accent)" />
+                  <span>Editing your vote</span>
+                </span>
                 <button
                   type="button"
                   onClick={() => setIsEditingVote(false)}
@@ -886,9 +933,8 @@ function PollContent() {
                   alignItems: "center",
                   gap: 6
                 }}>
-                  <span>💡 Drag</span>
-                  <span style={{ fontFamily: "monospace", fontWeight: 700 }}>⋮⋮</span>
-                  <span>or use ▲ / ▼ to rank options from 1st to {rankedOptions.length}th Choice:</span>
+                  <Sparkles size={13} color="var(--accent)" />
+                  <span>Drag or use arrows to rank options from 1st to {rankedOptions.length}th Choice:</span>
                 </div>
 
                 {rankedOptions.map((opt, i) => {
@@ -928,49 +974,17 @@ function PollContent() {
                         padding: "10px 14px",
                         borderRadius: "var(--radius)",
                         border: isDragOver ? "2px dashed var(--accent)" : "1px solid var(--line)",
-                        background: isDragOver ? "var(--accent-soft)" : "var(--paper)",
-                        fontSize: 14,
-                        transition: "all 0.15s ease",
-                        opacity: isDragging ? 0.4 : 1,
+                        background: "var(--paper)",
                         cursor: "grab",
+                        opacity: isDragging ? 0.4 : 1,
+                        transition: "all 0.15s ease",
                       }}
                     >
-                      {/* Left: 6-dot Drag Handle + Rank Number + Option Label */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        {/* 6-dot Drag Handle */}
-                        <div
-                          title="Drag to reorder"
-                          style={{
-                            cursor: "grab",
-                            display: "flex",
-                            alignItems: "center",
-                            color: "var(--muted)",
-                            padding: "2px 4px",
-                            userSelect: "none"
-                          }}
-                        >
-                          <svg width="14" height="18" viewBox="0 0 14 18" fill="currentColor">
-                            <circle cx="4" cy="3" r="1.5" />
-                            <circle cx="10" cy="3" r="1.5" />
-                            <circle cx="4" cy="9" r="1.5" />
-                            <circle cx="10" cy="9" r="1.5" />
-                            <circle cx="4" cy="15" r="1.5" />
-                            <circle cx="10" cy="15" r="1.5" />
-                          </svg>
-                        </div>
-
-                        {/* Rank Badge */}
-                        <span style={{
-                          fontFamily: "monospace",
-                          fontWeight: 700,
-                          color: "var(--accent)",
-                          fontSize: 13,
-                          minWidth: 24,
-                        }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden" }}>
+                        <GripVertical size={14} color="var(--muted)" />
+                        <span style={{ fontFamily: "monospace", fontWeight: 700, color: "var(--accent)", fontSize: 13, minWidth: 24 }}>
                           #{i + 1}
                         </span>
-
-                        {/* Points Badge */}
                         <span style={{
                           fontSize: 11,
                           fontWeight: 700,
@@ -983,43 +997,37 @@ function PollContent() {
                         }}>
                           +{pointsForThisRank} pts
                         </span>
-
-                        {/* Optional Image */}
                         {opt.imageUrl && (
-                          <img src={opt.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} />
+                          <img
+                            src={opt.imageUrl}
+                            alt=""
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                            style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover", flexShrink: 0 }}
+                          />
                         )}
-
-                        {/* Option Label */}
-                        <span style={{
-                          fontWeight: 600,
-                          color: "var(--ink)",
-                          fontSize: 14,
-                        }}>
+                        <span style={{ fontWeight: 600, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {opt.label}
                         </span>
                       </div>
 
-
-                      {/* Right: Side-by-side Green Up and Red Down Arrow Buttons */}
+                      {/* Rank Movement Controls */}
                       <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                         <button
                           type="button"
+                          onClick={() => moveRankedOption(i, i - 1)}
                           disabled={i === 0}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            moveRankedOption(i, i - 1);
-                          }}
                           style={{
-                            padding: "4px 8px",
-                            fontSize: 12,
-                            border: "1px solid var(--line)",
+                            width: 28,
+                            height: 28,
                             borderRadius: 4,
-                            background: "var(--surface)",
+                            border: "1px solid var(--line)",
+                            background: i === 0 ? "transparent" : "var(--surface)",
+                            color: i === 0 ? "var(--faint)" : "#10B981",
                             cursor: i === 0 ? "not-allowed" : "pointer",
-                            opacity: i === 0 ? 0.25 : 1,
-                            color: i === 0 ? "var(--muted)" : "#10B981",
+                            fontSize: 11,
                             fontWeight: 700,
-                            lineHeight: 1,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1027,26 +1035,22 @@ function PollContent() {
                           aria-label="Move priority up"
                           title="Move priority up"
                         >
-                          ▲
+                          <ChevronUp size={14} />
                         </button>
                         <button
                           type="button"
+                          onClick={() => moveRankedOption(i, i + 1)}
                           disabled={i === rankedOptions.length - 1}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            moveRankedOption(i, i + 1);
-                          }}
                           style={{
-                            padding: "4px 8px",
-                            fontSize: 12,
-                            border: "1px solid var(--line)",
+                            width: 28,
+                            height: 28,
                             borderRadius: 4,
-                            background: "var(--surface)",
+                            border: "1px solid var(--line)",
+                            background: i === rankedOptions.length - 1 ? "transparent" : "var(--surface)",
+                            color: i === rankedOptions.length - 1 ? "var(--faint)" : "#EF4444",
                             cursor: i === rankedOptions.length - 1 ? "not-allowed" : "pointer",
-                            opacity: i === rankedOptions.length - 1 ? 0.25 : 1,
-                            color: i === rankedOptions.length - 1 ? "var(--muted)" : "#EF4444",
+                            fontSize: 11,
                             fontWeight: 700,
-                            lineHeight: 1,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1054,9 +1058,10 @@ function PollContent() {
                           aria-label="Move priority down"
                           title="Move priority down"
                         >
-                          ▼
+                          <ChevronDown size={14} />
                         </button>
                       </div>
+
                     </div>
                   );
                 })}
@@ -1094,16 +1099,17 @@ function PollContent() {
                             style={{ width: "100%", height: "100%", objectFit: "contain" }}
                           />
                         ) : (
-                          <span style={{ fontSize: 28 }}>🖼️</span>
+                          <ImageIcon size={28} color="var(--muted)" />
                         )}
 
                       </div>
 
-                      {/* Bottom Caption & Selection State */}
-                      <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                      {/* Bottom Caption & Select Radio / Checkbox */}
+                      <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                         <span style={{ fontSize: 13, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {opt.label}
                         </span>
+
                         <div style={{
                           width: 18,
                           height: 18,
@@ -1118,7 +1124,7 @@ function PollContent() {
                           fontSize: 10,
                           fontWeight: 700,
                         }}>
-                          {isSelected && (poll.allowMultiple ? "✓" : "●")}
+                          {isSelected && (poll.allowMultiple ? <Check size={11} strokeWidth={3} /> : "●")}
                         </div>
                       </div>
                     </div>
@@ -1127,146 +1133,111 @@ function PollContent() {
               </div>
 
             ) : (
-              /* Standard / Multi-Choice Voting UI */
+              /* Standard Single / Multi-choice list */
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-                {poll.options.map((opt, i) => {
+                {poll.options.map((opt) => {
                   const isSelected = selectedIds.includes(opt.id);
                   return (
                     <div
                       key={opt.id}
                       onClick={() => handleSelect(opt.id)}
                       style={{
+                        padding: "12px 16px",
+                        borderRadius: "var(--radius)",
                         border: isSelected ? "2px solid var(--accent)" : "1px solid var(--line)",
                         background: isSelected ? "var(--accent-soft)" : "var(--paper)",
-                        borderRadius: 8,
-                        padding: "14px 16px",
                         cursor: "pointer",
                         display: "flex",
-                        alignItems: "center",
                         justifyContent: "space-between",
+                        alignItems: "center",
                         transition: "all 0.15s ease",
                       }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <div style={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: poll.allowMultiple ? 4 : "50%",
-                          border: isSelected ? "5px solid var(--accent)" : "2px solid var(--muted)",
-                          background: "#FFFFFF",
-                        }} />
-                        <span style={{ fontSize: 15, fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)" }}>
-                          {opt.label}
-                        </span>
+                      <span style={{ fontWeight: isSelected ? 700 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)", fontSize: 15 }}>
+                        {opt.label}
+                      </span>
+                      <div style={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: poll.allowMultiple ? 4 : "50%",
+                        border: isSelected ? "2px solid var(--accent)" : "2px solid var(--muted)",
+                        background: isSelected ? "var(--accent)" : "transparent",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#FFFFFF",
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}>
+                        {isSelected && (poll.allowMultiple ? <Check size={12} strokeWidth={3} /> : "●")}
                       </div>
-
-                      {opt.imageUrl && (
-                        <img src={opt.imageUrl} alt="" style={{ width: 44, height: 44, borderRadius: 6, objectFit: "cover" }} />
-                      )}
                     </div>
                   );
                 })}
               </div>
             )}
 
-
-            {/* Voter Name Field */}
-            {poll.requireName && !poll.hasVoted && (
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
-                  Your Name <span style={{ color: "var(--accent)" }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  value={voterName}
-                  onChange={(e) => setVoterName(e.target.value)}
-                  className="input-text"
-                  required
-                />
-              </div>
-            )}
-
+            {/* Submit Vote Button */}
             <button
-              ref={submitBtnRef}
               type="submit"
-              disabled={voting || (poll.pollType === "ranked_choice" ? rankedOptions.length === 0 : selectedIds.length === 0)}
+              disabled={voting || (poll.pollType !== "ranked_choice" && selectedIds.length === 0)}
               className="btn-primary"
-              style={{ width: "100%", padding: "14px", fontSize: 15 }}
+              style={{ width: "100%", padding: "12px", fontSize: 15, fontWeight: 700 }}
             >
-              {voting
-                ? "Submitting..."
-                : poll.pollType === "ranked_choice"
-                ? (isEditingVote && !isCastingAnotherVote ? "Update Ranked Order →" : "Submit Ranked Order →")
-                : (isEditingVote && !isCastingAnotherVote ? "Update My Vote →" : "Submit Vote →")}
+              {voting ? "Recording Vote..." : poll.pollType === "ranked_choice" ? "Submit Ranked Choices →" : "Cast Vote →"}
             </button>
-
-
-
 
           </form>
         ) : (
           /* 2. RESULTS VIEW */
-          <div aria-live="polite" aria-atomic="false" style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 20 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {poll.pollType === "ranked_choice" ? (
-              /* RANKED CHOICE (POINTS) DEDICATED LEADERBOARD VIEW */
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
-                  <div>
-                    <h2 style={{ fontSize: 18, fontWeight: 700 }}>Ranked Points Results</h2>
-                    <div style={{ fontSize: 12, color: "var(--muted)" }}>
-                      {poll.totalVotes || 0} {poll.totalVotes === 1 ? "ballot recorded" : "total ballots recorded"} · {poll.rankedPointsResult?.totalPointsAwarded || 0} total points scored
-                    </div>
-                  </div>
-
-                  {/* Top-Right Result / Tie Badge */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* 1. Official Points Consensus Winner Banner */}
+                <div>
                   {(() => {
-                    const topPoints = poll.rankedPointsResult?.leaderboard?.[0]?.totalPoints || 0;
-                    const topWinners = (poll.rankedPointsResult?.leaderboard || []).filter(
-                      (item) => item.totalPoints === topPoints && item.totalPoints > 0
-                    );
+                    const lb = poll.rankedPointsResult?.leaderboard;
+                    if (!lb || lb.length === 0 || poll.totalVotes === 0) {
+                      return (
+                        <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: "14px 16px", textAlign: "center", color: "var(--muted)", fontSize: 13 }}>
+                          Leaderboard will be calculated once votes are received.
+                        </div>
+                      );
+                    }
 
-                    if (topWinners.length === 1) {
-                      return (
-                        <div style={{
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: "var(--accent-ink)",
-                          background: "var(--accent-soft)",
-                          border: "1px solid var(--accent)",
-                          padding: "4px 10px",
-                          borderRadius: 6,
-                        }}>
-                          Result: {topWinners[0].label}
-                        </div>
-                      );
-                    }
-                    if (topWinners.length > 1) {
-                      return (
-                        <div style={{
-                          fontSize: 12,
-                          fontWeight: 700,
-                          color: "var(--accent-ink)",
-                          background: "var(--accent-soft)",
-                          border: "1px solid var(--accent)",
-                          padding: "4px 10px",
-                          borderRadius: 6,
-                        }}>
-                          Result: Tied between {topWinners.map((w) => w.label).join(", ")}
-                        </div>
-                      );
-                    }
+                    const winner = lb[0];
+                    const isTied = lb.length > 1 && lb[1].totalPoints === winner.totalPoints && winner.totalPoints > 0;
+
                     return (
                       <div style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "var(--muted)",
-                        background: "var(--paper)",
-                        border: "1px solid var(--line)",
-                        padding: "4px 10px",
-                        borderRadius: 6,
+                        background: isTied ? "var(--paper)" : "var(--accent-soft)",
+                        border: isTied ? "1px solid var(--line)" : "1px solid var(--accent)",
+                        borderRadius: 8,
+                        padding: "14px 16px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 10,
+                        flexWrap: "wrap",
+                        boxShadow: isTied ? "none" : "0 4px 12px rgba(15, 118, 110, 0.12)",
                       }}>
-                        Result: Awaiting votes
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
+                            {isTied ? "⚖️ Tied Consensus (Equal Points)" : "🏆 Official Points Consensus Winner"}
+                          </div>
+                          <div style={{ fontSize: 17, fontWeight: 700, color: "var(--ink)" }}>
+                            {winner.label}
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                            {winner.firstChoiceVotes} first-choice picks ({winner.scorePct}% score share)
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: "right" }}>
+                          <span style={{ fontSize: 20, fontWeight: 800, color: "var(--accent-ink)", fontFamily: "monospace" }}>
+                            {winner.totalPoints} pts
+                          </span>
+                        </div>
                       </div>
                     );
                   })()}
@@ -1277,7 +1248,8 @@ function PollContent() {
                   {/* Left Column (35%): Your Personal Preference & Points */}
                   <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: 14 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      <span>🗳️ Your Preference & Points</span>
+                      <Vote size={13} color="var(--accent)" />
+                      <span>Your Preference & Points</span>
                     </div>
                     {poll.myVotes && poll.myVotes.length > 0 ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1335,7 +1307,8 @@ function PollContent() {
                   {/* Right Column (65%): Group Points Leaderboard with Ties Grouped */}
                   <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: 14 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 10, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      <span>📊 Points Leaderboard</span>
+                      <BarChart3 size={13} color="var(--accent)" />
+                      <span>Points Leaderboard</span>
                     </div>
 
                     {(() => {
@@ -1378,7 +1351,15 @@ function PollContent() {
                           {groups.map((grp, gIdx) => {
                             const isTop = gIdx === 0 && grp.points > 0;
                             const isTied = grp.items.length > 1;
-                            const rankIcon = gIdx === 0 ? "🥇" : gIdx === 1 ? "🥈" : gIdx === 2 ? "🥉" : `#${runningRank}`;
+                            const rankIcon = gIdx === 0 ? (
+                              <Crown size={14} color="var(--accent)" />
+                            ) : gIdx === 1 ? (
+                              <Medal size={14} color="#8B5CF6" />
+                            ) : gIdx === 2 ? (
+                              <Award size={14} color="#EC4899" />
+                            ) : (
+                              <span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--muted)" }}>#{runningRank}</span>
+                            );
                             const rankLabel = isTied ? `${rankIcon} #${runningRank} (Tied)` : `${rankIcon}`;
                             runningRank += grp.items.length;
 
@@ -1526,9 +1507,13 @@ function PollContent() {
                                 fontWeight: chartType === "cards" ? 700 : 500,
                                 fontSize: 11,
                                 cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
                               }}
                             >
-                              🖼️ Cards
+                              <LayoutGrid size={12} color={chartType === "cards" ? "var(--accent)" : "currentColor"} />
+                              <span>Cards</span>
                             </button>
                           )}
                           <button
@@ -1542,9 +1527,13 @@ function PollContent() {
                               fontWeight: chartType === "ledger" ? 700 : 500,
                               fontSize: 11,
                               cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
                             }}
                           >
-                            Bars
+                            <BarChart3 size={12} color={chartType === "ledger" ? "var(--accent)" : "currentColor"} />
+                            <span>Bars</span>
                           </button>
                           <button
                             type="button"
@@ -1557,9 +1546,13 @@ function PollContent() {
                               fontWeight: chartType === "donut" ? 700 : 500,
                               fontSize: 11,
                               cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 4,
                             }}
                           >
-                            Donut
+                            <PieChart size={12} color={chartType === "donut" ? "var(--accent)" : "currentColor"} />
+                            <span>Donut</span>
                           </button>
                         </div>
                       </div>
@@ -1609,7 +1602,7 @@ function PollContent() {
                                       style={{ width: "100%", height: "100%", objectFit: "contain" }}
                                     />
                                   ) : (
-                                    <span style={{ fontSize: 28 }}>🖼️</span>
+                                    <ImageIcon size={28} color="var(--muted)" />
                                   )}
                                   <div style={{
                                     position: "absolute",
@@ -1641,8 +1634,8 @@ function PollContent() {
                                       )}
 
                                       {isMyPick && (
-                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", background: "var(--line)", padding: "1px 4px", borderRadius: 3 }}>
-                                          ✓ You
+                                        <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", background: "var(--line)", padding: "1px 4px", borderRadius: 3, display: "inline-flex", alignItems: "center", gap: 2 }}>
+                                          <Check size={10} strokeWidth={3} /> You
                                         </span>
                                       )}
                                     </div>
@@ -1702,8 +1695,8 @@ function PollContent() {
                                       </span>
                                     )}
                                     {isMyPick && (
-                                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", background: "var(--line)", padding: "1px 4px", borderRadius: 3, flexShrink: 0 }}>
-                                        ✓ You
+                                      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", background: "var(--line)", padding: "1px 4px", borderRadius: 3, display: "inline-flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                                        <Check size={10} strokeWidth={3} /> You
                                       </span>
                                     )}
                                   </div>
@@ -1771,43 +1764,81 @@ function PollContent() {
                             </div>
                           </div>
 
-                          {/* Donut Legend */}
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, width: "100%" }}>
+                          {/* Legend Pills */}
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 500 }}>
                             {poll.options.map((opt, i) => {
                               const count = opt.votes ?? 0;
                               const pct = totalVotesCast > 0 ? Math.round((count / totalVotesCast) * 100) : 0;
-                              const color = CHART_COLORS[i % CHART_COLORS.length];
-                              const isLeader = maxOptionVotes > 0 && count === maxOptionVotes;
-                              const isMyPick = !isUnlimited && poll.myVotes.includes(opt.id);
-                              const isHighlighted = isUnlimited ? isLeader : isMyPick;
-
                               return (
                                 <div
                                   key={opt.id}
                                   style={{
                                     display: "flex",
                                     alignItems: "center",
-                                    justifyContent: "space-between",
+                                    gap: 6,
                                     fontSize: 12,
-                                    padding: "6px 10px",
-                                    background: "var(--paper)",
-                                    borderRadius: 6,
-                                    border: isHighlighted ? "1px solid var(--accent)" : "1px solid var(--line)"
+                                    background: "var(--surface)",
+                                    border: "1px solid var(--line)",
+                                    padding: "4px 8px",
+                                    borderRadius: 6
                                   }}
                                 >
-                                  <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden" }}>
-                                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
-                                    <span style={{ fontWeight: isHighlighted ? 700 : 500, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                      {opt.label}
-                                    </span>
-                                  </div>
-                                  <span style={{ fontFamily: "monospace", color: "var(--muted)", marginLeft: 6 }}>
-                                    {pct}%
-                                  </span>
+                                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: CHART_COLORS[i % CHART_COLORS.length], display: "inline-block" }} />
+                                  <span style={{ color: "var(--ink)", fontWeight: 500 }}>{opt.label}</span>
+                                  <span style={{ color: "var(--muted)", fontFamily: "monospace" }}>{pct}%</span>
                                 </div>
                               );
                             })}
                           </div>
+                        </div>
+                      )}
+                      
+                      {/* Voter Action: Change Vote Button or Creator Test Vote Button */}
+                      {!poll.isInactive && (
+                        <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>
+                          {poll.securityMode === "unlimited" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedIds([]);
+                                setIsEditingVote(false);
+                                setIsCastingAnotherVote(true);
+                              }}
+                              className="btn-ghost"
+                              style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
+                            >
+                              <AnimatedRefreshIcon size={14} />
+                              <span>Cast Another Vote</span>
+                            </button>
+                          ) : poll.hasVoted && poll.allowVoteEdit ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedIds(poll.myVotes);
+                                setIsEditingVote(true);
+                                setIsCastingAnotherVote(false);
+                              }}
+                              className="btn-ghost"
+                              style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
+                            >
+                              <AnimatedRefreshIcon size={14} />
+                              <span>Change your vote</span>
+                            </button>
+                          ) : poll.isAdmin ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedIds([]);
+                                setIsEditingVote(true);
+                                setIsCastingAnotherVote(false);
+                              }}
+                              className="btn-ghost"
+                              style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
+                            >
+                              <Edit3 size={13} />
+                              <span>Test / Cast Ballot</span>
+                            </button>
+                          ) : null}
                         </div>
                       )}
                     </>
@@ -1818,55 +1849,9 @@ function PollContent() {
 
 
 
-            {/* Voter Action: Change Vote Button or Creator Test Vote Button */}
-            {!poll.isInactive && (
-              <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>
-                {poll.securityMode === "unlimited" ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedIds([]);
-                      setIsEditingVote(false);
-                      setIsCastingAnotherVote(true);
-                    }}
-                    className="btn-ghost"
-                    style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
-                  >
-                    <AnimatedRefreshIcon size={14} />
-                    <span>Cast Another Vote</span>
-                  </button>
-                ) : poll.hasVoted && poll.allowVoteEdit ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedIds(poll.myVotes);
-                      setIsEditingVote(true);
-                      setIsCastingAnotherVote(false);
-                    }}
-                    className="btn-ghost"
-                    style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
-                  >
-                    <AnimatedRefreshIcon size={14} />
-                    <span>Change your vote</span>
-                  </button>
-                ) : poll.isAdmin ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedIds([]);
-                      setIsEditingVote(true);
-                      setIsCastingAnotherVote(false);
-                    }}
-                    className="btn-ghost"
-                    style={{ fontSize: 13, gap: 6 }}
-                  >
-                    ✏️ Test / Cast Ballot
-                  </button>
-                ) : null}
-              </div>
-            )}
           </div>
         )}
+
 
 
 
@@ -1885,12 +1870,7 @@ function PollContent() {
           <button type="button" onClick={() => setShowQR(true)} className="action-text-btn" title="Scan to vote QR code">
             <span>QR code</span>
             <span className="action-tile">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="7" height="7" />
-                <rect x="14" y="3" width="7" height="7" />
-                <rect x="14" y="14" width="7" height="7" />
-                <rect x="3" y="14" width="7" height="7" />
-              </svg>
+              <QrCode size={13} />
             </span>
           </button>
 
@@ -1903,10 +1883,7 @@ function PollContent() {
               <button type="button" onClick={() => setShowEmbedModal(true)} className="action-text-btn" title="Embed poll widget">
                 <span>Embed</span>
                 <span className="action-tile">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="16 18 22 12 16 6" />
-                    <polyline points="8 6 2 12 8 18" />
-                  </svg>
+                  <Code2 size={13} />
                 </span>
               </button>
 
@@ -1919,11 +1896,7 @@ function PollContent() {
               >
                 <span>CSV</span>
                 <span className="action-tile">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
+                  <Download size={13} />
                 </span>
               </button>
 
@@ -1936,10 +1909,7 @@ function PollContent() {
               >
                 <span>Manage poll</span>
                 <span className="action-tile">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
+                  <Settings size={13} />
                 </span>
               </button>
             </>
@@ -1958,9 +1928,7 @@ function PollContent() {
             <div className="poll-marketing-grid">
               <div className="poll-marketing-feature">
                 <div className="poll-marketing-feature-title">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
+                  <Check size={14} color="var(--accent)" strokeWidth={2.5} />
                   <span>Ranked Choice</span>
                 </div>
                 <div className="poll-marketing-feature-desc">Instant runoff consensus voting</div>
@@ -1968,31 +1936,27 @@ function PollContent() {
 
               <div className="poll-marketing-feature">
                 <div className="poll-marketing-feature-title">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                  <span>Live Realtime Sync</span>
+                  <Check size={14} color="var(--accent)" strokeWidth={2.5} />
+                  <span>Anti-Fraud Engine</span>
                 </div>
-                <div className="poll-marketing-feature-desc">Instant spectator vote tallies</div>
+                <div className="poll-marketing-feature-desc">Robust fingerprinting protection</div>
               </div>
 
               <div className="poll-marketing-feature">
                 <div className="poll-marketing-feature-title">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                  <span>Anti-Fraud</span>
+                  <Check size={14} color="var(--accent)" strokeWidth={2.5} />
+                  <span>Live SSE Sync</span>
                 </div>
-                <div className="poll-marketing-feature-desc">Device & IP deduplication defense</div>
+                <div className="poll-marketing-feature-desc">Watch incoming votes update live</div>
               </div>
             </div>
 
             <div className="poll-marketing-actions">
-              <Link href="/new" className="btn-primary" style={{ padding: "10px 18px", fontSize: 14 }}>
-                + Create a Poll →
+              <Link href="/new" className="poll-marketing-primary-btn">
+                Create a Free Poll →
               </Link>
-              <Link href="/explore" className="btn-ghost" style={{ padding: "10px 18px", fontSize: 14 }}>
-                Explore Trending Polls
+              <Link href="/explore" className="poll-marketing-secondary-btn">
+                Explore Community Polls
               </Link>
             </div>
           </div>
@@ -2011,7 +1975,8 @@ function PollContent() {
           <div className="modal-box" style={{ maxWidth: 540, maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <h2 style={{ fontSize: 18, fontWeight: 700 }}>⚙️ Poll Management</h2>
+                <Settings size={18} color="var(--accent)" />
+                <h2 style={{ fontSize: 18, fontWeight: 700 }}>Poll Management</h2>
                 <span style={{
                   fontSize: 11,
                   fontWeight: 700,
@@ -2024,17 +1989,21 @@ function PollContent() {
                   ● {poll.status.toUpperCase()}
                 </span>
               </div>
-              <button type="button" className="btn-link" onClick={() => setShowAdminModal(false)}>✕</button>
+              <button type="button" className="btn-link" onClick={() => setShowAdminModal(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <X size={18} />
+              </button>
             </div>
 
             {/* Pre-vote vs Post-vote Status Notice Banner */}
             {hasZeroVotes ? (
-              <div style={{ background: "var(--accent-soft)", color: "var(--accent-ink)", border: "1px solid var(--accent)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, marginBottom: 16 }}>
-                ✏️ Full Edit Mode · 0 votes cast so far. You can freely edit the question, options, and settings.
+              <div style={{ background: "var(--accent-soft)", color: "var(--accent-ink)", border: "1px solid var(--accent)", padding: "10px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
+                <Edit3 size={13} color="var(--accent)" />
+                <span>Full Edit Mode · 0 votes cast so far. You can freely edit the question, options, and settings.</span>
               </div>
             ) : (
-              <div style={{ background: "var(--paper)", color: "var(--muted)", border: "1px solid var(--line)", padding: "10px 14px", borderRadius: 8, fontSize: 12, marginBottom: 16 }}>
-                🔒 Question & options are locked permanently to protect voter integrity ({poll.totalVotes} votes received).
+              <div style={{ background: "var(--paper)", color: "var(--muted)", border: "1px solid var(--line)", padding: "10px 14px", borderRadius: 8, fontSize: 12, marginBottom: 16, display: "flex", alignItems: "center", gap: 6 }}>
+                <Lock size={13} color="var(--muted)" />
+                <span>Question & options are locked permanently to protect voter integrity ({poll.totalVotes} votes received).</span>
               </div>
             )}
 
@@ -2051,8 +2020,9 @@ function PollContent() {
                 gap: 8
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>
-                    🔑 Secret Admin Management Link
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                    <Key size={13} color="var(--accent)" />
+                    <span>Secret Admin Management Link</span>
                   </div>
                   {!poll.creator && (
                     <span style={{ fontSize: 10, fontWeight: 700, background: "var(--accent-soft)", color: "var(--accent-ink)", padding: "1px 6px", borderRadius: 4 }}>
@@ -2062,8 +2032,9 @@ function PollContent() {
                 </div>
 
                 {!poll.creator && (
-                  <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4 }}>
-                    ⚠️ This link is a temporary session key. Sign in or create a free account to permanently secure this poll to your creator profile:
+                  <div style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4, display: "flex", alignItems: "flex-start", gap: 4 }}>
+                    <AlertTriangle size={13} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span>This link is a temporary session key. Sign in or create a free account to permanently secure this poll to your creator profile:</span>
                   </div>
                 )}
 
@@ -2093,9 +2064,10 @@ function PollContent() {
                       }
                     }}
                     className="btn-ghost"
-                    style={{ fontSize: 11, padding: "6px 12px", whiteSpace: "nowrap" }}
+                    style={{ fontSize: 11, padding: "6px 12px", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}
                   >
-                    {adminLinkCopied ? "✓ Copied" : "Copy"}
+                    {adminLinkCopied ? <Check size={12} color="var(--accent)" /> : <Copy size={12} />}
+                    <span>{adminLinkCopied ? "Copied" : "Copy"}</span>
                   </button>
                 </div>
 
@@ -2107,9 +2079,10 @@ function PollContent() {
                       setShowAuthModal(true);
                     }}
                     className="btn-primary"
-                    style={{ fontSize: 11, padding: "6px 12px", marginTop: 2, alignSelf: "flex-start" }}
+                    style={{ fontSize: 11, padding: "6px 12px", marginTop: 2, alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    🔐 Sign In to Secure & Claim Poll
+                    <Lock size={12} />
+                    <span>Sign In to Secure & Claim Poll</span>
                   </button>
                 )}
               </div>
@@ -2163,9 +2136,9 @@ function PollContent() {
                           <button
                             type="button"
                             onClick={() => removeEditOption(i)}
-                            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14 }}
+                            style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}
                           >
-                            ✕
+                            <X size={14} />
                           </button>
                         )}
                       </div>
@@ -2227,9 +2200,10 @@ function PollContent() {
                     onClick={handleToggleStatus}
                     disabled={adminLoading}
                     className="btn-ghost"
-                    style={{ fontSize: 12 }}
+                    style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    {poll.status === "live" ? "⏸️ Pause Poll" : "▶️ Reactivate Poll"}
+                    <RefreshCw size={12} />
+                    <span>{poll.status === "live" ? "Pause Poll" : "Reactivate Poll"}</span>
                   </button>
 
                   <button
@@ -2237,18 +2211,20 @@ function PollContent() {
                     onClick={handleRepoll}
                     disabled={adminLoading}
                     className="btn-ghost"
-                    style={{ fontSize: 12 }}
+                    style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    🔄 Repoll (Next Round)
+                    <RefreshCw size={12} />
+                    <span>Repoll (Next Round)</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
                     className="btn-ghost"
-                    style={{ fontSize: 12 }}
+                    style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    📥 Download CSV
+                    <Download size={12} />
+                    <span>Download CSV</span>
                   </button>
                 </div>
               </div>
@@ -2259,9 +2235,10 @@ function PollContent() {
                   type="button"
                   onClick={handleDeletePoll}
                   disabled={adminLoading}
-                  style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: 13 }}
+                  style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 6 }}
                 >
-                  🗑️ Delete Poll
+                  <Trash2 size={13} />
+                  <span>Delete Poll</span>
                 </button>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button type="button" onClick={() => setShowAdminModal(false)} className="btn-ghost">
@@ -2286,7 +2263,9 @@ function PollContent() {
                 <h2 style={{ fontSize: 16, fontWeight: 700 }}>Scan & Share Poll</h2>
                 <div style={{ fontSize: 11, color: "var(--muted)" }}>Instant mobile voting via camera</div>
               </div>
-              <button type="button" className="btn-link" onClick={() => setShowQR(false)}>✕</button>
+              <button type="button" className="btn-link" onClick={() => setShowQR(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <X size={18} />
+              </button>
             </div>
 
             {poll && (
@@ -2319,9 +2298,13 @@ function PollContent() {
               borderRadius: 6,
               padding: "4px 8px",
               marginBottom: 16,
-              fontFamily: "monospace"
+              fontFamily: "monospace",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6
             }}>
-              🔒 100% Safe · No App Install · No Signup
+              <ShieldCheck size={13} color="var(--accent)" />
+              <span>100% Safe · No App Install · No Signup</span>
             </div>
 
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 12 }}>
@@ -2329,9 +2312,10 @@ function PollContent() {
                 type="button"
                 onClick={handleShare}
                 className="btn-primary"
-                style={{ flex: 1, fontSize: 13 }}
+                style={{ flex: 1, fontSize: 13, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
               >
-                ↗ Share to Apps
+                <Share2 size={13} />
+                <span>Share to Apps</span>
               </button>
               <button
                 type="button"
@@ -2359,7 +2343,9 @@ function PollContent() {
           <div className="modal-box" style={{ maxWidth: 480 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700 }}>Embed Poll Widget</h2>
-              <button type="button" className="btn-link" onClick={() => setShowEmbedModal(false)}>✕</button>
+              <button type="button" className="btn-link" onClick={() => setShowEmbedModal(false)} style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <X size={18} />
+              </button>
             </div>
             <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
               Copy and paste this HTML embed snippet into your blog, notion page, or website:
