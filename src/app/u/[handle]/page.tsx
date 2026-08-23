@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
@@ -15,8 +16,131 @@ import {
   Plus,
   Sparkles,
   Check,
+  ChevronDown,
+  Vote,
+  Trophy,
+  Film,
 } from "lucide-react";
 import { AnimatedSearchIcon } from "@/components/icons/AnimatedSearchIcon";
+
+function FilterDropdown({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  value: string;
+  options: { value: string; label: string; icon?: React.ReactNode }[];
+  onChange: (val: string) => void;
+  ariaLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selected = options.find((o) => o.value === value) || options[0];
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="profile-select"
+        aria-label={ariaLabel}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          justifyContent: "space-between",
+          cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          {selected.icon}
+          <span>{selected.label}</span>
+        </span>
+        <ChevronDown
+          size={12}
+          color="var(--muted)"
+          style={{
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform 0.15s ease",
+            flexShrink: 0,
+          }}
+        />
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            right: 0,
+            zIndex: 50,
+            background: "var(--surface)",
+            border: "1px solid var(--line)",
+            borderRadius: 8,
+            padding: "4px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+            minWidth: 130,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 12,
+                  padding: "6px 10px",
+                  borderRadius: 5,
+                  border: "none",
+                  background: isSelected ? "var(--accent-soft)" : "transparent",
+                  color: isSelected ? "var(--accent-ink)" : "var(--ink)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  width: "100%",
+                  transition: "background 0.1s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = "var(--paper)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) (e.currentTarget as HTMLElement).style.background = "transparent";
+                }}
+              >
+                {opt.icon}
+                <span>{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 
 type CreatorProfile = {
@@ -339,42 +463,45 @@ export default function CreatorProfilePage() {
               {/* 40% Filter Dropdowns */}
               <div className="profile-filters-wrap">
                 {/* Status Dropdown */}
-                <select
+                <FilterDropdown
+
+
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="profile-select"
-                  aria-label="Filter by poll status"
-                >
-                  <option value="all">All Status</option>
-                  <option value="live">🟢 Live</option>
-                  <option value="closed">⚪ Closed</option>
-                </select>
+                  onChange={(val) => setStatusFilter(val as any)}
+                  ariaLabel="Filter by poll status"
+                  options={[
+                    { value: "all", label: "All Status" },
+                    { value: "live", label: "Live", icon: <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block" }} /> },
+                    { value: "closed", label: "Closed", icon: <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--muted)", display: "inline-block" }} /> },
+                  ]}
+                />
 
                 {/* Visibility / Type Dropdown */}
                 {isOwner ? (
-                  <select
+                  <FilterDropdown
                     value={visibilityFilter}
-                    onChange={(e) => setVisibilityFilter(e.target.value as any)}
-                    className="profile-select"
-                    aria-label="Filter by visibility"
-                  >
-                    <option value="all">All Visibility</option>
-                    <option value="public">🌐 Public</option>
-                    <option value="unlisted">🔒 Unlisted</option>
-                  </select>
+                    onChange={(val) => setVisibilityFilter(val as any)}
+                    ariaLabel="Filter by visibility"
+                    options={[
+                      { value: "all", label: "All Visibility" },
+                      { value: "public", label: "Public", icon: <Globe size={13} color="var(--accent)" /> },
+                      { value: "unlisted", label: "Unlisted", icon: <Lock size={13} color="var(--muted)" /> },
+                    ]}
+                  />
                 ) : (
-                  <select
+                  <FilterDropdown
                     value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value as any)}
-                    className="profile-select"
-                    aria-label="Filter by poll format"
-                  >
-                    <option value="all">All Types</option>
-                    <option value="standard">Standard</option>
-                    <option value="ranked_choice">Ranked</option>
-                    <option value="image">Image</option>
-                  </select>
+                    onChange={(val) => setTypeFilter(val as any)}
+                    ariaLabel="Filter by poll format"
+                    options={[
+                      { value: "all", label: "All Types" },
+                      { value: "standard", label: "Standard", icon: <Vote size={13} color="var(--accent)" /> },
+                      { value: "ranked_choice", label: "Ranked", icon: <Trophy size={13} color="var(--accent)" /> },
+                      { value: "image", label: "Image", icon: <Film size={13} color="var(--accent)" /> },
+                    ]}
+                  />
                 )}
+
 
                 {/* Quick Create New Poll button for Owner */}
                 {isOwner && (
