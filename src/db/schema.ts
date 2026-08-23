@@ -1,4 +1,5 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
+
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -74,7 +75,10 @@ export const votes = sqliteTable("votes", {
   availabilityResponse: text("availability_response"), // 'yes' | 'maybe' | 'no'
   idempotencyKey: text("idempotency_key"),
   createdAt: integer("created_at").notNull(),
-});
+}, (table) => ({
+  pollVoterOptionIdx: uniqueIndex("votes_poll_voter_option_unique").on(table.pollId, table.voterToken, table.optionId),
+}));
+
 
 // ── Fix 2.3: Persistent rate limits — works across all Vercel serverless instances ──
 export const rateLimits = sqliteTable("rate_limits", {

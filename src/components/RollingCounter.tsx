@@ -95,26 +95,32 @@ export function RollingCounter({
         transition: "color 0.3s ease",
       }}
     >
-      {formattedStr.split("").map((char, idx) => {
-        const num = parseInt(char, 10);
-        if (isNaN(num)) {
-          return (
-            <span
-              key={`sep-${idx}`}
-              style={{
-                display: "inline-block",
-                width: "0.3em",
-                textAlign: "center",
-                lineHeight: 1,
-              }}
-            >
-              {char}
-            </span>
-          );
-        }
-        return <SingleDigitColumn key={`digit-${idx}`} digit={num} />;
-      })}
-      {suffix && <span style={{ marginLeft: 2, fontSize: "0.85em", color: "var(--accent)" }}>{suffix}</span>}
+      <span aria-hidden="true" style={{ display: "inline-flex", alignItems: "center" }}>
+        {formattedStr.split("").map((char, idx) => {
+          const num = parseInt(char, 10);
+          if (isNaN(num)) {
+            return (
+              <span
+                key={`sep-${idx}`}
+                style={{
+                  display: "inline-block",
+                  width: "0.3em",
+                  textAlign: "center",
+                  lineHeight: 1,
+                }}
+              >
+                {char}
+              </span>
+            );
+          }
+          return <SingleDigitColumn key={`digit-${idx}`} digit={num} />;
+        })}
+        {suffix && <span style={{ marginLeft: 2, fontSize: "0.85em", color: "var(--accent)" }}>{suffix}</span>}
+      </span>
+      <span className="sr-only">
+        {formattedStr}{suffix}
+      </span>
     </span>
   );
 }
+

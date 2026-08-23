@@ -94,6 +94,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     const { token: voterToken, isNew } = resolveVoterToken(req);
 
     const isUnlimited = poll.securityMode === "unlimited" || poll.securityMode === "none";
+    const effectiveVoterToken = isUnlimited ? nanoid() : voterToken;
 
     let existingVote = null;
     if (!isUnlimited) {
@@ -102,10 +103,10 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       // 'standard' / 'strict': checks voterToken OR ipHash
       const checkDuplicateCondition =
         poll.securityMode === "relaxed"
-          ? and(eq(votes.pollId, poll.id), eq(votes.voterToken, voterToken))
+          ? and(eq(votes.pollId, poll.id), eq(votes.voterToken, effectiveVoterToken))
           : and(
               eq(votes.pollId, poll.id),
-              or(eq(votes.voterToken, voterToken), eq(votes.ipHash, ipHash))
+              or(eq(votes.voterToken, effectiveVoterToken), eq(votes.ipHash, ipHash))
             );
 
       const [foundVote] = await db
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
       existingVote = foundVote;
 
-      const isIpMatch = existingVote && existingVote.ipHash === ipHash && existingVote.voterToken !== voterToken;
+      const isIpMatch = existingVote && existingVote.ipHash === ipHash && existingVote.voterToken !== effectiveVoterToken;
 
       if (isIpMatch) {
         const res = NextResponse.json(
@@ -169,7 +170,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       id: nanoid(),
       pollId: poll.id,
       optionId: optId,
-      voterToken,
+      voterToken: effectiveVoterToken,
       voterName: finalVoterName,
       ipHash,
       ballotId,
@@ -178,16 +179,47 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       createdAt: now,
     }));
 
-    // ── Fix 1.1: Use DB transaction for vote edit — prevents data loss on server crash ──
-    if (isVoteEdit) {
-      await db.transaction(async (tx) => {
-        await tx
-          .delete(votes)
-          .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, voterToken)));
-        await tx.insert(votes).values(voteRows);
-      });
-    } else {
-      await db.insert(votes).values(voteRows);
+    // ── DB insert with unique constraint handling for concurrent requests ──
+    try {
+      if (isVoteEdit) {
+        await db.transaction(async (tx) => {
+          await tx
+            .delete(votes)
+            .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, effectiveVoterToken)));
+          await tx.insert(votes).values(voteRows);
+        });
+      } else {
+        await db.insert(votes).values(voteRows);
+      }
+    } catch (insertErr: any) {
+      const errMsg = insertErr?.message || String(insertErr);
+      const isConstraintViolation =
+        errMsg.includes("UNIQUE constraint failed") ||
+        errMsg.includes("SQLITE_CONSTRAINT") ||
+        errMsg.includes("constraint");
+
+      if (isConstraintViolation && !isUnlimited) {
+        // Handle race condition: a concurrent vote with same voter token already completed
+        if (poll.allowVoteEdit === 0) {
+          const res = NextResponse.json(
+            { error: "You have already voted on this poll." },
+            { status: 409 }
+          );
+          if (isNew) attachVoterCookie(res, voterToken);
+          return res;
+        }
+
+        // If vote editing is allowed, execute edit via transaction
+        isVoteEdit = true;
+        await db.transaction(async (tx) => {
+          await tx
+            .delete(votes)
+            .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, effectiveVoterToken)));
+          await tx.insert(votes).values(voteRows);
+        });
+      } else {
+        throw insertErr;
+      }
     }
 
     // Trigger debounced realtime broadcast to all active spectators
@@ -201,6 +233,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     const res = NextResponse.json({ ok: true, ballotId, isEdit: isVoteEdit });
     if (isNew) attachVoterCookie(res, voterToken);
     return res;
+
 
 
   } catch (e) {

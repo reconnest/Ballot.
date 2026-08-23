@@ -49,7 +49,10 @@ export async function POST(req: NextRequest) {
       expiresAt,
     });
 
-    console.log(`[Ballot Auth] Verification Code for ${email}: ${code}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[Ballot Auth] (Dev only) Verification Code for ${email}: ${code}`);
+    }
+
 
     // Dispatch email to user's inbox
     const mailResult = await sendOtpEmail(email, code);

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { polls, votes } from "@/db/schema";
-import { ne, count } from "drizzle-orm";
+import { ne, count, countDistinct, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 10;
@@ -15,8 +15,9 @@ export async function GET() {
       .where(ne(polls.status, "deleted"));
 
     const [votesResult] = await db
-      .select({ count: count() })
+      .select({ count: countDistinct(sql`COALESCE(${votes.ballotId}, ${votes.voterToken})`) })
       .from(votes);
+
 
     const totalPolls = Number(pollsResult?.count || 0);
     const totalVotes = Number(votesResult?.count || 0);

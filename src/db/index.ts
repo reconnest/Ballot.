@@ -95,7 +95,14 @@ export async function ensureDbSchema() {
       );
     `);
 
+    // 7. Create unique index on votes table to prevent concurrent duplicate votes
+    await client.execute(`
+      CREATE UNIQUE INDEX IF NOT EXISTS votes_poll_voter_option_unique 
+      ON votes(poll_id, voter_token, option_id);
+    `);
+
     schemaInitialized = true;
+
 
   } catch (err) {
     console.error("Schema init error:", err);
