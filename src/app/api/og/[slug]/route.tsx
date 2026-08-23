@@ -147,7 +147,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
               paddingTop: 16,
             }}
           >
-            <span>🔒 Verified Poll · No Signup Required · 100% Free</span>
+            <span>Verified Poll · No Signup Required · 100% Free</span>
+
             <span style={{ color: "#6B7280" }}>ballot-poll.vercel.app</span>
           </div>
         </div>

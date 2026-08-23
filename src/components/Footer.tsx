@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { BallotLogo } from "@/components/BallotLogo";
+import { Lock } from "lucide-react";
 
 export function Footer() {
   return (
@@ -38,7 +39,10 @@ export function Footer() {
           paddingTop: 12,
         }}
       >
-        🔒 <strong>Privacy disclosure:</strong> Ballot uses private session cookies and one-way salted IP digests to deter duplicate voting. We show ads through Google AdSense, which may use cookies and similar technologies to serve ads based on your visits to this and other sites. You can control ad personalization at{" "}
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, verticalAlign: "middle", marginRight: 4 }}>
+          <Lock size={12} color="var(--muted)" />
+        </span>
+        <strong>Privacy disclosure:</strong> Ballot uses private session cookies and one-way salted IP digests to deter duplicate voting. We show ads through Google AdSense, which may use cookies and similar technologies to serve ads based on your visits to this and other sites. You can control ad personalization at{" "}
         <a
           href="https://g.co/adssettings"
           target="_blank"
@@ -52,3 +56,4 @@ export function Footer() {
     </footer>
   );
 }
+
