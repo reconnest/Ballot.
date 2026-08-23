@@ -25,6 +25,10 @@ export function AdSlot({ position, adSlotId, className = "", style }: AdSlotProp
     }
   }, [isAdConfigured, adSlotId]);
 
+  if (!isAdConfigured) {
+    return null;
+  }
+
   return (
     <aside
       className={`ad-sidebar ad-sidebar-${position} ${className}`}
@@ -32,27 +36,20 @@ export function AdSlot({ position, adSlotId, className = "", style }: AdSlotProp
       aria-label={`Advertisement ${position} sidebar`}
     >
       <div className="ad-sticky-wrapper">
-        {isAdConfigured ? (
-          <ins
-            ref={adRef}
-            className="adsbygoogle"
-            style={{ display: "inline-block", width: 160, height: 600 }}
-            data-ad-client={clientId}
-            data-ad-slot={adSlotId}
-            data-ad-format="vertical"
-            data-full-width-responsive="false"
-          />
-        ) : (
-          <div className="ad-placeholder-box">
-            <div className="ad-placeholder-badge">AD</div>
-            <div className="ad-placeholder-title">Ad slot — pending AdSense approval</div>
-            <div className="ad-placeholder-dim">160 × 600 Skyscraper</div>
-          </div>
-        )}
+        <ins
+          ref={adRef}
+          className="adsbygoogle"
+          style={{ display: "inline-block", width: 160, height: 600 }}
+          data-ad-client={clientId}
+          data-ad-slot={adSlotId}
+          data-ad-format="vertical"
+          data-full-width-responsive="false"
+        />
       </div>
     </aside>
   );
 }
+
 
 interface AdSidebarContainerProps {
   children: React.ReactNode;
@@ -61,8 +58,13 @@ interface AdSidebarContainerProps {
 }
 
 export function AdSidebarContainer({ children, leftSlotId, rightSlotId }: AdSidebarContainerProps) {
+  const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
   const defaultLeft = leftSlotId ?? process.env.NEXT_PUBLIC_ADSENSE_LEFT_SLOT;
   const defaultRight = rightSlotId ?? process.env.NEXT_PUBLIC_ADSENSE_RIGHT_SLOT;
+
+  if (!clientId || (!defaultLeft && !defaultRight)) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="ad-layout-root">
@@ -72,3 +74,4 @@ export function AdSidebarContainer({ children, leftSlotId, rightSlotId }: AdSide
     </div>
   );
 }
+

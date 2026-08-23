@@ -173,14 +173,14 @@ export default function HomePage() {
 
 
 
-  // Fetch top 3 trending public polls
+  // Fetch top 4 trending public polls
   useEffect(() => {
     async function loadTrending() {
       try {
         const res = await fetch("/api/explore?filter=trending", { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
-          setTrendingPolls((data.polls || []).slice(0, 3));
+          setTrendingPolls((data.polls || []).slice(0, 4));
         }
       } catch (err) {
         console.warn("[loadTrending] Failed to load trending polls:", err);
@@ -188,6 +188,7 @@ export default function HomePage() {
     }
     loadTrending();
   }, []);
+
 
   // Fetch real-time live platform global statistics (Total Votes & Total Polls)
   useEffect(() => {
@@ -1441,22 +1442,36 @@ export default function HomePage() {
             </div>
 
             <div className="explore-cards-grid" role="list" aria-label="Trending public polls">
-              {trendingPolls.map((tp) => (
-                <Link href={`/p/${tp.slug}`} key={tp.id} className="poll-row" role="listitem" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                  <div>
-                    <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                      <span className="badge-category">{tp.category || "general"}</span>
-                      {tp.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
+              {trendingPolls.map((tp) => {
+                const typeLabel =
+                  tp.pollType === "ranked_choice"
+                    ? "ranked choice"
+                    : tp.pollType === "image"
+                    ? "image"
+                    : tp.pollType === "availability"
+                    ? "availability"
+                    : null;
+
+                return (
+                  <Link href={`/p/${tp.slug}`} key={tp.id} className="explore-poll-card" role="listitem">
+                    <div>
+                      <div className="explore-card-badges">
+                        <span className="badge-category">{tp.category || "general"}</span>
+                        {typeLabel && <span className="badge-type">{typeLabel}</span>}
+                      </div>
+                      <div className="explore-card-q">{tp.question}</div>
                     </div>
-                    <div className="poll-q" style={{ fontSize: 15 }}>{tp.question}</div>
-                  </div>
-                  <div className="poll-meta" style={{ marginTop: 12, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 600, color: "var(--ink)" }}>{tp.voteCount} {tp.voteCount === 1 ? "vote" : "votes"}</span>
-                    <span>Vote now →</span>
-                  </div>
-                </Link>
-              ))}
+                    <div className="explore-card-footer">
+                      <span className="explore-card-votes">
+                        {tp.voteCount} {tp.voteCount === 1 ? "vote" : "votes"}
+                      </span>
+                      <span className="explore-card-action">Vote now →</span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
+
           </section>
         )}
 

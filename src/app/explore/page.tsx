@@ -154,38 +154,35 @@ function ExploreContent() {
             })}
           </div>
 
-          {/* Filter Tabs */}
-          <div className="chart-toolbar" style={{ marginBottom: 20 }}>
-            <div className="chart-type-toggle">
+          {/* Filter Tabs (Underline Tabs) */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--line)", marginBottom: 20 }}>
+            <div className="sort-tabs" style={{ borderBottom: "none", marginBottom: 0 }}>
               <button
                 type="button"
-                className={`chart-btn ${filter === "trending" ? "active" : ""}`}
+                className={`sort-tab ${filter === "trending" ? "active" : ""}`}
                 onClick={() => setFilter("trending")}
-                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
               >
                 <Flame size={13} color={filter === "trending" ? "var(--accent)" : "currentColor"} />
                 <span>Trending</span>
               </button>
               <button
                 type="button"
-                className={`chart-btn ${filter === "recent" ? "active" : ""}`}
+                className={`sort-tab ${filter === "recent" ? "active" : ""}`}
                 onClick={() => setFilter("recent")}
-                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
               >
                 <Sparkles size={13} color={filter === "recent" ? "var(--accent)" : "currentColor"} />
                 <span>Recent</span>
               </button>
               <button
                 type="button"
-                className={`chart-btn ${filter === "active" ? "active" : ""}`}
+                className={`sort-tab ${filter === "active" ? "active" : ""}`}
                 onClick={() => setFilter("active")}
-                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
               >
                 <Zap size={13} color={filter === "active" ? "var(--accent)" : "currentColor"} />
                 <span>Active</span>
               </button>
             </div>
-            <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "monospace" }}>
+            <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'JetBrains Mono', monospace", paddingBottom: 10 }}>
               {totalCount} poll{totalCount === 1 ? "" : "s"}
             </div>
           </div>
@@ -195,8 +192,8 @@ function ExploreContent() {
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <div key={n} className="skeleton-card" style={{ gap: 12 }}>
                   <div style={{ display: "flex", gap: 6 }}>
-                    <div className="skeleton-box" style={{ width: 64, height: 20, borderRadius: 10 }} />
-                    <div className="skeleton-box" style={{ width: 80, height: 20, borderRadius: 10 }} />
+                    <div className="skeleton-box" style={{ width: 64, height: 20, borderRadius: 6 }} />
+                    <div className="skeleton-box" style={{ width: 80, height: 20, borderRadius: 6 }} />
                   </div>
                   <div className="skeleton-box" style={{ width: "90%", height: 22, marginTop: 4 }} />
                   <div className="skeleton-box" style={{ width: "70%", height: 16 }} />
@@ -237,28 +234,52 @@ function ExploreContent() {
           ) : (
             <>
               <div className="explore-cards-grid" role="list" aria-label="Public polls list">
-                {polls.map((p) => (
-                  <Link href={`/p/${p.slug}`} key={p.id} className="poll-row" role="listitem" style={{ height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                    <div>
-                      <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
-                        <span className="badge-category">{p.category || "general"}</span>
-                        {p.pollType === "ranked_choice" && <span className="badge-type">Ranked Choice</span>}
-                        {p.pollType === "image" && <span className="badge-type">Image Poll</span>}
-                      </div>
-                      <div className="poll-q" style={{ fontSize: 15 }}>{p.question}</div>
-                      {p.description && (
-                        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>
-                          {p.description}
+                {polls.map((p) => {
+                  const typeLabel =
+                    p.pollType === "ranked_choice"
+                      ? "ranked choice"
+                      : p.pollType === "image"
+                      ? "image"
+                      : p.pollType === "availability"
+                      ? "availability"
+                      : null;
+
+                  return (
+                    <Link href={`/p/${p.slug}`} key={p.id} className="explore-poll-card" role="listitem">
+                      <div>
+                        <div className="explore-card-badges">
+                          <span className="badge-category">{p.category || "general"}</span>
+                          {typeLabel && <span className="badge-type">{typeLabel}</span>}
                         </div>
-                      )}
-                    </div>
-                    <div className="poll-meta" style={{ marginTop: 14, borderTop: "1px solid var(--line)", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: 600, color: "var(--ink)" }}>{p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}</span>
-                      <span>{p.isExpired ? "closed" : "active · vote →"}</span>
-                    </div>
+                        <div className="explore-card-q">{p.question}</div>
+                        {p.description && (
+                          <div className="explore-card-desc" title={p.description}>
+                            {p.description}
+                          </div>
+                        )}
+                      </div>
+                      <div className="explore-card-footer">
+                        <span className="explore-card-votes">
+                          {p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}
+                        </span>
+                        <span className={`explore-card-action ${p.isExpired ? "closed" : ""}`}>
+                          {p.isExpired ? "closed" : "vote →"}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+
+                {/* Sparse State: When under 4 polls, show a friendly + New Poll card to eliminate empty grid gaps */}
+                {polls.length > 0 && polls.length < 4 && (
+                  <Link href="/new" className="explore-cta-card" aria-label="Create a new poll">
+                    <div className="explore-cta-plus">+</div>
+                    <div className="explore-cta-text">Create a new poll</div>
+                    <div className="explore-cta-sub">Ask the community anything →</div>
                   </Link>
-                ))}
+                )}
               </div>
+
 
               {/* Pagination / Load More Button */}
               {hasMore && (
