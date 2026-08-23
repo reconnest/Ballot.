@@ -304,8 +304,8 @@ function ExploreContent() {
                         <div className="explore-card-badges">
                           <span className="badge-category">{p.category || "general"}</span>
                           {typeLabel && <span className="badge-type">{typeLabel}</span>}
-                          <span className="badge-code">#{p.slug}</span>
                         </div>
+                        <span className="explore-card-id">#{p.slug}</span>
                         <div className="explore-card-q">{p.question}</div>
                         {p.description && (
                           <div className="explore-card-desc" title={p.description}>
@@ -313,6 +313,7 @@ function ExploreContent() {
                           </div>
                         )}
                       </div>
+
                       <div className="explore-card-footer">
                         <span className="explore-card-votes">
                           {p.voteCount} {p.voteCount === 1 ? "vote" : "votes"}

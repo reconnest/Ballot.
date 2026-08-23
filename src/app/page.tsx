@@ -1459,7 +1459,9 @@ export default function HomePage() {
                         <span className="badge-category">{tp.category || "general"}</span>
                         {typeLabel && <span className="badge-type">{typeLabel}</span>}
                       </div>
+                      <span className="explore-card-id">#{tp.slug}</span>
                       <div className="explore-card-q">{tp.question}</div>
+
                     </div>
                     <div className="explore-card-footer">
                       <span className="explore-card-votes">

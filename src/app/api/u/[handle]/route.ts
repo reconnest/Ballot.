@@ -61,13 +61,21 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
       .orderBy(desc(polls.createdAt));
 
 
-    // Calculate votes for each poll (total votes recorded)
-    const allVotes = await db.select({ pollId: votes.pollId, voterToken: votes.voterToken }).from(votes);
-    const voteCountByPoll: Record<string, number> = {};
+    // Calculate distinct votes for each poll (unique ballots)
+    const allVotes = await db
+      .select({ pollId: votes.pollId, voterToken: votes.voterToken, ballotId: votes.ballotId })
+      .from(votes);
+    const ballotsByPoll = new Map<string, Set<string>>();
     const myVotedPollIds = new Set<string>();
 
     for (const v of allVotes) {
-      voteCountByPoll[v.pollId] = (voteCountByPoll[v.pollId] || 0) + 1;
+      if (!ballotsByPoll.has(v.pollId)) {
+        ballotsByPoll.set(v.pollId, new Set());
+      }
+      const key = v.ballotId || v.voterToken;
+      if (key) {
+        ballotsByPoll.get(v.pollId)!.add(key);
+      }
       if (myToken && v.voterToken === myToken) {
         myVotedPollIds.add(v.pollId);
       }
@@ -75,7 +83,7 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
 
     let totalVotes = 0;
     const enrichedPolls = userPolls.map((p) => {
-      const count = voteCountByPoll[p.id] || 0;
+      const count = ballotsByPoll.get(p.id)?.size || 0;
       totalVotes += count;
       return {
         ...p,
@@ -84,6 +92,7 @@ export async function GET(req: NextRequest, { params }: { params: { handle: stri
         hasVoted: myVotedPollIds.has(p.id),
       };
     });
+
 
 
     return NextResponse.json({

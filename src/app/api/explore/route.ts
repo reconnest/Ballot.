@@ -47,20 +47,27 @@ export async function GET(req: NextRequest) {
     const allUsers = await db.select({ id: users.id, username: users.username, displayName: users.displayName, avatarUrl: users.avatarUrl }).from(users);
     const userById = new Map(allUsers.map((u) => [u.id, u]));
 
-    // Compute vote counts for each poll (total votes recorded)
-    const allVotes = await db.select({ pollId: votes.pollId }).from(votes);
-    const voteCountByPoll: Record<string, number> = {};
+    // Compute distinct ballot counts for each poll (distinct voters/ballots)
+    const allVotes = await db
+      .select({ pollId: votes.pollId, voterToken: votes.voterToken, ballotId: votes.ballotId })
+      .from(votes);
+    const ballotsByPoll = new Map<string, Set<string>>();
 
     for (const v of allVotes) {
-      voteCountByPoll[v.pollId] = (voteCountByPoll[v.pollId] || 0) + 1;
+      if (!ballotsByPoll.has(v.pollId)) {
+        ballotsByPoll.set(v.pollId, new Set());
+      }
+      const key = v.ballotId || v.voterToken;
+      if (key) {
+        ballotsByPoll.get(v.pollId)!.add(key);
+      }
     }
-
 
     const now = Date.now();
 
     // Map and enrich items
     let items = publicPolls.map((p) => {
-      const voteCount = voteCountByPoll[p.id] || 0;
+      const voteCount = ballotsByPoll.get(p.id)?.size || 0;
       const isExpired = p.expiresAt ? now > p.expiresAt : false;
       const isInactive = p.status === "inactive" || isExpired;
       const creator = p.creatorUserId ? userById.get(p.creatorUserId) || null : null;
@@ -73,6 +80,7 @@ export async function GET(req: NextRequest) {
         creator,
       };
     });
+
 
 
     // Apply comprehensive text search across question, description, slug ID, category, and creator name

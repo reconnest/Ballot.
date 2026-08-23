@@ -77,10 +77,9 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const isExpired = poll.expiresAt ? Date.now() > poll.expiresAt : false;
     const isInactive = poll.status === "inactive" || isExpired;
 
-    // Calculate unique ballots (distinct ballotIds for unlimited, or distinct voterTokens for single-vote)
-    const totalBallots = poll.securityMode === "unlimited"
-      ? new Set(pollVotes.map((v) => v.ballotId || v.id)).size
-      : new Set(pollVotes.map((v) => v.voterToken)).size;
+    // Calculate unique ballots (distinct ballotIds or voterTokens)
+    const totalBallots = new Set(pollVotes.map((v) => v.ballotId || v.voterToken)).size;
+
 
     // Determine results visibility
     const visibility = poll.resultsVisibility || "always_public";
