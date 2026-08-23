@@ -1222,8 +1222,9 @@ function PollContent() {
                         boxShadow: isTied ? "none" : "0 4px 12px rgba(15, 118, 110, 0.12)",
                       }}>
                         <div>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>
-                            {isTied ? "⚖️ Tied Consensus (Equal Points)" : "🏆 Official Points Consensus Winner"}
+                          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, display: "flex", alignItems: "center", gap: 5 }}>
+                            {isTied ? <BarChart3 size={13} /> : <Trophy size={13} />}
+                            <span>{isTied ? "Tied Consensus (Equal Points)" : "Official Points Consensus Winner"}</span>
                           </div>
                           <div style={{ fontSize: 17, fontWeight: 700, color: "var(--ink)" }}>
                             {winner.label}
@@ -1351,6 +1352,7 @@ function PollContent() {
                           {groups.map((grp, gIdx) => {
                             const isTop = gIdx === 0 && grp.points > 0;
                             const isTied = grp.items.length > 1;
+                            const thisGroupRank = runningRank;
                             const rankIcon = gIdx === 0 ? (
                               <Crown size={14} color="var(--accent)" />
                             ) : gIdx === 1 ? (
@@ -1358,9 +1360,8 @@ function PollContent() {
                             ) : gIdx === 2 ? (
                               <Award size={14} color="#EC4899" />
                             ) : (
-                              <span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--muted)" }}>#{runningRank}</span>
+                              <span style={{ fontFamily: "monospace", fontSize: 11, color: "var(--muted)" }}>#{thisGroupRank}</span>
                             );
-                            const rankLabel = isTied ? `${rankIcon} #${runningRank} (Tied)` : `${rankIcon}`;
                             runningRank += grp.items.length;
 
                             if (isTied) {
@@ -1380,14 +1381,18 @@ function PollContent() {
                                   {/* Tied Group Header */}
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--line)", paddingBottom: 6 }}>
                                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ display: "inline-flex", alignItems: "center" }}>
+                                        {rankIcon}
+                                      </span>
                                       <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: isTop ? "var(--accent-ink)" : "var(--muted)" }}>
-                                        {rankLabel} · {grp.items.length} Options
+                                        #{thisGroupRank} (Tied) · {grp.items.length} Options
                                       </span>
                                     </div>
                                     <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--ink)" }}>
                                       {grp.points} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({grp.scorePct}%)</span>
                                     </span>
                                   </div>
+
 
                                   {/* Individual items inside tie */}
                                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1951,16 +1956,17 @@ function PollContent() {
               </div>
             </div>
 
-            <div className="poll-marketing-actions">
-              <Link href="/new" className="poll-marketing-primary-btn">
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginTop: 24 }}>
+              <Link href="/new" className="btn-primary" style={{ padding: "10px 22px", fontSize: 14, textDecoration: "none", fontWeight: 600 }}>
                 Create a Free Poll →
               </Link>
-              <Link href="/explore" className="poll-marketing-secondary-btn">
+              <Link href="/explore" className="btn-ghost" style={{ padding: "10px 22px", fontSize: 14, textDecoration: "none", fontWeight: 600 }}>
                 Explore Community Polls
               </Link>
             </div>
           </div>
         </section>
+
 
         <Footer />
       </main>
