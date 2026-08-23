@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { polls, options, votes } from "@/db/schema";
+import { polls, options, votes, ballotLocks } from "@/db/schema";
+
 import { eq, and, inArray, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { resolveVoterToken, attachVoterCookie } from "@/lib/voter-token";
@@ -181,48 +182,64 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
       createdAt: now,
     }));
 
-    // ── DB insert with unique constraint handling for concurrent requests ──
-    try {
-      if (isVoteEdit) {
+    // ── Atomically record ballot with ballot_locks table to prevent race conditions ──
+    if (isVoteEdit) {
+      // Vote Edit path: ballot_locks already exists for this voter.
+      // Replace options in votes table.
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(votes)
+          .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, effectiveVoterToken)));
+        await tx.insert(votes).values(voteRows);
+      });
+    } else {
+      // First-time vote path:
+      // In non-unlimited polls, insert into ballotLocks to lock the voter slot.
+      try {
         await db.transaction(async (tx) => {
-          await tx
-            .delete(votes)
-            .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, effectiveVoterToken)));
+          if (!isUnlimited) {
+            await tx.insert(ballotLocks).values({
+              pollId: poll.id,
+              voterToken: effectiveVoterToken,
+              ballotId,
+              createdAt: now,
+            });
+          }
           await tx.insert(votes).values(voteRows);
         });
-      } else {
-        await db.insert(votes).values(voteRows);
-      }
-    } catch (insertErr: any) {
-      const errMsg = insertErr?.message || String(insertErr);
-      const isConstraintViolation =
-        errMsg.includes("UNIQUE constraint failed") ||
-        errMsg.includes("SQLITE_CONSTRAINT") ||
-        errMsg.includes("constraint");
+      } catch (insertErr: any) {
+        const errMsg = insertErr?.message || String(insertErr);
+        const isLockConflict =
+          errMsg.includes("UNIQUE constraint failed") ||
+          errMsg.includes("PRIMARY KEY") ||
+          errMsg.includes("SQLITE_CONSTRAINT") ||
+          errMsg.includes("constraint");
 
-      if (isConstraintViolation && !isUnlimited) {
-        // Handle race condition: a concurrent vote with same voter token already completed
-        if (poll.allowVoteEdit === 0) {
-          const res = NextResponse.json(
-            { error: "You have already voted on this poll." },
-            { status: 409 }
-          );
-          if (isNew) attachVoterCookie(res, voterToken);
-          return res;
+        if (isLockConflict && !isUnlimited) {
+          // A concurrent request claimed this voter's slot.
+          if (poll.allowVoteEdit === 0) {
+            const res = NextResponse.json(
+              { error: "You have already voted on this poll." },
+              { status: 409 }
+            );
+            if (isNew) attachVoterCookie(res, voterToken);
+            return res;
+          }
+
+          // If vote editing is allowed, execute edit via transaction
+          isVoteEdit = true;
+          await db.transaction(async (tx) => {
+            await tx
+              .delete(votes)
+              .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, effectiveVoterToken)));
+            await tx.insert(votes).values(voteRows);
+          });
+        } else {
+          throw insertErr;
         }
-
-        // If vote editing is allowed, execute edit via transaction
-        isVoteEdit = true;
-        await db.transaction(async (tx) => {
-          await tx
-            .delete(votes)
-            .where(and(eq(votes.pollId, poll.id), eq(votes.voterToken, effectiveVoterToken)));
-          await tx.insert(votes).values(voteRows);
-        });
-      } else {
-        throw insertErr;
       }
     }
+
 
     // Trigger debounced realtime broadcast to all active spectators
     try {

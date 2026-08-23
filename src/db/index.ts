@@ -95,13 +95,19 @@ export async function ensureDbSchema() {
       );
     `);
 
-    // 7. Create unique index on votes table to prevent concurrent duplicate votes
+    // 7. Create ballot_locks table with primary key on (poll_id, voter_token) for race condition prevention
     await client.execute(`
-      CREATE UNIQUE INDEX IF NOT EXISTS votes_poll_voter_option_unique 
-      ON votes(poll_id, voter_token, option_id);
+      CREATE TABLE IF NOT EXISTS ballot_locks (
+        poll_id TEXT NOT NULL,
+        voter_token TEXT NOT NULL,
+        ballot_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (poll_id, voter_token)
+      );
     `);
 
     schemaInitialized = true;
+
 
 
   } catch (err) {
