@@ -6,6 +6,8 @@ import { nanoid } from "nanoid";
 import { resolveVoterToken, attachVoterCookie } from "@/lib/voter-token";
 import { getClientIp, hashIp, verifyTurnstileToken, checkPollAnomalyVelocity } from "@/lib/security";
 import { broadcastVoteUpdate } from "@/lib/realtime";
+import { captureException } from "@/lib/error-monitor";
+
 
 export async function POST(req: NextRequest, { params }: { params: { slug: string } }) {
   try {
@@ -237,9 +239,10 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
 
   } catch (e) {
-    console.error("vote failed", e);
+    captureException(e, { route: "POST /api/polls/[slug]/vote", pollSlug: params.slug });
     return NextResponse.json({ error: "Could not record vote. Please try again." }, { status: 500 });
   }
+
 }
 
 

@@ -4,6 +4,8 @@ import { users, authCodes } from "@/db/schema";
 import { eq, and, gt, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { hashOtpCode, validateHandle, createSession, attachSessionCookie } from "@/lib/auth";
+import { captureException } from "@/lib/error-monitor";
+
 
 export const dynamic = "force-dynamic";
 
@@ -123,7 +125,8 @@ export async function POST(req: NextRequest) {
     attachSessionCookie(res, sessionToken);
     return res;
   } catch (err) {
-    console.error("verify-code error:", err);
+    captureException(err, { route: "POST /api/auth/verify-code" });
     return NextResponse.json({ error: "Verification failed." }, { status: 500 });
   }
+
 }

@@ -5,6 +5,8 @@ import { eq, and, gt, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { hashOtpCode, generate6DigitCode } from "@/lib/auth";
 import { sendOtpEmail } from "@/lib/email";
+import { captureException } from "@/lib/error-monitor";
+
 
 export const dynamic = "force-dynamic";
 
@@ -69,9 +71,10 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (err) {
-    console.error("send-code error:", err);
+    captureException(err, { route: "POST /api/auth/send-code" });
     return NextResponse.json({ error: "Could not send verification code." }, { status: 500 });
   }
+
 }
 
 

@@ -5,6 +5,8 @@ import { nanoid, customAlphabet } from "nanoid";
 import { randomBytes, createHash } from "crypto";
 import { getClientIp, generateIpSalt, checkPollCreationRateLimit } from "@/lib/security";
 import { getSessionUser } from "@/lib/auth";
+import { captureException } from "@/lib/error-monitor";
+
 
 const scopedCode = customAlphabet("23456789ABCDEFGHJKLMNPQRSTUVWXYZ", 6);
 
@@ -144,9 +146,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ slug, adminKey, isPublic: isPublic === 1 });
   } catch (e) {
-    console.error("create poll failed", e);
+    captureException(e, { route: "POST /api/polls" });
     return NextResponse.json({ error: "Could not create poll." }, { status: 500 });
   }
+
 }
 
 

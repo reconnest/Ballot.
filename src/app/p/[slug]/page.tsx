@@ -1986,7 +1986,7 @@ function PollContent() {
                 </span>
               </button>
 
-              {/* 4. CSV Export */}
+              {/* 4. CSV & JSON Export */}
               <button
                 type="button"
                 onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
@@ -1998,6 +1998,19 @@ function PollContent() {
                   <Download size={13} />
                 </span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => exportToJSON(poll)}
+                className="action-text-btn"
+                title="Download complete JSON data"
+              >
+                <span>JSON</span>
+                <span className="action-tile">
+                  <Download size={13} />
+                </span>
+              </button>
+
 
               {/* 5. Manage Poll */}
               <button
@@ -2326,6 +2339,17 @@ function PollContent() {
                     <Download size={12} />
                     <span>Download CSV</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => exportToJSON(poll)}
+                    className="btn-ghost"
+                    style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
+                  >
+                    <Download size={12} />
+                    <span>Download JSON</span>
+                  </button>
+
                 </div>
               </div>
 
