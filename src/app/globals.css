@@ -978,26 +978,79 @@ textarea:focus {
   }
 }
 
+/* Unified Navbar Buttons & Controls */
+.navbar-btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.navbar-btn-primary:hover {
+  background: var(--accent-ink);
+  color: #fff;
+}
+
+.navbar-btn-ghost {
+  background: var(--surface);
+  color: var(--ink);
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.navbar-btn-ghost:hover {
+  border-color: var(--accent);
+  background: var(--paper);
+}
+
 .creator-dropdown-trigger {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: none;
+  height: 34px;
+  background: var(--surface);
   border: 1px solid var(--line);
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 0 12px;
+  border-radius: var(--radius);
   color: var(--ink);
-  font-family: monospace;
+  font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  box-sizing: border-box;
   transition: all 0.15s ease;
 }
 
 .creator-dropdown-trigger:hover {
   border-color: var(--accent);
-  background: var(--surface);
+  background: var(--paper);
 }
+
 
 .creator-dropdown-menu {
   position: absolute;
@@ -1234,14 +1287,18 @@ textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 34px;
+  height: 34px;
+  box-sizing: border-box;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 6px;
+  padding: 0;
   cursor: pointer;
   color: var(--ink);
   transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
 }
+
 .theme-toggle-btn:hover {
   border-color: var(--accent);
   transform: scale(1.05);

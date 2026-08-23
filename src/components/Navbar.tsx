@@ -167,12 +167,12 @@ export function Navbar({ onUserChange }: NavbarProps) {
           <ThemeToggle />
 
           {loading ? (
-            <div style={{ width: 60, height: 32 }} />
+            <div style={{ width: 60, height: 34 }} />
           ) : user ? (
             /* Logged-In Creator Navigation */
             <>
               {pathname !== "/new" && (
-                <Link href="/new" className="btn-primary" style={{ fontSize: 13 }}>
+                <Link href="/new" className="navbar-btn-primary">
                   + Create poll
                 </Link>
               )}
@@ -185,7 +185,6 @@ export function Navbar({ onUserChange }: NavbarProps) {
                   className="creator-dropdown-trigger"
                   aria-expanded={showDropdown}
                   title={`Creator ID: @${user.username}`}
-                  style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
                 >
                   <User size={13} color="var(--accent)" />
                   <span>@{user.username}</span>
@@ -243,19 +242,19 @@ export function Navbar({ onUserChange }: NavbarProps) {
               <button
                 type="button"
                 onClick={() => handleOpenSignIn()}
-                className="btn-ghost"
-                style={{ fontSize: 13, fontWeight: 600 }}
+                className="navbar-btn-ghost"
               >
                 Sign in
               </button>
 
               {pathname !== "/new" && (
-                <Link href="/new" className="btn-primary" style={{ fontSize: 13 }}>
+                <Link href="/new" className="navbar-btn-primary">
                   + Create poll
                 </Link>
               )}
             </>
           )}
+
         </div>
       </header>
 
