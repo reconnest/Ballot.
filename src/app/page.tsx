@@ -999,68 +999,71 @@ export default function HomePage() {
             <div className="stepper-panel" role="tabpanel" key={workflowStep}>
               {/* STEP 1: CREATE */}
               {workflowStep === "create" && (
-                <div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span className="stepper-row-badge">STEP 01 — CREATE</span>
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Create in Seconds</h3>
-                  <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
-                    Set up your question with single choice, multi-selection, ranked points, or visual image choices:
-                  </p>
 
-                  <div className="stepper-rows">
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <Zap size={18} color="var(--accent)" />
-                        </span>
-                        <div>
-                          <div>
-                            <span className="stepper-row-badge">Standard Poll</span>
-                            <span className="stepper-row-title">Single & Multi-Choice</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Simple voting when you need a quick answer. Support for pick-one or bounded multi-selection rules.
-                          </div>
-                        </div>
-                      </div>
-                      <span className="stepper-row-tag">→ Quick decisions & check-ins</span>
+                <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                      <span className="stepper-row-badge">STEP 01 — CREATE</span>
                     </div>
+                    <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Create in Seconds</h3>
+                    <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
+                      Set up your question with single choice, multi-selection, ranked points, or visual image choices:
+                    </p>
 
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <Trophy size={18} color="var(--accent)" />
-                        </span>
-                        <div>
+                    <div className="stepper-rows">
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <Zap size={18} color="var(--accent)" />
+                          </span>
                           <div>
-                            <span className="stepper-row-badge">Ranked Choice (Points)</span>
-                            <span className="stepper-row-title">Weighted Points Scoring</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Let voters rank their preferences. 1st choice earns maximum points to find the highest-scoring winner.
+                            <div>
+                              <span className="stepper-row-badge">Standard Poll</span>
+                              <span className="stepper-row-title">Single & Multi-Choice</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Simple voting when you need a quick answer. Support for pick-one or bounded multi-selection rules.
+                            </div>
                           </div>
                         </div>
+                        <span className="stepper-row-tag">→ Quick decisions & check-ins</span>
                       </div>
-                      <span className="stepper-row-tag">→ Elections & team rankings</span>
-                    </div>
 
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <ImageIcon size={18} color="var(--accent)" />
-                        </span>
-                        <div>
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <Trophy size={18} color="var(--accent)" />
+                          </span>
                           <div>
-                            <span className="stepper-row-badge">Image Poll</span>
-                            <span className="stepper-row-title">Visual Choices</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Let people vote visually with image-based choices. Add high-res thumbnails for designs, products, and contests.
+                            <div>
+                              <span className="stepper-row-badge">Ranked Choice (Points)</span>
+                              <span className="stepper-row-title">Weighted Points Scoring</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Let voters rank their preferences. 1st choice earns maximum points to find the highest-scoring winner.
+                            </div>
                           </div>
                         </div>
+                        <span className="stepper-row-tag">→ Elections & team rankings</span>
                       </div>
-                      <span className="stepper-row-tag">→ Design critiques & picks</span>
+
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <ImageIcon size={18} color="var(--accent)" />
+                          </span>
+                          <div>
+                            <div>
+                              <span className="stepper-row-badge">Image Poll</span>
+                              <span className="stepper-row-title">Visual Choices</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Let people vote visually with image-based choices. Add high-res thumbnails for designs, products, and contests.
+                            </div>
+                          </div>
+                        </div>
+                        <span className="stepper-row-tag">→ Design critiques & picks</span>
+                      </div>
                     </div>
                   </div>
 
@@ -1076,68 +1079,70 @@ export default function HomePage() {
 
               {/* STEP 2: SHARE */}
               {workflowStep === "share" && (
-                <div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span className="stepper-row-badge">STEP 02 — SHARE</span>
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Reach Your Audience Everywhere</h3>
-                  <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
-                    Distribute your poll in seconds through direct links, downloadable QR codes, or embedded widgets:
-                  </p>
-
-                  <div className="stepper-rows">
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <Link2 size={18} color="var(--accent)" />
-                        </span>
-                        <div>
-                          <div>
-                            <span className="stepper-row-badge">Direct Link</span>
-                            <span className="stepper-row-title">One Clean URL</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Copy a shareable link and send it over email, Slack, Discord, or any messaging app instantly.
-                          </div>
-                        </div>
-                      </div>
-                      <span className="stepper-row-tag">→ Team channels & messages</span>
+                <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                      <span className="stepper-row-badge">STEP 02 — SHARE</span>
                     </div>
+                    <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Reach Your Audience Everywhere</h3>
+                    <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
+                      Distribute your poll in seconds through direct links, downloadable QR codes, or embedded widgets:
+                    </p>
 
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <QrCode size={18} color="var(--accent)" />
-                        </span>
-                        <div>
+                    <div className="stepper-rows">
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <Link2 size={18} color="var(--accent)" />
+                          </span>
                           <div>
-                            <span className="stepper-row-badge">QR Code</span>
-                            <span className="stepper-row-title">Downloadable QR</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Generate a high-res QR code as PNG or SVG. Print it anywhere, project on live screens or presentation slides.
+                            <div>
+                              <span className="stepper-row-badge">Direct Link</span>
+                              <span className="stepper-row-title">One Clean URL</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Copy a shareable link and send it over email, Slack, Discord, or any messaging app instantly.
+                            </div>
                           </div>
                         </div>
+                        <span className="stepper-row-tag">→ Team channels & messages</span>
                       </div>
-                      <span className="stepper-row-tag">→ Events & physical spaces</span>
-                    </div>
 
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <Laptop size={18} color="var(--accent)" />
-                        </span>
-                        <div>
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <QrCode size={18} color="var(--accent)" />
+                          </span>
                           <div>
-                            <span className="stepper-row-badge">Embed</span>
-                            <span className="stepper-row-title">Live Website Embed</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Drop a single lightweight iframe snippet into any webpage or blog and your poll renders inline, live and interactive.
+                            <div>
+                              <span className="stepper-row-badge">QR Code</span>
+                              <span className="stepper-row-title">Downloadable QR</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Generate a high-res QR code as PNG or SVG. Print it anywhere, project on live screens or presentation slides.
+                            </div>
                           </div>
                         </div>
+                        <span className="stepper-row-tag">→ Events & physical spaces</span>
                       </div>
-                      <span className="stepper-row-tag">→ Blogs, landing pages & apps</span>
+
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <Laptop size={18} color="var(--accent)" />
+                          </span>
+                          <div>
+                            <div>
+                              <span className="stepper-row-badge">Embed</span>
+                              <span className="stepper-row-title">Live Website Embed</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Drop a single lightweight iframe snippet into any webpage or blog and your poll renders inline, live and interactive.
+                            </div>
+                          </div>
+                        </div>
+                        <span className="stepper-row-tag">→ Blogs, landing pages & apps</span>
+                      </div>
                     </div>
                   </div>
 
@@ -1153,69 +1158,71 @@ export default function HomePage() {
 
               {/* STEP 3: DECIDE (VOTER DECISION & CREATOR/GROUP CONSENSUS) */}
               {workflowStep === "decide" && (
-                <div>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                    <span className="stepper-row-badge">STEP 03 — DECIDE</span>
-                  </div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Decide with Confidence</h3>
-
-                  <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
-                    How voters cast their true choices and how creators reach undeniable consensus:
-                  </p>
-
-                  <div className="stepper-rows">
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <CheckCircle2 size={18} color="var(--accent)" />
-                        </span>
-                        <div>
-                          <div>
-                            <span className="stepper-row-badge">Voter Decision</span>
-                            <span className="stepper-row-title">Cast with Absolute Clarity</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Voters easily express their authentic preferences through single votes, ranked point ballots, or visual cards—with zero signup friction.
-                          </div>
-                        </div>
-                      </div>
-                      <span className="stepper-row-tag">→ Frictionless voter experience</span>
+                <div style={{ display: "flex", flexDirection: "column", height: "100%", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                      <span className="stepper-row-badge">STEP 03 — DECIDE</span>
                     </div>
+                    <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Decide with Confidence</h3>
 
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <Crown size={18} color="var(--accent)" />
-                        </span>
-                        <div>
+                    <p style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.5, marginBottom: 18 }}>
+                      How voters cast their true choices and how creators reach undeniable consensus:
+                    </p>
+
+                    <div className="stepper-rows">
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <CheckCircle2 size={18} color="var(--accent)" />
+                          </span>
                           <div>
-                            <span className="stepper-row-badge">Group Consensus</span>
-                            <span className="stepper-row-title">Ranked Points Winner</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Live real-time SSE streams and automated weighted ranking algorithms reveal the highest-scoring winner without endless debate.
+                            <div>
+                              <span className="stepper-row-badge">Voter Decision</span>
+                              <span className="stepper-row-title">Cast with Absolute Clarity</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Voters easily express their authentic preferences through single votes, ranked point ballots, or visual cards—with zero signup friction.
+                            </div>
                           </div>
                         </div>
+                        <span className="stepper-row-tag">→ Frictionless voter experience</span>
                       </div>
-                      <span className="stepper-row-tag">→ Fast, trustworthy outcome</span>
-                    </div>
 
-                    <div className="stepper-row-card">
-                      <div className="stepper-row-left">
-                        <span className="stepper-row-icon">
-                          <BarChart3 size={18} color="var(--accent)" />
-                        </span>
-                        <div>
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <Crown size={18} color="var(--accent)" />
+                          </span>
                           <div>
-                            <span className="stepper-row-badge">Actionable Data</span>
-                            <span className="stepper-row-title">Live Analytics & Raw Export</span>
-                          </div>
-                          <div className="stepper-row-desc">
-                            Inspect real-time SVG charts (Donut, Pie, Ledger) and download raw CSV/JSON records to document and share your final decision.
+                            <div>
+                              <span className="stepper-row-badge">Group Consensus</span>
+                              <span className="stepper-row-title">Ranked Points Winner</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Live real-time SSE streams and automated weighted ranking algorithms reveal the highest-scoring winner without endless debate.
+                            </div>
                           </div>
                         </div>
+                        <span className="stepper-row-tag">→ Fast, trustworthy outcome</span>
                       </div>
-                      <span className="stepper-row-tag">→ Complete data transparency</span>
+
+                      <div className="stepper-row-card">
+                        <div className="stepper-row-left">
+                          <span className="stepper-row-icon">
+                            <BarChart3 size={18} color="var(--accent)" />
+                          </span>
+                          <div>
+                            <div>
+                              <span className="stepper-row-badge">Actionable Data</span>
+                              <span className="stepper-row-title">Live Analytics & Raw Export</span>
+                            </div>
+                            <div className="stepper-row-desc">
+                              Inspect real-time SVG charts (Donut, Pie, Ledger) and download raw CSV/JSON records to document and share your final decision.
+                            </div>
+                          </div>
+                        </div>
+                        <span className="stepper-row-tag">→ Complete data transparency</span>
+                      </div>
                     </div>
                   </div>
 
@@ -1231,6 +1238,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
 
         {/* 4. DIFFERENTIATORS ("Built for trustworthy decisions") */}
         <section id="why-ballot" aria-labelledby="pillars-heading" style={{ margin: "48px 0" }}>
