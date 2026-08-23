@@ -75,14 +75,19 @@ export async function GET(req: NextRequest) {
     });
 
 
-    // Apply text search
+    // Apply comprehensive text search across question, description, slug ID, category, and creator name
     if (query) {
       items = items.filter(
         (p) =>
+          p.slug.toLowerCase().includes(query) ||
           p.question.toLowerCase().includes(query) ||
-          (p.description && p.description.toLowerCase().includes(query))
+          (p.description && p.description.toLowerCase().includes(query)) ||
+          (p.category && p.category.toLowerCase().includes(query)) ||
+          (p.creator && p.creator.username.toLowerCase().includes(query)) ||
+          (p.creator && p.creator.displayName.toLowerCase().includes(query))
       );
     }
+
 
     // Apply category filter
     if (category && category !== "all") {

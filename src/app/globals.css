@@ -1066,6 +1066,15 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
   letter-spacing: 0.02em;
 }
 
+.badge-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--faint);
+  letter-spacing: 0.04em;
+  margin-left: auto;
+}
+
+
 .explore-card-q {
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;

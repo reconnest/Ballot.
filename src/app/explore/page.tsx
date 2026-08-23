@@ -19,7 +19,9 @@ import {
   Sparkles,
   Zap,
   Search,
+  X,
 } from "lucide-react";
+
 
 type PollSummary = {
   id: string;
@@ -56,17 +58,23 @@ function ExploreContent() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "all");
-  const [filter, setFilter] = useState<"trending" | "recent" | "active">("trending");
+  const [filter, setFilter] = useState<"recent" | "trending" | "active">("recent");
 
-  async function loadPolls(targetPage = 1, append = false) {
+  async function loadPolls(
+    targetPage = 1,
+    append = false,
+    currentSearch = search,
+    currentCategory = category,
+    currentFilter = filter
+  ) {
     if (targetPage === 1) setLoading(true);
     else setLoadingMore(true);
 
     try {
       const params = new URLSearchParams();
-      if (category !== "all") params.set("category", category);
-      if (search) params.set("q", search);
-      params.set("filter", filter);
+      if (currentCategory !== "all") params.set("category", currentCategory);
+      if (currentSearch.trim()) params.set("q", currentSearch.trim());
+      params.set("filter", currentFilter);
       params.set("page", String(targetPage));
       params.set("limit", "24");
 
@@ -88,19 +96,26 @@ function ExploreContent() {
   }
 
   useEffect(() => {
-    loadPolls(1, false);
+    loadPolls(1, false, search, category, filter);
   }, [category, filter]);
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
-    loadPolls(1, false);
+    loadPolls(1, false, search, category, filter);
+  }
+
+  function handleClearSearch() {
+    setSearch("");
+    loadPolls(1, false, "", category, filter);
   }
 
   function handleLoadMore() {
     if (!loadingMore && hasMore) {
-      loadPolls(page + 1, true);
+      loadPolls(page + 1, true, search, category, filter);
     }
   }
+
+  const isRecentView = filter === "recent" && !search.trim();
 
   return (
     <div className="wrap">
@@ -111,19 +126,25 @@ function ExploreContent() {
           <div className="section-label">Public Polls</div>
           <h1 className="poll-title" style={{ fontSize: 24, marginBottom: 16 }}>Explore & Discover</h1>
 
-          {/* Search Bar */}
+          {/* Search Bar with Instant Clear */}
           <form onSubmit={handleSearchSubmit} style={{ marginBottom: 18, position: "relative" }}>
             <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}>
               <AnimatedSearchIcon size={18} />
             </div>
             <input
               type="text"
-              placeholder="Search questions or topics… (press Enter)"
+              placeholder="Search by question, creator @handle, topic, or poll ID… (press Enter)"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSearch(val);
+                if (val === "") {
+                  loadPolls(1, false, "", category, filter);
+                }
+              }}
               style={{
                 width: "100%",
-                padding: "11px 14px 11px 40px",
+                padding: "11px 40px 11px 40px",
                 border: "1px solid var(--line)",
                 borderRadius: "var(--radius)",
                 background: "var(--surface)",
@@ -133,6 +154,30 @@ function ExploreContent() {
                 transition: "border-color 0.2s ease, box-shadow 0.2s ease",
               }}
             />
+            {search && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                aria-label="Clear search"
+                title="Clear search"
+                style={{
+                  position: "absolute",
+                  right: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--muted)",
+                  padding: 4,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <X size={16} />
+              </button>
+            )}
           </form>
 
           {/* Categories Pills */}
@@ -154,17 +199,9 @@ function ExploreContent() {
             })}
           </div>
 
-          {/* Filter Tabs (Underline Tabs) */}
+          {/* Filter Tabs (Reordered: Recent, Trending, Active) */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--line)", marginBottom: 20 }}>
             <div className="sort-tabs" style={{ borderBottom: "none", marginBottom: 0 }}>
-              <button
-                type="button"
-                className={`sort-tab ${filter === "trending" ? "active" : ""}`}
-                onClick={() => setFilter("trending")}
-              >
-                <Flame size={13} color={filter === "trending" ? "var(--accent)" : "currentColor"} />
-                <span>Trending</span>
-              </button>
               <button
                 type="button"
                 className={`sort-tab ${filter === "recent" ? "active" : ""}`}
@@ -172,6 +209,14 @@ function ExploreContent() {
               >
                 <Sparkles size={13} color={filter === "recent" ? "var(--accent)" : "currentColor"} />
                 <span>Recent</span>
+              </button>
+              <button
+                type="button"
+                className={`sort-tab ${filter === "trending" ? "active" : ""}`}
+                onClick={() => setFilter("trending")}
+              >
+                <Flame size={13} color={filter === "trending" ? "var(--accent)" : "currentColor"} />
+                <span>Trending</span>
               </button>
               <button
                 type="button"
@@ -217,10 +262,10 @@ function ExploreContent() {
                 <button
                   type="button"
                   className="btn-ghost"
-                  onClick={() => { setSearch(""); setCategory("all"); }}
+                  onClick={handleClearSearch}
                   style={{ padding: "8px 16px", fontSize: 13 }}
                 >
-                  Reset filters
+                  Reset search & filters
                 </button>
                 <Link
                   href="/new"
@@ -234,6 +279,15 @@ function ExploreContent() {
           ) : (
             <>
               <div className="explore-cards-grid" role="list" aria-label="Public polls list">
+                {/* 1st Position: "+ Create new poll" card in the Recent feed */}
+                {isRecentView && (
+                  <Link href="/new" className="explore-cta-card" aria-label="Create a new poll">
+                    <div className="explore-cta-plus">+</div>
+                    <div className="explore-cta-text">Create a new poll</div>
+                    <div className="explore-cta-sub">Launch your question in seconds →</div>
+                  </Link>
+                )}
+
                 {polls.map((p) => {
                   const typeLabel =
                     p.pollType === "ranked_choice"
@@ -250,6 +304,7 @@ function ExploreContent() {
                         <div className="explore-card-badges">
                           <span className="badge-category">{p.category || "general"}</span>
                           {typeLabel && <span className="badge-type">{typeLabel}</span>}
+                          <span className="badge-code">#{p.slug}</span>
                         </div>
                         <div className="explore-card-q">{p.question}</div>
                         {p.description && (
@@ -270,8 +325,8 @@ function ExploreContent() {
                   );
                 })}
 
-                {/* Sparse State: When under 4 polls, show a friendly + New Poll card to eliminate empty grid gaps */}
-                {polls.length > 0 && polls.length < 4 && (
+                {/* Sparse State Fallback: for Trending / Active when under 4 polls */}
+                {!isRecentView && polls.length > 0 && polls.length < 4 && (
                   <Link href="/new" className="explore-cta-card" aria-label="Create a new poll">
                     <div className="explore-cta-plus">+</div>
                     <div className="explore-cta-text">Create a new poll</div>
@@ -279,6 +334,7 @@ function ExploreContent() {
                   </Link>
                 )}
               </div>
+
 
 
               {/* Pagination / Load More Button */}
