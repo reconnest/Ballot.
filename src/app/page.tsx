@@ -10,6 +10,30 @@ import { getCachedSessionUser } from "@/lib/session-cache";
 import { AnimatedTrophyIcon } from "@/components/icons/AnimatedTrophyIcon";
 import { AnimatedRefreshIcon } from "@/components/icons/AnimatedRefreshIcon";
 import { Footer } from "@/components/Footer";
+import {
+  Zap,
+  Trophy,
+  Image as ImageIcon,
+  ShieldCheck,
+  BarChart3,
+  Link2,
+  QrCode,
+  Laptop,
+  CheckCircle2,
+  Crown,
+  Medal,
+  Award,
+  Globe,
+  ClipboardList,
+  Sparkles,
+  Palmtree,
+  Trees,
+  Building2,
+  Tent,
+  Smartphone,
+  RefreshCw,
+} from "lucide-react";
+
 
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
@@ -27,24 +51,20 @@ type PublicPoll = {
 export default function HomePage() {
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(() => getCachedSessionUser());
   const [polls, setPolls] = useState<Summary[] | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = localStorage.getItem("ballot_my_polls");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("ballot_my_polls");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {
+        console.warn("[ballot_my_polls] Storage parse warning:", e);
+      }
     }
+    return null;
   });
-  const [showMyPolls, setShowMyPolls] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const raw = localStorage.getItem("ballot_my_polls");
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) && parsed.length > 0;
-    } catch {
-      return false;
-    }
-  });
+  const [showMyPolls, setShowMyPolls] = useState<boolean>(false);
   const [trendingPolls, setTrendingPolls] = useState<PublicPoll[]>([]);
 
 
@@ -59,18 +79,18 @@ export default function HomePage() {
   const [standardVoteSubmitted, setStandardVoteSubmitted] = useState<boolean>(false);
   const [standardTallies, setStandardTallies] = useState<number[]>([48, 56, 32, 25]);
   const standardOptions = [
-    { label: "🏖️ Beachside Resort" },
-    { label: "🌲 Mountain Cabin Retreat" },
-    { label: "🏙️ Downtown Loft & City Tour" },
-    { label: "🏕️ National Park Glamping" },
+    { label: "Beachside Resort", icon: Palmtree },
+    { label: "Mountain Cabin Retreat", icon: Trees },
+    { label: "Downtown Loft & City Tour", icon: Building2 },
+    { label: "National Park Glamping", icon: Tent },
   ];
 
   // Ranked format state
   const [rankedOrder, setRankedOrder] = useState<string[]>([
-    "⚡ Instant Realtime SSE Sync",
-    "🛡️ Multi-Tier Fraud Defense",
-    "📊 Interactive SVG Charts",
-    "📱 Mobile Web Experience",
+    "Instant Realtime SSE Sync",
+    "Multi-Tier Fraud Defense",
+    "Interactive SVG Charts",
+    "Mobile Web Experience",
   ]);
   const [rankedSubmitted, setRankedSubmitted] = useState<boolean>(false);
 
@@ -82,19 +102,19 @@ export default function HomePage() {
     {
       label: "Minimal Logo",
       subtitle: "Geometric Monogram",
-      icon: "💠",
+      iconComponent: Sparkles,
       color: "#0f766e",
     },
     {
       label: "Dynamic Slit",
       subtitle: "High Energy Motion",
-      icon: "⚡",
+      iconComponent: Zap,
       color: "#2563eb",
     },
     {
       label: "Ballot Box",
       subtitle: "Clean & Modern",
-      icon: "🗳️",
+      iconComponent: CheckCircle2,
       color: "#7c3aed",
     },
   ];
@@ -212,9 +232,15 @@ export default function HomePage() {
             {/* Left Column: Value Proposition & CTAs */}
             <div>
               <div className="hero-badge-row">
-                <span className="hero-pill">🏆 Ranked Choice (Points)</span>
-                <span className="hero-pill">🛡️ Anti-Fraud Defense</span>
-                <span className="hero-pill">📊 Live Analytics</span>
+                <span className="hero-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Trophy size={13} color="var(--accent)" /> Ranked Choice (Points)
+                </span>
+                <span className="hero-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <ShieldCheck size={13} color="var(--accent)" /> Anti-Fraud Defense
+                </span>
+                <span className="hero-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <BarChart3 size={13} color="var(--accent)" /> Live Analytics
+                </span>
               </div>
 
 
@@ -253,8 +279,10 @@ export default function HomePage() {
                     aria-selected={sandboxFormat === "standard"}
                     className={`sandbox-format-tab ${sandboxFormat === "standard" ? "active" : ""}`}
                     onClick={() => setSandboxFormat("standard")}
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   >
-                    Standard Poll
+                    <Zap size={14} />
+                    <span>Standard Poll</span>
                   </button>
                   <button
                     type="button"
@@ -262,8 +290,10 @@ export default function HomePage() {
                     aria-selected={sandboxFormat === "ranked"}
                     className={`sandbox-format-tab ${sandboxFormat === "ranked" ? "active" : ""}`}
                     onClick={() => setSandboxFormat("ranked")}
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   >
-                    Ranked Choice
+                    <Trophy size={14} />
+                    <span>Ranked Choice</span>
                   </button>
                   <button
                     type="button"
@@ -271,8 +301,10 @@ export default function HomePage() {
                     aria-selected={sandboxFormat === "image"}
                     className={`sandbox-format-tab ${sandboxFormat === "image" ? "active" : ""}`}
                     onClick={() => setSandboxFormat("image")}
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
                   >
-                    Image Poll
+                    <ImageIcon size={14} />
+                    <span>Image Poll</span>
                   </button>
                 </div>
 
@@ -299,6 +331,7 @@ export default function HomePage() {
                         <div role="radiogroup" aria-label="Standard demo options" style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                           {standardOptions.map((opt, i) => {
                             const isSelected = selectedStandard === i;
+                            const IconComponent = opt.icon;
                             return (
                               <div
                                 key={i}
@@ -325,9 +358,13 @@ export default function HomePage() {
                                   boxShadow: isSelected ? "0 2px 8px rgba(15, 118, 110, 0.12)" : "none",
                                 }}
                               >
-                                <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)" }}>
-                                  {opt.label}
-                                </span>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                  <IconComponent size={15} color={isSelected ? "var(--accent)" : "var(--muted)"} />
+                                  <span style={{ fontSize: 13, fontWeight: isSelected ? 600 : 500, color: isSelected ? "var(--accent-ink)" : "var(--ink)" }}>
+                                    {opt.label}
+                                  </span>
+                                </div>
+
                                 <span style={{
                                   width: 18,
                                   height: 18,
@@ -483,10 +520,10 @@ export default function HomePage() {
                       <div aria-live="polite">
                         {(() => {
                           const baselineRanked = {
-                            "⚡ Instant Realtime SSE Sync": { points: 34, firstChoices: 3 },
-                            "🛡️ Multi-Tier Fraud Defense": { points: 40, firstChoices: 5 },
-                            "📊 Interactive SVG Charts": { points: 26, firstChoices: 2 },
-                            "📱 Mobile Web Experience": { points: 16, firstChoices: 1 },
+                            "Instant Realtime SSE Sync": { points: 34, firstChoices: 3 },
+                            "Multi-Tier Fraud Defense": { points: 40, firstChoices: 5 },
+                            "Interactive SVG Charts": { points: 26, firstChoices: 2 },
+                            "Mobile Web Experience": { points: 16, firstChoices: 1 },
                           };
 
                           const rankedLeaderboard = Object.keys(baselineRanked).map((title) => {
@@ -514,13 +551,22 @@ export default function HomePage() {
                           return (
                             <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 8, display: "flex", alignItems: "center", gap: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                <span>📊 Points Leaderboard</span>
+                                <BarChart3 size={13} color="var(--accent)" />
+                                <span>Points Leaderboard</span>
                               </div>
 
                               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                                 {itemsWithPct.map((item, idx) => {
                                   const isTop = idx === 0;
-                                  const rankIcon = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : `#${idx + 1}`;
+                                  const rankIcon = idx === 0 ? (
+                                    <Crown size={13} color="var(--accent)" />
+                                  ) : idx === 1 ? (
+                                    <Medal size={13} color="#8B5CF6" />
+                                  ) : idx === 2 ? (
+                                    <Award size={13} color="#EC4899" />
+                                  ) : (
+                                    <span style={{ fontSize: 10, fontFamily: "monospace", color: "var(--muted)" }}>#{idx + 1}</span>
+                                  );
                                   const trackColor = isTop ? "var(--accent)" : idx === 1 ? "#8B5CF6" : idx === 2 ? "#EC4899" : "#F59E0B";
 
                                   return (
@@ -538,11 +584,12 @@ export default function HomePage() {
                                     >
                                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11 }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 6, overflow: "hidden", maxWidth: "62%" }}>
-                                          <span style={{ fontSize: 12 }}>{rankIcon}</span>
+                                          <span style={{ display: "inline-flex", alignItems: "center" }}>{rankIcon}</span>
                                           <span style={{ fontWeight: isTop ? 700 : 600, color: isTop ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                             {item.title}
                                           </span>
                                         </div>
+
                                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
                                           <span style={{ fontSize: 10, color: "var(--muted)" }}>
                                             {item.firstChoiceVotes} 1st picks
@@ -632,9 +679,8 @@ export default function HomePage() {
                                   alignItems: "center",
                                   justifyContent: "center",
                                   borderBottom: "1px solid var(--line)",
-                                  fontSize: 26
                                 }}>
-                                  {opt.icon}
+                                  <opt.iconComponent size={24} color={opt.color} />
                                 </div>
                                 <div style={{ padding: "8px 6px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                                   <div style={{ fontWeight: 700, fontSize: 11, color: isSelected ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%" }}>
@@ -682,6 +728,7 @@ export default function HomePage() {
                               const pct = Math.round((count / imageTotal) * 100);
                               const isLeader = maxImage > 0 && count === maxImage;
                               const isMine = selectedImage === i;
+                              const IconComponent = opt.iconComponent;
                               return (
                                 <div
                                   key={i}
@@ -703,9 +750,8 @@ export default function HomePage() {
                                     justifyContent: "center",
                                     borderBottom: "1px solid var(--line)",
                                     position: "relative",
-                                    fontSize: 24
                                   }}>
-                                    {opt.icon}
+                                    <IconComponent size={24} color={opt.color} />
                                     <div style={{
                                       position: "absolute",
                                       top: 4,
@@ -728,8 +774,8 @@ export default function HomePage() {
                                         {opt.label}
                                       </div>
                                       {isLeader && (
-                                        <span style={{ fontSize: 9, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 4px", borderRadius: 2, flexShrink: 0 }}>
-                                          🏆
+                                        <span style={{ display: "inline-flex", alignItems: "center", padding: "1px 4px", borderRadius: 2, background: "var(--accent-soft)", flexShrink: 0 }}>
+                                          <Trophy size={11} color="var(--accent)" />
                                         </span>
                                       )}
                                     </div>
@@ -756,9 +802,10 @@ export default function HomePage() {
                               setImageVoteSubmitted(false);
                             }}
                             className="btn-ghost"
-                            style={{ fontSize: 11, padding: "5px 10px" }}
+                            style={{ fontSize: 11, padding: "5px 10px", display: "inline-flex", alignItems: "center", gap: 6, margin: "0 auto" }}
                           >
-                            🗳️ Cast Another Vote
+                            <RefreshCw size={12} />
+                            <span>Cast Another Vote</span>
                           </button>
                         </div>
                       </div>
@@ -778,9 +825,10 @@ export default function HomePage() {
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 16 }}>📋</span>
+                <ClipboardList size={18} color="var(--accent)" />
                 <h2 style={{ fontSize: 16, fontWeight: 700 }}>Your Created Polls ({polls.length})</h2>
               </div>
+
               <button
                 type="button"
                 className="btn-link"
@@ -953,7 +1001,9 @@ export default function HomePage() {
                   <div className="stepper-rows">
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">⚡</span>
+                        <span className="stepper-row-icon">
+                          <Zap size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">Standard Poll</span>
@@ -969,7 +1019,9 @@ export default function HomePage() {
 
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">🏆</span>
+                        <span className="stepper-row-icon">
+                          <Trophy size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">Ranked Choice (Points)</span>
@@ -985,7 +1037,9 @@ export default function HomePage() {
 
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">🖼️</span>
+                        <span className="stepper-row-icon">
+                          <ImageIcon size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">Image Poll</span>
@@ -1024,7 +1078,9 @@ export default function HomePage() {
                   <div className="stepper-rows">
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">🔗</span>
+                        <span className="stepper-row-icon">
+                          <Link2 size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">Direct Link</span>
@@ -1040,7 +1096,9 @@ export default function HomePage() {
 
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">📱</span>
+                        <span className="stepper-row-icon">
+                          <QrCode size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">QR Code</span>
@@ -1056,7 +1114,9 @@ export default function HomePage() {
 
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">💻</span>
+                        <span className="stepper-row-icon">
+                          <Laptop size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">Embed</span>
@@ -1096,7 +1156,9 @@ export default function HomePage() {
                   <div className="stepper-rows">
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">🗳️</span>
+                        <span className="stepper-row-icon">
+                          <CheckCircle2 size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">Voter Decision</span>
@@ -1112,7 +1174,9 @@ export default function HomePage() {
 
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">👑</span>
+                        <span className="stepper-row-icon">
+                          <Crown size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">Group Consensus</span>
@@ -1128,7 +1192,9 @@ export default function HomePage() {
 
                     <div className="stepper-row-card">
                       <div className="stepper-row-left">
-                        <span className="stepper-row-icon">📊</span>
+                        <span className="stepper-row-icon">
+                          <BarChart3 size={18} color="var(--accent)" />
+                        </span>
                         <div>
                           <div>
                             <span className="stepper-row-badge">Actionable Data</span>
@@ -1171,7 +1237,9 @@ export default function HomePage() {
             <div className="why-ballot-row-top">
               <div className="pillar-card">
                 <div>
-                  <div className="pillar-icon">🛡️</div>
+                  <div className="pillar-icon">
+                    <ShieldCheck size={26} color="var(--accent)" />
+                  </div>
                   <div className="pillar-title">Smart Fraud Defense</div>
                   <div className="pillar-desc">
                     Multiple layers of duplicate protection—choose from relaxed cookies, salted IP digests, or Turnstile bot defense.
@@ -1182,7 +1250,9 @@ export default function HomePage() {
 
               <div className="pillar-card">
                 <div>
-                  <div className="pillar-icon">⚡</div>
+                  <div className="pillar-icon">
+                    <Zap size={26} color="var(--accent)" />
+                  </div>
                   <div className="pillar-title">Adaptive Realtime Stream</div>
                   <div className="pillar-desc">
                     Live spectator counter and zero-polling SSE tallies with automatic traffic-spike protection and sub-100ms sync.
@@ -1197,7 +1267,9 @@ export default function HomePage() {
               {/* 25% Feature */}
               <div className="pillar-card">
                 <div>
-                  <div className="pillar-icon">🏆</div>
+                  <div className="pillar-icon">
+                    <Trophy size={26} color="var(--accent)" />
+                  </div>
                   <div className="pillar-title">Ranked Choice (Points)</div>
                   <div className="pillar-desc">
                     Built-in weighted point ballots (#1 gets max points) that find the highest-consensus choice without requiring enterprise add-ons.
@@ -1209,7 +1281,9 @@ export default function HomePage() {
               {/* 50% Center Hero Feature */}
               <div className="pillar-card">
                 <div>
-                  <div className="pillar-icon">📊</div>
+                  <div className="pillar-icon">
+                    <BarChart3 size={26} color="var(--accent)" />
+                  </div>
                   <div className="pillar-title">Interactive SVG Charts & Data Exports</div>
                   <div className="pillar-desc">
                     Inspect vote share with real-time Donut, Pie, and Ranked Points charts. Download raw CSV and JSON records instantly for transparent auditing or your own custom reporting pipeline.
@@ -1222,7 +1296,9 @@ export default function HomePage() {
               {/* 25% Feature */}
               <div className="pillar-card">
                 <div>
-                  <div className="pillar-icon">🌐</div>
+                  <div className="pillar-icon">
+                    <Globe size={26} color="var(--accent)" />
+                  </div>
                   <div className="pillar-title">Zero-Friction Voting</div>
                   <div className="pillar-desc">
                     No account or app download required for voters. Share one clean URL or printable QR code for maximum turnout.
@@ -1233,6 +1309,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
 
 
 
