@@ -1459,8 +1459,9 @@ export default function HomePage() {
                         <span className="badge-category">{tp.category || "general"}</span>
                         {typeLabel && <span className="badge-type">{typeLabel}</span>}
                       </div>
-                      <span className="explore-card-id">#{tp.slug}</span>
-                      <div className="explore-card-q">{tp.question}</div>
+                      <span className="explore-card-id">Poll ID: {tp.slug.replace(/^(BPC|BPP)-/, "")}</span>
+                      <div className="explore-card-q" title={tp.question}>{tp.question}</div>
+
 
                     </div>
                     <div className="explore-card-footer">

@@ -231,9 +231,13 @@ export default function CreatorProfilePage() {
                             {p.status === "inactive" ? "FINALIZED" : "LIVE"}
                           </span>
                         </div>
-                        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)", marginBottom: 4 }}>
+                        <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "var(--faint)", marginBottom: 4 }}>
+                          Poll ID: {p.slug.replace(/^(BPC|BPP)-/, "")}
+                        </div>
+                        <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)", marginBottom: 4 }} title={p.question}>
                           {p.question}
                         </div>
+
                       </div>
                       <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                         <span style={{ fontSize: 13, fontWeight: 700, color: "var(--accent)" }}>

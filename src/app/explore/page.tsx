@@ -305,14 +305,15 @@ function ExploreContent() {
                           <span className="badge-category">{p.category || "general"}</span>
                           {typeLabel && <span className="badge-type">{typeLabel}</span>}
                         </div>
-                        <span className="explore-card-id">#{p.slug}</span>
-                        <div className="explore-card-q">{p.question}</div>
+                        <span className="explore-card-id">Poll ID: {p.slug.replace(/^(BPC|BPP)-/, "")}</span>
+                        <div className="explore-card-q" title={p.question}>{p.question}</div>
                         {p.description && (
                           <div className="explore-card-desc" title={p.description}>
                             {p.description}
                           </div>
                         )}
                       </div>
+
 
                       <div className="explore-card-footer">
                         <span className="explore-card-votes">
