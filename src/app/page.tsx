@@ -10,6 +10,7 @@ import { getCachedSessionUser } from "@/lib/session-cache";
 import { AnimatedTrophyIcon } from "@/components/icons/AnimatedTrophyIcon";
 import { AnimatedRefreshIcon } from "@/components/icons/AnimatedRefreshIcon";
 import { Footer } from "@/components/Footer";
+import { RollingCounter } from "@/components/RollingCounter";
 import {
   Zap,
   Trophy,
@@ -33,7 +34,9 @@ import {
   RefreshCw,
   ChevronUp,
   ChevronDown,
+  Vote,
 } from "lucide-react";
+
 
 
 
@@ -67,6 +70,11 @@ export default function HomePage() {
   });
   const [showMyPolls, setShowMyPolls] = useState<boolean>(false);
   const [trendingPolls, setTrendingPolls] = useState<PublicPoll[]>([]);
+  const [globalStats, setGlobalStats] = useState<{ totalPolls: number; totalVotes: number }>({
+    totalPolls: 0,
+    totalVotes: 0,
+  });
+
 
   // Ephemeral Sandbox State (100% client-side, zero network API calls)
   const [sandboxFormat, setSandboxFormat] = useState<"standard" | "ranked" | "image">("standard");
@@ -180,6 +188,35 @@ export default function HomePage() {
     }
     loadTrending();
   }, []);
+
+  // Fetch real-time live platform global statistics (Total Votes & Total Polls)
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchStats() {
+      try {
+        const res = await fetch(`/api/stats?_t=${Date.now()}`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setGlobalStats({
+              totalPolls: data.totalPolls || 0,
+              totalVotes: data.totalVotes || 0,
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("[fetchStats] Could not sync global stats:", err);
+      }
+    }
+
+    fetchStats();
+    const interval = setInterval(fetchStats, 15000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
 
   // Only load user's created polls when creator is logged in
   useEffect(() => {
@@ -1362,22 +1399,60 @@ export default function HomePage() {
 
 
 
-        {/* 6. NO ACCOUNT / NO FRICTION */}
-        <section>
-          <div className="frictionless-box">
-            <div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
-                No signup. Instant voting. Zero friction.
-              </h2>
-              <p style={{ fontSize: 14, color: "var(--muted)", maxWidth: 520, lineHeight: 1.5 }}>
-                Create a poll, share the link, and let people vote without forcing them through an account-creation process.
-              </p>
+        {/* 6. LIVE PLATFORM ACTIVITY & METRICS */}
+        <section className="live-activity-section" aria-labelledby="live-activity-heading">
+          <div className="live-activity-box">
+            <div className="live-activity-header">
+              <div>
+                <div className="live-beacon-badge">
+                  <span className="live-beacon-dot" />
+                  <span>LIVE PLATFORM ACTIVITY</span>
+                </div>
+                <h2 id="live-activity-heading" style={{ fontSize: 20, fontWeight: 800, marginTop: 8, color: "var(--ink)" }}>
+                  Real-Time Decisions Across Ballot
+                </h2>
+              </div>
+              <div style={{ fontSize: 12, color: "var(--muted)", fontFamily: "'JetBrains Mono', monospace" }}>
+                Auto-syncing live
+              </div>
             </div>
-            <Link href="/new" className="btn-primary" style={{ padding: "12px 22px", fontSize: 14, whiteSpace: "nowrap" }}>
-              Create a Poll Now →
-            </Link>
+
+            <div className="live-activity-grid">
+              {/* Metric 1: Total Votes Cast */}
+              <div className="live-metric-card">
+                <div className="live-metric-top">
+                  <span className="live-metric-label">Total Votes Cast</span>
+                  <div className="live-metric-icon-wrap">
+                    <Vote size={18} color="var(--accent-ink)" />
+                  </div>
+                </div>
+                <div className="live-metric-number">
+                  <RollingCounter value={globalStats.totalVotes} />
+                </div>
+                <div className="live-metric-desc">
+                  Live ballots cast across all community, team, and private decision polls.
+                </div>
+              </div>
+
+              {/* Metric 2: Polls Created */}
+              <div className="live-metric-card">
+                <div className="live-metric-top">
+                  <span className="live-metric-label">Polls Created</span>
+                  <div className="live-metric-icon-wrap">
+                    <Sparkles size={18} color="var(--accent-ink)" />
+                  </div>
+                </div>
+                <div className="live-metric-number">
+                  <RollingCounter value={globalStats.totalPolls} />
+                </div>
+                <div className="live-metric-desc">
+                  Single-choice, multi-select, and ranked consensus polls launched globally.
+                </div>
+              </div>
+            </div>
           </div>
         </section>
+
 
 
         {/* 8. EXPLORE PUBLIC POLLS */}
