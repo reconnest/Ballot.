@@ -1601,17 +1601,19 @@ function PollContent() {
                               style={{
                                 padding: "4px 8px",
                                 borderRadius: 4,
-                                border: "none",
-                                background: chartType === "cards" ? "var(--surface)" : "none",
+                                border: chartType === "cards" ? "1px solid var(--line)" : "1px solid transparent",
+                                background: chartType === "cards" ? "var(--surface)" : "transparent",
+                                color: chartType === "cards" ? "var(--ink)" : "var(--muted)",
                                 fontWeight: chartType === "cards" ? 700 : 500,
                                 fontSize: 11,
                                 cursor: "pointer",
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: 4,
+                                transition: "all 0.15s ease",
                               }}
                             >
-                              <LayoutGrid size={12} color={chartType === "cards" ? "var(--accent)" : "currentColor"} />
+                              <LayoutGrid size={12} color={chartType === "cards" ? "var(--accent)" : "var(--muted)"} />
                               <span>Cards</span>
                             </button>
                           )}
@@ -1621,17 +1623,19 @@ function PollContent() {
                             style={{
                               padding: "4px 8px",
                               borderRadius: 4,
-                              border: "none",
-                              background: chartType === "ledger" ? "var(--surface)" : "none",
+                              border: chartType === "ledger" ? "1px solid var(--line)" : "1px solid transparent",
+                              background: chartType === "ledger" ? "var(--surface)" : "transparent",
+                              color: chartType === "ledger" ? "var(--ink)" : "var(--muted)",
                               fontWeight: chartType === "ledger" ? 700 : 500,
                               fontSize: 11,
                               cursor: "pointer",
                               display: "inline-flex",
                               alignItems: "center",
                               gap: 4,
+                              transition: "all 0.15s ease",
                             }}
                           >
-                            <BarChart3 size={12} color={chartType === "ledger" ? "var(--accent)" : "currentColor"} />
+                            <BarChart3 size={12} color={chartType === "ledger" ? "var(--accent)" : "var(--muted)"} />
                             <span>Bars</span>
                           </button>
                           <button
@@ -1640,21 +1644,24 @@ function PollContent() {
                             style={{
                               padding: "4px 8px",
                               borderRadius: 4,
-                              border: "none",
-                              background: chartType === "donut" ? "var(--surface)" : "none",
+                              border: chartType === "donut" ? "1px solid var(--line)" : "1px solid transparent",
+                              background: chartType === "donut" ? "var(--surface)" : "transparent",
+                              color: chartType === "donut" ? "var(--ink)" : "var(--muted)",
                               fontWeight: chartType === "donut" ? 700 : 500,
                               fontSize: 11,
                               cursor: "pointer",
                               display: "inline-flex",
                               alignItems: "center",
                               gap: 4,
+                              transition: "all 0.15s ease",
                             }}
                           >
-                            <PieChart size={12} color={chartType === "donut" ? "var(--accent)" : "currentColor"} />
+                            <PieChart size={12} color={chartType === "donut" ? "var(--accent)" : "var(--muted)"} />
                             <span>Donut</span>
                           </button>
                         </div>
                       </div>
+
 
                       {/* 1. 🖼️ Visual Cards Grid View (Default for Image Polls) */}
                       {chartType === "cards" && poll.pollType === "image" ? (
