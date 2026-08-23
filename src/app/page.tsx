@@ -31,7 +31,11 @@ import {
   Building2,
   Tent,
   RefreshCw,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
+
+
 
 type StoredPoll = { slug: string; question: string; createdAt: number; adminKey?: string };
 type Summary = StoredPoll & { totalVotes: number; isExpired?: boolean };
@@ -483,28 +487,53 @@ export default function HomePage() {
                               </span>
                               <span>{item}</span>
                             </div>
-                            <div style={{ display: "flex", gap: 4 }}>
+                            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
                               <button
                                 type="button"
                                 disabled={idx === 0}
                                 onClick={() => handleRankMove(idx, "up")}
-                                style={{ padding: "2px 6px", fontSize: 11, border: "1px solid var(--line)", borderRadius: 3, background: "var(--surface)", cursor: idx === 0 ? "not-allowed" : "pointer", opacity: idx === 0 ? 0.3 : 1 }}
+                                style={{
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: 4,
+                                  border: "1px solid var(--line)",
+                                  background: idx === 0 ? "transparent" : "var(--surface)",
+                                  color: idx === 0 ? "var(--faint)" : "#10B981",
+                                  cursor: idx === 0 ? "not-allowed" : "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 aria-label="Move priority up"
+                                title="Move priority up"
                               >
-                                ▲
+                                <ChevronUp size={14} />
                               </button>
                               <button
                                 type="button"
                                 disabled={idx === rankedOrder.length - 1}
                                 onClick={() => handleRankMove(idx, "down")}
-                                style={{ padding: "2px 6px", fontSize: 11, border: "1px solid var(--line)", borderRadius: 3, background: "var(--surface)", cursor: idx === rankedOrder.length - 1 ? "not-allowed" : "pointer", opacity: idx === rankedOrder.length - 1 ? 0.3 : 1 }}
+                                style={{
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: 4,
+                                  border: "1px solid var(--line)",
+                                  background: idx === rankedOrder.length - 1 ? "transparent" : "var(--surface)",
+                                  color: idx === rankedOrder.length - 1 ? "var(--faint)" : "#EF4444",
+                                  cursor: idx === rankedOrder.length - 1 ? "not-allowed" : "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 aria-label="Move priority down"
+                                title="Move priority down"
                               >
-                                ▼
+                                <ChevronDown size={14} />
                               </button>
                             </div>
                           </div>
                         ))}
+
                         <button
                           type="button"
                           className="btn-primary"
