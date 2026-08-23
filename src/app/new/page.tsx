@@ -32,7 +32,9 @@ import {
   ShieldCheck,
   CheckCircle2,
   Trash2,
+  Info,
 } from "lucide-react";
+
 
 const EXPIRY_PRESETS = [
   { label: "No limit", ms: null },
@@ -1405,6 +1407,7 @@ export default function NewPollPage() {
                     </div>
                     {/* User-friendly info box */}
                     <div style={{
+                      marginTop: 8,
                       background: "var(--paper)",
                       border: "1px solid var(--line)",
                       borderRadius: 6,
@@ -1416,7 +1419,7 @@ export default function NewPollPage() {
                       gap: 8,
                       lineHeight: 1.4
                     }}>
-                      <span style={{ fontSize: 14 }}>ℹ️</span>
+                      <Info size={15} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
                       <div>
                         <strong style={{ color: "var(--ink)" }}>{selectedSecurityObj.label} Mode:</strong> {selectedSecurityObj.desc}
                       </div>
