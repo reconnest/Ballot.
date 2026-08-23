@@ -50,24 +50,25 @@ function FilterDropdown({
   const selected = options.find((o) => o.value === value) || options[0];
 
   return (
-    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+    <div ref={ref} style={{ position: "relative", display: "inline-block", flexShrink: 0 }}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
         className="profile-select"
         aria-label={ariaLabel}
         style={{
-          display: "flex",
+          display: "inline-flex",
           alignItems: "center",
           gap: 6,
           justifyContent: "space-between",
           cursor: "pointer",
           userSelect: "none",
+          whiteSpace: "nowrap",
         }}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
           {selected.icon}
-          <span>{selected.label}</span>
+          <span style={{ whiteSpace: "nowrap" }}>{selected.label}</span>
         </span>
         <ChevronDown
           size={12}
@@ -76,9 +77,11 @@ function FilterDropdown({
             transform: open ? "rotate(180deg)" : "none",
             transition: "transform 0.15s ease",
             flexShrink: 0,
+            marginLeft: 4,
           }}
         />
       </button>
+
 
       {open && (
         <div
@@ -416,8 +419,8 @@ export default function CreatorProfilePage() {
             <div className="profile-control-bar">
               {/* 60% Search Input */}
               <div className="profile-search-wrap">
-                <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)" }}>
-                  <AnimatedSearchIcon size={16} />
+                <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--faint)", display: "flex", alignItems: "center" }}>
+                  <AnimatedSearchIcon size={17} />
                 </div>
                 <input
                   type="text"
@@ -426,7 +429,8 @@ export default function CreatorProfilePage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     width: "100%",
-                    padding: "9px 36px 9px 36px",
+                    height: 38,
+                    padding: "0 34px 0 38px",
                     border: "1px solid var(--line)",
                     borderRadius: 6,
                     background: "var(--paper)",
@@ -441,6 +445,7 @@ export default function CreatorProfilePage() {
                     type="button"
                     onClick={() => setSearchQuery("")}
                     aria-label="Clear search"
+                    title="Clear search"
                     style={{
                       position: "absolute",
                       right: 10,
@@ -464,8 +469,6 @@ export default function CreatorProfilePage() {
               <div className="profile-filters-wrap">
                 {/* Status Dropdown */}
                 <FilterDropdown
-
-
                   value={statusFilter}
                   onChange={(val) => setStatusFilter(val as any)}
                   ariaLabel="Filter by poll status"
@@ -502,21 +505,22 @@ export default function CreatorProfilePage() {
                   />
                 )}
 
-
                 {/* Quick Create New Poll button for Owner */}
                 {isOwner && (
                   <Link
                     href="/new"
                     className="btn-primary"
                     style={{
-                      padding: "8px 12px",
+                      height: 38,
+                      padding: "0 14px",
                       fontSize: 12,
                       textDecoration: "none",
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: 4,
+                      gap: 5,
                       whiteSpace: "nowrap",
                       borderRadius: 6,
+                      flexShrink: 0,
                     }}
                     title="Create a new poll"
                   >
@@ -525,6 +529,7 @@ export default function CreatorProfilePage() {
                   </Link>
                 )}
               </div>
+
             </div>
 
             {/* 3. POLLS LIST HEADER */}

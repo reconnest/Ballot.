@@ -1184,7 +1184,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -1196,7 +1196,7 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
 .profile-search-wrap {
   flex: 6;
   position: relative;
-  min-width: 180px;
+  min-width: 0;
 }
 
 .profile-filters-wrap {
@@ -1205,25 +1205,34 @@ input[type="text"]:focus, input[type="number"]:focus { border-bottom-color: var(
   gap: 8px;
   align-items: center;
   justify-content: flex-end;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
 }
 
 .profile-select {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
-  padding: 8px 10px;
+  padding: 0 12px;
+  height: 38px;
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--paper);
   color: var(--ink);
   outline: none;
   cursor: pointer;
-  transition: border-color 0.15s ease;
-  min-width: 110px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
+.profile-select:hover,
 .profile-select:focus {
   border-color: var(--accent);
 }
+
 
 /* Hairline-Divided Poll Card */
 .profile-poll-card {
@@ -2062,17 +2071,35 @@ button:hover .clipboard-flap {
 
 /* 3. Magnifier Search Icon Animation */
 .icon-magnifier {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.2s ease, color 0.2s ease;
   transform-origin: 11px 11px;
 }
 form:focus-within .icon-magnifier,
-form:hover .icon-magnifier {
-  transform: rotate(-12deg) scale(1.1);
+form:hover .icon-magnifier,
+.profile-search-wrap:focus-within .icon-magnifier,
+.profile-search-wrap:hover .icon-magnifier,
+.profile-control-bar:focus-within .icon-magnifier {
+  transform: rotate(-12deg) scale(1.15);
   color: var(--accent);
+  stroke: var(--accent);
 }
-.magnifier-glass {
+form:focus-within .magnifier-glass,
+form:hover .magnifier-glass,
+.profile-search-wrap:focus-within .magnifier-glass,
+.profile-search-wrap:hover .magnifier-glass {
+  stroke: var(--accent);
+}
+form:focus-within .magnifier-handle,
+form:hover .magnifier-handle,
+.profile-search-wrap:focus-within .magnifier-handle,
+.profile-search-wrap:hover .magnifier-handle {
+  stroke: var(--accent);
+}
+.magnifier-glass,
+.magnifier-handle {
   transition: stroke 0.2s ease;
 }
+
 
 /* 4. Leader Trophy Micro-animation */
 .badge-leader {
