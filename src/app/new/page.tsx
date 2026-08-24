@@ -1413,15 +1413,55 @@ export default function NewPollPage() {
                     </div>
                   </div>
 
-                  {/* 2. Require Name */}
-                  <label className="checkbox-row">
-                    <input
-                      type="checkbox"
-                      checked={requireName}
-                      onChange={(e) => setRequireName(e.target.checked)}
-                    />
-                    <span>Require voter name before submitting</span>
-                  </label>
+                  {/* 2. Require Voter Name Toggle */}
+                  <div>
+                    <label className="field-label">Voter Identity</label>
+                    <div
+                      onClick={() => setRequireName(!requireName)}
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--line)",
+                        borderRadius: 8,
+                        padding: "12px 14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+                          Require voter name before submitting
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                          {requireName
+                            ? "Voters must provide their name or handle before casting a vote."
+                            : "Voters can vote anonymously without providing their name."}
+                        </div>
+                      </div>
+                      <div style={{
+                        width: 36,
+                        height: 20,
+                        borderRadius: 12,
+                        background: requireName ? "var(--accent)" : "var(--line)",
+                        position: "relative",
+                        transition: "background 0.15s ease",
+                        flexShrink: 0
+                      }}>
+                        <div style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: "50%",
+                          background: "#FFFFFF",
+                          position: "absolute",
+                          top: 2,
+                          left: requireName ? 18 : 2,
+                          transition: "left 0.15s ease"
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+
 
                   {/* 3. Voter Vote Editing Toggle */}
                   <div>
