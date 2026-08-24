@@ -10,6 +10,7 @@ import { AuthModal } from "@/components/AuthModal";
 import { getCachedSessionUser, setCachedSessionUser } from "@/lib/session-cache";
 import { fireMotionSafeConfetti } from "@/lib/confetti";
 import { compressImage } from "@/lib/image-utils";
+import { AdSidebarContainer } from "@/components/AdSlot";
 import {
   Zap,
   Trophy,
@@ -564,395 +565,617 @@ export default function NewPollPage() {
         }}
       />
 
-      <main>
-        <div className="section-label">Create new poll</div>
+      <AdSidebarContainer>
+        <main style={{ maxWidth: 680, margin: "0 auto", width: "100%", paddingBottom: 60 }}>
+          <div className="section-label">Create new poll</div>
 
-        {/* Poll Format (3-Column Row) */}
-        <div className="block" style={{ marginBottom: 32 }}>
-          <label className="field-label">Poll Format</label>
-          <div className="format-grid-3">
-            {POLL_TYPES.map((pt) => {
-              const IconComp = pt.icon;
-              return (
+          {/* 1. Poll Visibility (First in Flow) */}
+          <div className="block" style={{ marginBottom: 24 }}>
+            <label className="field-label">Poll Visibility</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {/* Public Community */}
+              <button
+                type="button"
+                className={`visibility-card ${isPublic ? "active" : ""}`}
+                onClick={handleSelectCommunity}
+                style={{ padding: "14px 16px", textAlign: "left" }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Globe size={15} color={isPublic ? "var(--accent)" : "currentColor"} />
+                  <span>Public Poll</span>
+                </div>
+                <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
+                  Discoverable in Explore. Requires sign in.
+                </div>
+              </button>
+
+              {/* Private Poll */}
+              <button
+                type="button"
+                className={`visibility-card ${!isPublic ? "active" : ""}`}
+                onClick={() => setIsPublic(false)}
+                style={{ padding: "14px 16px", textAlign: "left" }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Lock size={15} color={!isPublic ? "var(--accent)" : "currentColor"} />
+                  <span>Private Poll</span>
+                </div>
+                <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
+                  Direct link only. No sign in required.
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* 2. Poll Format */}
+          <div className="block" style={{ marginBottom: 24 }}>
+            <label className="field-label">Poll Format</label>
+            <div className="format-grid-3">
+              {POLL_TYPES.map((pt) => {
+                const IconComp = pt.icon;
+                return (
+                  <button
+                    type="button"
+                    key={pt.value}
+                    className={`visibility-card ${pollType === pt.value ? "active" : ""}`}
+                    onClick={() => setPollType(pt.value)}
+                  >
+                    <div className="vis-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <IconComp size={15} color={pollType === pt.value ? "var(--accent)" : "currentColor"} />
+                      <span>{pt.label}</span>
+                    </div>
+                    <div className="vis-hint">{pt.hint}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Adaptive Context: Category (if Public) & Voting Mode (if Standard) */}
+          {(isPublic || pollType === "standard") && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 24 }}>
+              {/* Category: Only for Public Community Polls */}
+              {isPublic && (
+                <div className="block" style={{ marginBottom: 0 }}>
+                  <label className="field-label">Community Category</label>
+                  <div className="expiry-row" style={{ marginBottom: 10 }}>
+                    {PRESET_CATEGORIES.map((c) => (
+                      <button
+                        type="button"
+                        key={c.value}
+                        className={`expiry-chip ${!isAddingCustom && category === c.value ? "active" : ""}`}
+                        onClick={() => { setCategory(c.value); setIsAddingCustom(false); }}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className={`expiry-chip ${isAddingCustom ? "active" : ""}`}
+                      onClick={() => setIsAddingCustom(true)}
+                    >
+                      + Custom
+                    </button>
+                  </div>
+
+                  {isAddingCustom && (
+                    <div>
+                      <input
+                        type="text"
+                        maxLength={30}
+                        placeholder="Enter custom category (e.g. Design, BookClub)"
+                        value={customCategory}
+                        onChange={(e) => setCustomCategory(e.target.value)}
+                        autoFocus
+                        style={{ fontSize: 13 }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Voting Mode: Single vs Multi (Only for Standard Polls) */}
+              {pollType === "standard" && (
+                <div className="block" style={{ marginBottom: 0 }}>
+                  <label className="field-label">Voting Mode</label>
+                  <div className="expiry-row">
+                    <button
+                      type="button"
+                      className={`expiry-chip ${!allowMultiple ? "active" : ""}`}
+                      onClick={() => setAllowMultiple(false)}
+                    >
+                      Single choice
+                    </button>
+                    <button
+                      type="button"
+                      className={`expiry-chip ${allowMultiple ? "active" : ""}`}
+                      onClick={() => setAllowMultiple(true)}
+                    >
+                      Multiple selections
+                    </button>
+                  </div>
+
+                  {allowMultiple && (
+                    <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 4 }}>
+                          Min Choices
+                        </label>
+                        <input
+                          type="number"
+                          min={1}
+                          max={opts.length}
+                          value={minChoices}
+                          onChange={(e) => handleMinChoicesChange(parseInt(e.target.value) || 1)}
+                          className="input-text"
+                          style={{ padding: "8px 10px", fontSize: 13 }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 4 }}>
+                          Max Choices (Uniform: {minChoices})
+                        </label>
+                        <input
+                          type="number"
+                          min={minChoices}
+                          max={opts.length}
+                          value={maxChoices}
+                          onChange={(e) => handleMaxChoicesChange(parseInt(e.target.value) || minChoices)}
+                          className="input-text"
+                          style={{ padding: "8px 10px", fontSize: 13 }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 4. Question & Description */}
+          <div className="block" style={{ marginBottom: 24 }}>
+            <label className="field-label" htmlFor="q">
+              Question <span style={{ color: "var(--accent)" }}>*</span>
+            </label>
+            <input
+              id="q"
+              type="text"
+              maxLength={140}
+              placeholder="What would you like to decide?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              autoFocus
+              className="input-text"
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+              {!showDesc && (
                 <button
                   type="button"
-                  key={pt.value}
-                  className={`visibility-card ${pollType === pt.value ? "active" : ""}`}
-                  onClick={() => setPollType(pt.value)}
+                  className="btn-link"
+                  style={{ fontSize: 12 }}
+                  onClick={() => setShowDesc(true)}
                 >
-                  <div className="vis-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <IconComp size={15} color={pollType === pt.value ? "var(--accent)" : "currentColor"} />
-                    <span>{pt.label}</span>
-                  </div>
-                  <div className="vis-hint">{pt.hint}</div>
+                  + Add description / context notes
                 </button>
-              );
-            })}
+              )}
+              <span className="char-count" style={{ marginLeft: "auto" }}>{question.length}/140</span>
+            </div>
           </div>
-        </div>
 
-        {/* 2-Column Split-Screen Desktop Creator Grid */}
-        <div className="creator-grid">
-          {/* Left Column: Question, Description & Options */}
-          <div>
-            {/* Question */}
-            <div className="block">
-              <label className="field-label" htmlFor="q">
-                Question <span style={{ color: "var(--accent)" }}>*</span>
+          {/* Optional Description */}
+          {showDesc && (
+            <div className="block" style={{ marginBottom: 24 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <label className="field-label" htmlFor="desc" style={{ marginBottom: 0 }}>
+                  Description / Context (Optional)
+                </label>
+                <button
+                  type="button"
+                  className="btn-link"
+                  style={{ fontSize: 11, color: "var(--muted)" }}
+                  onClick={() => { setShowDesc(false); setDescription(""); }}
+                >
+                  Remove
+                </button>
+              </div>
+              <textarea
+                id="desc"
+                rows={2}
+                maxLength={1000}
+                placeholder="Provide additional context, guidelines, or decision background..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+              <span className="char-count">{description.length}/1000</span>
+            </div>
+          )}
+
+          {/* Guest Creator Attribution Name (Optional) */}
+          {!sessionUser && (
+            <div className="block" style={{ marginBottom: 24 }}>
+              <label className="field-label" htmlFor="guestName">
+                Your Name / Organization <span style={{ fontSize: 11, fontWeight: 400, color: "var(--muted)" }}>(Optional)</span>
               </label>
               <input
-                id="q"
+                id="guestName"
                 type="text"
-                maxLength={140}
-                placeholder="What would you like to decide?"
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                autoFocus
+                maxLength={80}
+                placeholder="e.g. Alex, Team Design (or leave blank for Guest)"
+                value={guestCreatorName}
+                onChange={(e) => setGuestCreatorName(e.target.value)}
                 className="input-text"
               />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                {!showDesc && (
-                  <button
-                    type="button"
-                    className="btn-link"
-                    style={{ fontSize: 12 }}
-                    onClick={() => setShowDesc(true)}
-                  >
-                    + Add description / context notes
-                  </button>
-                )}
-                <span className="char-count" style={{ marginLeft: "auto" }}>{question.length}/140</span>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
+                Displayed below your question as &ldquo;Created by {guestCreatorName.trim() || "Guest"}&rdquo;.
               </div>
             </div>
+          )}
 
-            {/* Optional Description */}
-            {showDesc && (
-              <div className="block">
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <label className="field-label" htmlFor="desc" style={{ marginBottom: 0 }}>
-                    Description / Context (Optional)
-                  </label>
-                  <button
-                    type="button"
-                    className="btn-link"
-                    style={{ fontSize: 11, color: "var(--muted)" }}
-                    onClick={() => { setShowDesc(false); setDescription(""); }}
-                  >
-                    Remove
-                  </button>
-                </div>
-                <textarea
-                  id="desc"
-                  rows={2}
-                  maxLength={1000}
-                  placeholder="Provide additional context, guidelines, or decision background..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-                <span className="char-count">{description.length}/1000</span>
-              </div>
-            )}
-
-            {/* Guest Creator Attribution Name (Optional) */}
-            {!sessionUser && (
-              <div className="block">
-                <label className="field-label" htmlFor="guestName">
-                  Your Name / Organization <span style={{ fontSize: 11, fontWeight: 400, color: "var(--muted)" }}>(Optional)</span>
-                </label>
-                <input
-                  id="guestName"
-                  type="text"
-                  maxLength={80}
-                  placeholder="e.g. Alex, Team Design (or leave blank for Guest)"
-                  value={guestCreatorName}
-                  onChange={(e) => setGuestCreatorName(e.target.value)}
-                  className="input-text"
-                />
-                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4 }}>
-                  Displayed below your question as &ldquo;Created by {guestCreatorName.trim() || "Guest"}&rdquo;.
-                </div>
-              </div>
-            )}
-
-
-            {/* Options */}
-            <div className="block">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <label className="field-label" style={{ marginBottom: 0 }}>
-                  Options <span style={{ color: "var(--accent)" }}>*</span>
-                </label>
-                {pollType === "image" ? (
-                  <label
-                    className="btn-ghost"
-                    style={{
-                      fontSize: 12,
-                      padding: "4px 10px",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      cursor: "pointer",
-                      color: "var(--accent-ink)",
-                      background: "var(--accent-soft)",
-                      border: "1px solid var(--accent)",
-                      borderRadius: "var(--radius)",
-                      fontWeight: 600,
-                    }}
-                    title="Select multiple images at once to auto-create options & labels"
-                  >
-                    <UploadCloud size={14} />
-                    <span>Bulk Upload Images</span>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          handleBulkImageUpload(e.target.files);
-                        }
-                      }}
-                    />
-                  </label>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-link"
-                    style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }}
-                    onClick={() => setShowBulkModal(true)}
-                  >
-                    <ClipboardPaste size={13} /> Bulk paste
-                  </button>
-                )}
-              </div>
-
+          {/* 5. Options List & Bulk Paste */}
+          <div className="block" style={{ marginBottom: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <label className="field-label" style={{ marginBottom: 0 }}>
+                Options <span style={{ color: "var(--accent)" }}>*</span>
+              </label>
               {pollType === "image" ? (
-                /* 🖼️ 3-COLUMN IMAGE POLL CREATION GRID (DRAGGABLE & REORDERABLE) */
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
-                  {opts.map((opt, i) => {
-                    const isBeingDragged = draggedOptIdx === i;
-                    const isDragOver = dragOverOptIdx === i;
+                <label
+                  className="btn-ghost"
+                  style={{
+                    fontSize: 12,
+                    padding: "4px 10px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    cursor: "pointer",
+                    color: "var(--accent-ink)",
+                    background: "var(--accent-soft)",
+                    border: "1px solid var(--accent)",
+                    borderRadius: "var(--radius)",
+                    fontWeight: 600,
+                  }}
+                  title="Select multiple images at once to auto-create options & labels"
+                >
+                  <UploadCloud size={14} />
+                  <span>Bulk Upload Images</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleBulkImageUpload(e.target.files);
+                      }
+                    }}
+                  />
+                </label>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-link"
+                  style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 4 }}
+                  onClick={() => setShowBulkModal(true)}
+                >
+                  <ClipboardPaste size={13} /> Bulk paste
+                </button>
+              )}
+            </div>
 
-                    return (
-                      <div
-                        key={i}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData("text/plain", `${i}`);
-                          setDraggedOptIdx(i);
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          if (dragOverOptIdx !== i) setDragOverOptIdx(i);
-                        }}
-                        onDragLeave={() => {
-                          if (dragOverOptIdx === i) setDragOverOptIdx(null);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (draggedOptIdx !== null && draggedOptIdx !== i) {
-                            handleReorderOptions(draggedOptIdx, i);
-                          }
-                          setDraggedOptIdx(null);
-                          setDragOverOptIdx(null);
-                        }}
-                        style={{
-                          background: "var(--surface)",
-                          border: isDragOver
-                            ? "2px dashed var(--accent)"
-                            : "1px solid var(--line)",
-                          borderRadius: 8,
-                          padding: 8,
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 8,
-                          position: "relative",
-                          boxShadow: isDragOver ? "0 4px 12px rgba(15, 118, 110, 0.2)" : "var(--shadow-sm)",
-                          opacity: isBeingDragged ? 0.4 : 1,
-                          transition: "border 0.15s ease, box-shadow 0.15s ease",
-                        }}
-                      >
-                        {/* Card Header: Reorder Grips, Index Badge, Shift Arrows + Delete */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "grab" }} title="Drag to reorder">
-                            <span style={{ fontSize: 11, color: "var(--muted)" }}>⠿</span>
-                            <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 11, color: "var(--accent)" }}>
-                              #{i + 1}
-                            </span>
-                          </div>
+            {pollType === "image" ? (
+              /* 🖼️ 3-COLUMN IMAGE POLL CREATION GRID (DRAGGABLE & REORDERABLE) */
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10 }}>
+                {opts.map((opt, i) => {
+                  const isBeingDragged = draggedOptIdx === i;
+                  const isDragOver = dragOverOptIdx === i;
 
-                          {/* Quick Shift Arrows & Remove */}
-                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            <button
-                              type="button"
-                              onClick={() => handleMoveOption(i, "prev")}
-                              disabled={i === 0}
-                              title="Move left"
-                              aria-label={`Move option ${i + 1} left`}
-                              style={{
-                                width: 24,
-                                height: 24,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 11,
-                                border: "1px solid var(--line)",
-                                background: i === 0 ? "transparent" : "var(--paper)",
-                                color: i === 0 ? "var(--faint)" : "var(--ink)",
-                                borderRadius: 4,
-                                cursor: i === 0 ? "not-allowed" : "pointer",
-                                padding: 0
-                              }}
-                            >
-                              ◀
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleMoveOption(i, "next")}
-                              disabled={i === opts.length - 1}
-                              title="Move right"
-                              aria-label={`Move option ${i + 1} right`}
-                              style={{
-                                width: 24,
-                                height: 24,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 11,
-                                border: "1px solid var(--line)",
-                                background: i === opts.length - 1 ? "transparent" : "var(--paper)",
-                                color: i === opts.length - 1 ? "var(--faint)" : "var(--ink)",
-                                borderRadius: 4,
-                                cursor: i === opts.length - 1 ? "not-allowed" : "pointer",
-                                padding: 0
-                              }}
-                            >
-                              ▶
-                            </button>
-                            {opts.length > 2 && (
-                              <button
-                                type="button"
-                                className="remove-opt-btn"
-                                onClick={() => removeOpt(i)}
-                                title="Remove option"
-                                aria-label={`Remove option ${i + 1}`}
-                                style={{ fontSize: 13, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 2 }}
-                              >
-                                ✕
-                              </button>
-                            )}
-                          </div>
-
+                  return (
+                    <div
+                      key={i}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", `${i}`);
+                        setDraggedOptIdx(i);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (dragOverOptIdx !== i) setDragOverOptIdx(i);
+                      }}
+                      onDragLeave={() => {
+                        if (dragOverOptIdx === i) setDragOverOptIdx(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedOptIdx !== null && draggedOptIdx !== i) {
+                          handleReorderOptions(draggedOptIdx, i);
+                        }
+                        setDraggedOptIdx(null);
+                        setDragOverOptIdx(null);
+                      }}
+                      style={{
+                        background: "var(--surface)",
+                        border: isDragOver
+                          ? "2px dashed var(--accent)"
+                          : "1px solid var(--line)",
+                        borderRadius: 8,
+                        padding: 8,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                        position: "relative",
+                        boxShadow: isDragOver ? "0 4px 12px rgba(15, 118, 110, 0.2)" : "var(--shadow-sm)",
+                        opacity: isBeingDragged ? 0.4 : 1,
+                        transition: "border 0.15s ease, box-shadow 0.15s ease",
+                      }}
+                    >
+                      {/* Card Header: Reorder Grips, Index Badge, Shift Arrows + Delete */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "grab" }} title="Drag to reorder">
+                          <span style={{ fontSize: 11, color: "var(--muted)" }}>⠿</span>
+                          <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: 11, color: "var(--accent)" }}>
+                            #{i + 1}
+                          </span>
                         </div>
 
-                        {/* Image Dropzone / Preview */}
-                        {opt.imageUrl ? (
+                        {/* Quick Shift Arrows & Remove */}
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveOption(i, "prev")}
+                            disabled={i === 0}
+                            title="Move left"
+                            aria-label={`Move option ${i + 1} left`}
+                            style={{
+                              width: 24,
+                              height: 24,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 11,
+                              border: "1px solid var(--line)",
+                              background: i === 0 ? "transparent" : "var(--paper)",
+                              color: i === 0 ? "var(--faint)" : "var(--ink)",
+                              borderRadius: 4,
+                              cursor: i === 0 ? "not-allowed" : "pointer",
+                              padding: 0
+                            }}
+                          >
+                            ◀
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveOption(i, "next")}
+                            disabled={i === opts.length - 1}
+                            title="Move right"
+                            aria-label={`Move option ${i + 1} right`}
+                            style={{
+                              width: 24,
+                              height: 24,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: 11,
+                              border: "1px solid var(--line)",
+                              background: i === opts.length - 1 ? "transparent" : "var(--paper)",
+                              color: i === opts.length - 1 ? "var(--faint)" : "var(--ink)",
+                              borderRadius: 4,
+                              cursor: i === opts.length - 1 ? "not-allowed" : "pointer",
+                              padding: 0
+                            }}
+                          >
+                            ▶
+                          </button>
+                          {opts.length > 2 && (
+                            <button
+                              type="button"
+                              className="remove-opt-btn"
+                              onClick={() => removeOpt(i)}
+                              title="Remove option"
+                              aria-label={`Remove option ${i + 1}`}
+                              style={{ fontSize: 13, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", marginLeft: 2 }}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+
+                      </div>
+
+                      {/* Image Dropzone / Preview */}
+                      {opt.imageUrl ? (
+                        <div style={{
+                          position: "relative",
+                          width: "100%",
+                          height: 110,
+                          borderRadius: 6,
+                          overflow: "hidden",
+                          border: "1px solid var(--line)",
+                          background: "var(--paper)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center"
+                        }}>
+                          <img
+                            src={opt.imageUrl}
+                            alt={`Option ${i + 1}`}
+                            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                          />
+                          {/* Bottom Control Bar */}
                           <div style={{
-                            position: "relative",
+                            position: "absolute",
+                            bottom: 4,
+                            left: 4,
+                            right: 4,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: 4
+                          }}>
+                            <label
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: "var(--ink)",
+                                background: "var(--surface)",
+                                border: "1px solid var(--line)",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
+                              }}
+                            >
+                              Change
+                              <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: "none" }}
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (f) handleImageUpload(i, f);
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => updateOptImage(i, "")}
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: "#EF4444",
+                                background: "var(--surface)",
+                                border: "1px solid var(--line)",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                                boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <label
+                          style={{
                             width: "100%",
                             height: 110,
                             borderRadius: 6,
-                            overflow: "hidden",
-                            border: "1px solid var(--line)",
+                            border: "2px dashed var(--line)",
                             background: "var(--paper)",
                             display: "flex",
+                            flexDirection: "column",
                             alignItems: "center",
-                            justifyContent: "center"
-                          }}>
-                            <img
-                              src={opt.imageUrl}
-                              alt={`Option ${i + 1}`}
-                              style={{ width: "100%", height: "100%", objectFit: "contain" }}
-                            />
-                            {/* Bottom Control Bar */}
-                            <div style={{
-                              position: "absolute",
-                              bottom: 4,
-                              left: 4,
-                              right: 4,
-                              display: "flex",
-                              justifyContent: "space-between",
-                              gap: 4
-                            }}>
-                              <label
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: 600,
-                                  color: "var(--ink)",
-                                  background: "var(--surface)",
-                                  border: "1px solid var(--line)",
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  cursor: "pointer",
-                                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
-                                }}
-                              >
-                                Change
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  style={{ display: "none" }}
-                                  onChange={(e) => {
-                                    const f = e.target.files?.[0];
-                                    if (f) handleImageUpload(i, f);
-                                  }}
-                                />
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => updateOptImage(i, "")}
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: 600,
-                                  color: "#EF4444",
-                                  background: "var(--surface)",
-                                  border: "1px solid var(--line)",
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  cursor: "pointer",
-                                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center"
-                                }}
-                              >
-                                <X size={12} />
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <label
-                            style={{
-                              width: "100%",
-                              height: 110,
-                              borderRadius: 6,
-                              border: "2px dashed var(--line)",
-                              background: "var(--paper)",
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: 6,
-                              cursor: "pointer",
-                              transition: "all 0.15s ease",
-                              textAlign: "center",
-                              padding: 4
+                            justifyContent: "center",
+                            gap: 6,
+                            cursor: "pointer",
+                            transition: "all 0.15s ease",
+                            textAlign: "center",
+                            padding: 4
+                          }}
+                        >
+                          <Camera size={20} color="var(--muted)" />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)" }}>Upload</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: "none" }}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleImageUpload(i, f);
                             }}
-                          >
-                            <Camera size={20} color="var(--muted)" />
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)" }}>Upload</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              style={{ display: "none" }}
-                              onChange={(e) => {
-                                const f = e.target.files?.[0];
-                                if (f) handleImageUpload(i, f);
-                              }}
-                            />
-                          </label>
-                        )}
+                          />
+                        </label>
+                      )}
 
-                        {/* Optional Text Label */}
+                      {/* Optional Text Label */}
+                      <input
+                        type="text"
+                        maxLength={100}
+                        placeholder={`Option ${i + 1}`}
+                        value={opt.label}
+                        onChange={(e) => updateOptLabel(i, e.target.value)}
+                        className="input-text"
+                        style={{ fontSize: 12, padding: "5px 8px" }}
+                      />
+                    </div>
+                  );
+                })}
+
+                {/* Add Option Card in Grid */}
+                {opts.length < 30 && (
+                  <button
+                    type="button"
+                    onClick={addOpt}
+                    style={{
+                      minHeight: 160,
+                      background: "var(--paper)",
+                      border: "2px dashed var(--line)",
+                      borderRadius: 8,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      color: "var(--muted)",
+                      cursor: "pointer",
+                      transition: "all 0.15s ease",
+                      padding: 8
+                    }}
+                  >
+                    <Plus size={20} color="var(--accent)" />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>
+                      + Add Image
+                    </span>
+                    <span style={{ fontSize: 10, color: "var(--muted)" }}>
+                      ({opts.length}/30)
+                    </span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              /* 📋 STANDARD & RANKED CHOICE VERTICAL LIST STACK (DRAGGABLE & REORDERABLE) */
+              <div className="options-stack">
+                {opts.map((opt, i) => {
+                  const isBeingDragged = draggedOptIdx === i;
+                  const isDragOver = dragOverOptIdx === i;
+
+                  return (
+                    <div
+                      key={i}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", `${i}`);
+                        setDraggedOptIdx(i);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (dragOverOptIdx !== i) setDragOverOptIdx(i);
+                      }}
+                      onDragLeave={() => {
+                        if (dragOverOptIdx === i) setDragOverOptIdx(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedOptIdx !== null && draggedOptIdx !== i) {
+                          handleReorderOptions(draggedOptIdx, i);
+                        }
+                        setDraggedOptIdx(null);
+                        setDragOverOptIdx(null);
+                      }}
+                      className="option-row"
+                      style={{
+                        opacity: isBeingDragged ? 0.4 : 1,
+                        border: isDragOver ? "2px dashed var(--accent)" : undefined,
+                        transition: "border 0.15s ease",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "grab" }} title="Drag to reorder">
+                        <GripVertical size={14} color="var(--muted)" />
+                        <span className="drag-handle">{i + 1}</span>
+                      </div>
+
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
                         <input
                           type="text"
                           maxLength={100}
@@ -960,554 +1183,322 @@ export default function NewPollPage() {
                           value={opt.label}
                           onChange={(e) => updateOptLabel(i, e.target.value)}
                           className="input-text"
-                          style={{ fontSize: 12, padding: "5px 8px" }}
                         />
                       </div>
-                    );
-                  })}
 
-                  {/* Add Option Card in Grid */}
-                  {opts.length < 30 && (
-                    <button
-                      type="button"
-                      onClick={addOpt}
-                      style={{
-                        minHeight: 160,
-                        background: "var(--paper)",
-                        border: "2px dashed var(--line)",
-                        borderRadius: 8,
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                        color: "var(--muted)",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease",
-                        padding: 8
-                      }}
-                    >
-                      <Plus size={20} color="var(--accent)" />
-                      <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent-ink)" }}>
-                        + Add Image
-                      </span>
-                      <span style={{ fontSize: 10, color: "var(--muted)" }}>
-                        ({opts.length}/30)
-                      </span>
-                    </button>
-                  )}
-                </div>
-              ) : (
-                /* 📋 STANDARD & RANKED CHOICE VERTICAL LIST STACK (DRAGGABLE & REORDERABLE) */
-                <div className="options-stack">
-                  {opts.map((opt, i) => {
-                    const isBeingDragged = draggedOptIdx === i;
-                    const isDragOver = dragOverOptIdx === i;
-
-                    return (
-                      <div
-                        key={i}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData("text/plain", `${i}`);
-                          setDraggedOptIdx(i);
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          if (dragOverOptIdx !== i) setDragOverOptIdx(i);
-                        }}
-                        onDragLeave={() => {
-                          if (dragOverOptIdx === i) setDragOverOptIdx(null);
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          if (draggedOptIdx !== null && draggedOptIdx !== i) {
-                            handleReorderOptions(draggedOptIdx, i);
-                          }
-                          setDraggedOptIdx(null);
-                          setDragOverOptIdx(null);
-                        }}
-                        className="option-row"
-                        style={{
-                          opacity: isBeingDragged ? 0.4 : 1,
-                          border: isDragOver ? "2px dashed var(--accent)" : undefined,
-                          transition: "border 0.15s ease",
-                        }}
-                      >
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, cursor: "grab" }} title="Drag to reorder">
-                          <GripVertical size={14} color="var(--muted)" />
-                          <span className="drag-handle">{i + 1}</span>
-                        </div>
-
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-                          <input
-                            type="text"
-                            maxLength={100}
-                            placeholder={`Option ${i + 1}`}
-                            value={opt.label}
-                            onChange={(e) => updateOptLabel(i, e.target.value)}
-                            className="input-text"
-                          />
-                        </div>
-
-                        {/* Shift Up/Down buttons */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveOption(i, "up")}
-                            disabled={i === 0}
-                            title="Move up"
-                            aria-label={`Move option ${i + 1} up`}
-                            style={{
-                              width: 24,
-                              height: 16,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 9,
-                              border: "1px solid var(--line)",
-                              background: i === 0 ? "transparent" : "var(--paper)",
-                              color: i === 0 ? "var(--faint)" : "var(--ink)",
-                              borderRadius: 3,
-                              cursor: i === 0 ? "not-allowed" : "pointer",
-                              padding: 0
-                            }}
-                          >
-                            <ChevronUp size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleMoveOption(i, "down")}
-                            disabled={i === opts.length - 1}
-                            title="Move down"
-                            aria-label={`Move option ${i + 1} down`}
-                            style={{
-                              width: 24,
-                              height: 16,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 9,
-                              border: "1px solid var(--line)",
-                              background: i === opts.length - 1 ? "transparent" : "var(--paper)",
-                              color: i === opts.length - 1 ? "var(--faint)" : "var(--ink)",
-                              borderRadius: 3,
-                              cursor: i === opts.length - 1 ? "not-allowed" : "pointer",
-                              padding: 0
-                            }}
-                          >
-                            <ChevronDown size={12} />
-                          </button>
-                        </div>
-
-                        {opts.length > 2 && (
-                          <button
-                            type="button"
-                            className="remove-opt-btn"
-                            onClick={() => removeOpt(i)}
-                            title="Remove option"
-                            aria-label={`Remove option ${i + 1}`}
-                            style={{ fontSize: 13, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
-
-
+                      {/* Shift Up/Down buttons */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveOption(i, "up")}
+                          disabled={i === 0}
+                          title="Move up"
+                          aria-label={`Move option ${i + 1} up`}
+                          style={{
+                            width: 24,
+                            height: 16,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 9,
+                            border: "1px solid var(--line)",
+                            background: i === 0 ? "transparent" : "var(--paper)",
+                            color: i === 0 ? "var(--faint)" : "var(--ink)",
+                            borderRadius: 3,
+                            cursor: i === 0 ? "not-allowed" : "pointer",
+                            padding: 0
+                          }}
+                        >
+                          <ChevronUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveOption(i, "down")}
+                          disabled={i === opts.length - 1}
+                          title="Move down"
+                          aria-label={`Move option ${i + 1} down`}
+                          style={{
+                            width: 24,
+                            height: 16,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 9,
+                            border: "1px solid var(--line)",
+                            background: i === opts.length - 1 ? "transparent" : "var(--paper)",
+                            color: i === opts.length - 1 ? "var(--faint)" : "var(--ink)",
+                            borderRadius: 3,
+                            cursor: i === opts.length - 1 ? "not-allowed" : "pointer",
+                            padding: 0
+                          }}
+                        >
+                          <ChevronDown size={12} />
+                        </button>
                       </div>
-                    );
-                  })}
 
-                  {opts.length < 30 && (
-                    <button type="button" className="add-opt" onClick={addOpt}>
-                      + Add option ({opts.length}/30)
-                    </button>
-                  )}
-                </div>
-              )}
+                      {opts.length > 2 && (
+                        <button
+                          type="button"
+                          className="remove-opt-btn"
+                          onClick={() => removeOpt(i)}
+                          title="Remove option"
+                          aria-label={`Remove option ${i + 1}`}
+                          style={{ fontSize: 13, width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
 
-            </div>
-          </div>
-
-
-
-          {/* Right Column: Visibility, Category, Mode & Advanced Settings */}
-          <div>
-            {/* Top Requirement: Discovery & Directory */}
-            <div className="block">
-              <label className="field-label">Poll Visibility</label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {/* Public Community */}
-                <button
-                  type="button"
-                  className={`visibility-card ${isPublic ? "active" : ""}`}
-                  onClick={handleSelectCommunity}
-                  style={{ padding: "14px 16px", textAlign: "left" }}
-                >
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                    <Globe size={15} color={isPublic ? "var(--accent)" : "currentColor"} />
-                    <span>Public Poll</span>
-                  </div>
-                  <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
-                    Discoverable in Explore. Requires sign in.
-                  </div>
-                </button>
-
-                {/* Private Poll */}
-                <button
-                  type="button"
-                  className={`visibility-card ${!isPublic ? "active" : ""}`}
-                  onClick={() => setIsPublic(false)}
-                  style={{ padding: "14px 16px", textAlign: "left" }}
-                >
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                    <Lock size={15} color={!isPublic ? "var(--accent)" : "currentColor"} />
-                    <span>Private Poll</span>
-                  </div>
-                  <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
-                    Direct link only. No sign in required.
-                  </div>
-                </button>
-              </div>
-            </div>
-
-
-            {/* Category: Only for Public Community Polls */}
-            {isPublic && (
-              <div className="block">
-                <label className="field-label">Community Category</label>
-                <div className="expiry-row" style={{ marginBottom: 10 }}>
-                  {PRESET_CATEGORIES.map((c) => (
-                    <button
-                      type="button"
-                      key={c.value}
-                      className={`expiry-chip ${!isAddingCustom && category === c.value ? "active" : ""}`}
-                      onClick={() => { setCategory(c.value); setIsAddingCustom(false); }}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    className={`expiry-chip ${isAddingCustom ? "active" : ""}`}
-                    onClick={() => setIsAddingCustom(true)}
-                  >
-                    + Custom
+                {opts.length < 30 && (
+                  <button type="button" className="add-opt" onClick={addOpt}>
+                    + Add option ({opts.length}/30)
                   </button>
-                </div>
-
-                {isAddingCustom && (
-                  <div>
-                    <input
-                      type="text"
-                      maxLength={30}
-                      placeholder="Enter custom category (e.g. Design, BookClub)"
-                      value={customCategory}
-                      onChange={(e) => setCustomCategory(e.target.value)}
-                      autoFocus
-                      style={{ fontSize: 13 }}
-                    />
-                  </div>
                 )}
               </div>
             )}
+          </div>
 
-            {/* Voting Mode: Single vs Multi (Only for Standard Polls) */}
-            {pollType === "standard" && (
-              <div className="block">
-                <label className="field-label">Voting Mode</label>
-                <div className="expiry-row">
-                  <button
-                    type="button"
-                    className={`expiry-chip ${!allowMultiple ? "active" : ""}`}
-                    onClick={() => setAllowMultiple(false)}
-                  >
-                    Single choice
-                  </button>
-                  <button
-                    type="button"
-                    className={`expiry-chip ${allowMultiple ? "active" : ""}`}
-                    onClick={() => setAllowMultiple(true)}
-                  >
-                    Multiple selections
-                  </button>
+          {/* 6. Advanced Settings Drawer (5 Settings) */}
+          <div className="block" style={{ marginBottom: 24 }}>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ width: "100%", justifyContent: "space-between", display: "flex", alignItems: "center", fontSize: 13, padding: "10px 14px" }}
+              onClick={() => setShowAdvanced(!showAdvanced)}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <Settings size={14} color="var(--accent)" />
+                <span>More Settings (Security, Voter Name, Editing, Deadline, Results)</span>
+              </span>
+              <span>{showAdvanced ? "▲" : "▼"}</span>
+            </button>
+
+            {showAdvanced && (
+              <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 18 }}>
+                {/* 1. Security & Anti-Abuse with Info Tooltip */}
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                    <label className="field-label" style={{ marginBottom: 0 }}>Security & Duplicate Protection</label>
+                  </div>
+                  <div className="expiry-row" style={{ gap: 6, marginBottom: 8 }}>
+                    {SECURITY_MODES.map((sc) => (
+                      <button
+                        type="button"
+                        key={sc.value}
+                        className={`expiry-chip ${securityMode === sc.value ? "active" : ""}`}
+                        onClick={() => {
+                          setSecurityMode(sc.value);
+                          if (sc.value === "unlimited") {
+                            setAllowVoteEdit(false);
+                          }
+                        }}
+                      >
+                        {sc.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* User-friendly info box */}
+                  <div style={{
+                    marginTop: 8,
+                    background: "var(--paper)",
+                    border: "1px solid var(--line)",
+                    borderRadius: 6,
+                    padding: "8px 12px",
+                    fontSize: 12,
+                    color: "var(--muted)",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 8,
+                    lineHeight: 1.4
+                  }}>
+                    <Info size={15} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
+                    <div>
+                      <strong style={{ color: "var(--ink)" }}>{selectedSecurityObj.label} Mode:</strong> {selectedSecurityObj.desc}
+                    </div>
+                  </div>
                 </div>
 
-                {allowMultiple && (
-                  <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {/* 2. Require Name */}
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={requireName}
+                    onChange={(e) => setRequireName(e.target.checked)}
+                  />
+                  <span>Require voter name before submitting</span>
+                </label>
+
+                {/* 3. Voter Vote Editing Toggle */}
+                <div>
+                  <label className="field-label">Voter Editing</label>
+                  <div
+                    onClick={() => {
+                      if (securityMode !== "unlimited") {
+                        setAllowVoteEdit(!allowVoteEdit);
+                      }
+                    }}
+                    style={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--line)",
+                      borderRadius: 8,
+                      padding: "12px 14px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: securityMode === "unlimited" ? "not-allowed" : "pointer",
+                      opacity: securityMode === "unlimited" ? 0.6 : 1,
+                    }}
+                  >
                     <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 4 }}>
-                        Min Choices
-                      </label>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+                        Allow voters to change their vote
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                        {securityMode === "unlimited"
+                          ? "Disabled in Unlimited mode — voters can cast new ballots at any time."
+                          : "Voters can update their selection while the poll is live."}
+                      </div>
+                    </div>
+                    <div style={{
+                      width: 36,
+                      height: 20,
+                      borderRadius: 12,
+                      background: (allowVoteEdit && securityMode !== "unlimited") ? "var(--accent)" : "var(--line)",
+                      position: "relative",
+                      transition: "background 0.15s ease",
+                      flexShrink: 0
+                    }}>
+                      <div style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        background: "#FFFFFF",
+                        position: "absolute",
+                        top: 2,
+                        left: (allowVoteEdit && securityMode !== "unlimited") ? 18 : 2,
+                        transition: "left 0.15s ease"
+                      }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Poll Deadline & Custom Duration */}
+                <div>
+                  <label className="field-label">Poll Deadline</label>
+                  <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                    {EXPIRY_PRESETS.map((choice) => (
+                      <button
+                        type="button"
+                        key={choice.label}
+                        className={`expiry-chip ${expiryPreset === choice.ms ? "active" : ""}`}
+                        onClick={() => setExpiryPreset(choice.ms)}
+                      >
+                        {choice.label}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className={`expiry-chip ${expiryPreset === "custom" ? "active" : ""}`}
+                      onClick={() => setExpiryPreset("custom")}
+                    >
+                      + Custom
+                    </button>
+                  </div>
+
+                  {expiryPreset === "custom" && (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", background: "var(--paper)", padding: "10px", borderRadius: 8, border: "1px solid var(--line)" }}>
                       <input
                         type="number"
                         min={1}
-                        max={opts.length}
-                        value={minChoices}
-                        onChange={(e) => handleMinChoicesChange(parseInt(e.target.value) || 1)}
+                        max={365}
+                        value={customExpiryValue}
+                        onChange={(e) => setCustomExpiryValue(Math.max(1, parseInt(e.target.value) || 1))}
                         className="input-text"
-                        style={{ padding: "8px 10px", fontSize: 13 }}
+                        style={{ width: 80, padding: "6px 10px", fontSize: 13 }}
                       />
+                      <select
+                        value={customExpiryUnit}
+                        onChange={(e) => setCustomExpiryUnit(e.target.value as any)}
+                        style={{
+                          padding: "6px 10px",
+                          fontSize: 13,
+                          borderRadius: 6,
+                          border: "1px solid var(--line)",
+                          background: "var(--surface)",
+                          color: "var(--ink)",
+                        }}
+                      >
+                        <option value="minutes">Minutes</option>
+                        <option value="hours">Hours</option>
+                        <option value="days">Days</option>
+                      </select>
+                      <span style={{ fontSize: 12, color: "var(--muted)" }}>from creation</span>
                     </div>
-                    <div>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 4 }}>
-                        Max Choices (Uniform: {minChoices})
-                      </label>
-                      <input
-                        type="number"
-                        min={minChoices}
-                        max={opts.length}
-                        value={maxChoices}
-                        onChange={(e) => handleMaxChoicesChange(parseInt(e.target.value) || minChoices)}
-                        className="input-text"
-                        style={{ padding: "8px 10px", fontSize: 13 }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
 
-            {/* Voter Vote Editing Toggle */}
-            <div className="block">
-              <label className="field-label">Voter Editing</label>
-              <div
-                onClick={() => {
-                  if (securityMode !== "unlimited") {
-                    setAllowVoteEdit(!allowVoteEdit);
-                  }
-                }}
-                style={{
-                  background: "var(--surface)",
-                  border: "1px solid var(--line)",
-                  borderRadius: 8,
-                  padding: "12px 14px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  cursor: securityMode === "unlimited" ? "not-allowed" : "pointer",
-                  opacity: securityMode === "unlimited" ? 0.6 : 1,
-                }}
-              >
+                {/* 5. Results Visibility (Clean 3 Choices) */}
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
-                    Allow voters to change their vote
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                    {securityMode === "unlimited"
-                      ? "Disabled in Unlimited mode — voters can cast new ballots at any time."
-                      : "Voters can update their selection while the poll is live."}
-                  </div>
-                </div>
-                <div style={{
-                  width: 36,
-                  height: 20,
-                  borderRadius: 12,
-                  background: (allowVoteEdit && securityMode !== "unlimited") ? "var(--accent)" : "var(--line)",
-                  position: "relative",
-                  transition: "background 0.15s ease"
-                }}>
-                  <div style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: "50%",
-                    background: "#FFFFFF",
-                    position: "absolute",
-                    top: 2,
-                    left: (allowVoteEdit && securityMode !== "unlimited") ? 18 : 2,
-                    transition: "left 0.15s ease"
-                  }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Advanced Settings Drawer */}
-            <div className="block">
-              <button
-                type="button"
-                className="btn-ghost"
-                style={{ width: "100%", justifyContent: "space-between", display: "flex", alignItems: "center", fontSize: 13 }}
-                onClick={() => setShowAdvanced(!showAdvanced)}
-              >
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Settings size={14} color="var(--accent)" />
-                  <span>More Settings (Deadline, Security, Results)</span>
-                </span>
-                <span>{showAdvanced ? "▲" : "▼"}</span>
-              </button>
-
-
-              {showAdvanced && (
-                <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 16 }}>
-                  {/* 1. Poll Deadline & Custom Duration */}
-                  <div>
-                    <label className="field-label">Poll Deadline</label>
-                    <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                      {EXPIRY_PRESETS.map((choice) => (
-                        <button
-                          type="button"
-                          key={choice.label}
-                          className={`expiry-chip ${expiryPreset === choice.ms ? "active" : ""}`}
-                          onClick={() => setExpiryPreset(choice.ms)}
-                        >
-                          {choice.label}
-                        </button>
-                      ))}
+                  <label className="field-label">Results Visibility</label>
+                  <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6 }}>
+                    {VISIBILITY_CHOICES.map((vc) => (
                       <button
                         type="button"
-                        className={`expiry-chip ${expiryPreset === "custom" ? "active" : ""}`}
-                        onClick={() => setExpiryPreset("custom")}
+                        key={vc.value}
+                        className={`expiry-chip ${resultsVisibility === vc.value ? "active" : ""}`}
+                        onClick={() => setResultsVisibility(vc.value)}
                       >
-                        + Custom
+                        {vc.label}
                       </button>
-                    </div>
-
-                    {expiryPreset === "custom" && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", background: "var(--paper)", padding: "10px", borderRadius: 8, border: "1px solid var(--line)" }}>
-                        <input
-                          type="number"
-                          min={1}
-                          max={365}
-                          value={customExpiryValue}
-                          onChange={(e) => setCustomExpiryValue(Math.max(1, parseInt(e.target.value) || 1))}
-                          className="input-text"
-                          style={{ width: 80, padding: "6px 10px", fontSize: 13 }}
-                        />
-                        <select
-                          value={customExpiryUnit}
-                          onChange={(e) => setCustomExpiryUnit(e.target.value as any)}
-                          style={{
-                            padding: "6px 10px",
-                            fontSize: 13,
-                            borderRadius: 6,
-                            border: "1px solid var(--line)",
-                            background: "var(--surface)",
-                            color: "var(--ink)",
-                          }}
-                        >
-                          <option value="minutes">Minutes</option>
-                          <option value="hours">Hours</option>
-                          <option value="days">Days</option>
-                        </select>
-                        <span style={{ fontSize: 12, color: "var(--muted)" }}>from creation</span>
-                      </div>
-                    )}
+                    ))}
                   </div>
-
-                  {/* 2. Results Visibility (Clean 3 Choices) */}
-                  <div>
-                    <label className="field-label">Results Visibility</label>
-                    <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6 }}>
-                      {VISIBILITY_CHOICES.map((vc) => (
-                        <button
-                          type="button"
-                          key={vc.value}
-                          className={`expiry-chip ${resultsVisibility === vc.value ? "active" : ""}`}
-                          onClick={() => setResultsVisibility(vc.value)}
-                        >
-                          {vc.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 3. Security & Anti-Abuse with Info Tooltip */}
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                      <label className="field-label" style={{ marginBottom: 0 }}>Security & Duplicate Protection</label>
-                    </div>
-                    <div className="expiry-row" style={{ gap: 6, marginBottom: 8 }}>
-                      {SECURITY_MODES.map((sc) => (
-                        <button
-                          type="button"
-                          key={sc.value}
-                          className={`expiry-chip ${securityMode === sc.value ? "active" : ""}`}
-                          onClick={() => {
-                            setSecurityMode(sc.value);
-                            if (sc.value === "unlimited") {
-                              setAllowVoteEdit(false);
-                            }
-                          }}
-                        >
-                          {sc.label}
-                        </button>
-                      ))}
-                    </div>
-                    {/* User-friendly info box */}
-                    <div style={{
-                      marginTop: 8,
-                      background: "var(--paper)",
-                      border: "1px solid var(--line)",
-                      borderRadius: 6,
-                      padding: "8px 12px",
-                      fontSize: 12,
-                      color: "var(--muted)",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 8,
-                      lineHeight: 1.4
-                    }}>
-                      <Info size={15} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
-                      <div>
-                        <strong style={{ color: "var(--ink)" }}>{selectedSecurityObj.label} Mode:</strong> {selectedSecurityObj.desc}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 4. Require Name */}
-                  <label className="checkbox-row">
-                    <input
-                      type="checkbox"
-                      checked={requireName}
-                      onChange={(e) => setRequireName(e.target.checked)}
-                    />
-                    <span>Require voter name before submitting</span>
-                  </label>
                 </div>
-              )}
-            </div>
-
-            {/* Error Message */}
-            {error && <div className="error-box">{error}</div>}
-
-            {/* Action Buttons: Preview Ballot & Publish */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
-              <button
-                type="button"
-                onClick={handleOpenPreview}
-                className="btn-ghost"
-                style={{
-                  width: "100%",
-                  padding: "10px 16px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  border: "1px solid var(--line)",
-                  background: "var(--surface)",
-                  borderRadius: "var(--radius)",
-                  cursor: "pointer",
-                }}
-                title="Test and preview the live ballot before creating"
-              >
-                <Eye size={15} color="var(--accent)" />
-                <span>Preview Ballot</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="btn-primary"
-                style={{ width: "100%", padding: "12px 20px", fontSize: 15, fontWeight: 700 }}
-              >
-                {submitting ? "Creating poll..." : isPublic ? "Publish Public Poll →" : "Create Private Poll →"}
-              </button>
-            </div>
+              </div>
+            )}
           </div>
-        </div>
+
+          {/* Error Message */}
+          {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
+
+          {/* Action Buttons: Preview Ballot & Publish */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 12, marginTop: 24, marginBottom: 40 }}>
+            <button
+              type="button"
+              onClick={handleOpenPreview}
+              className="btn-ghost"
+              style={{
+                padding: "12px 16px",
+                fontSize: 14,
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                border: "1px solid var(--line)",
+                background: "var(--surface)",
+                borderRadius: "var(--radius)",
+                cursor: "pointer",
+              }}
+              title="Test and preview the live ballot before creating"
+            >
+              <Eye size={16} color="var(--accent)" />
+              <span>Preview Ballot</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="btn-primary"
+              style={{ padding: "12px 20px", fontSize: 15, fontWeight: 700 }}
+            >
+              {submitting ? "Creating poll..." : isPublic ? "Publish Public Poll →" : "Create Private Poll →"}
+            </button>
+          </div>
+
 
         {/* 👁️ Interactive Live Ballot Preview Modal */}
         {showPreviewModal && (
@@ -1910,7 +1901,9 @@ export default function NewPollPage() {
           </div>
         )}
       </main>
+      </AdSidebarContainer>
     </div>
   );
 }
+
 
