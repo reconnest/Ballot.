@@ -596,171 +596,98 @@ export default function NewPollPage() {
           </div>
 
 
-          {/* 1. Poll Visibility (First in Flow) */}
-          <div className="block" style={{ marginBottom: 24 }}>
-            <label className="field-label">Poll Visibility</label>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              {/* Public Community */}
+          {/* 1. Poll Visibility & Category */}
+          <div className="block" style={{ marginBottom: 18 }}>
+            <label className="field-label" style={{ marginBottom: 6 }}>Poll Visibility</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <button
                 type="button"
-                className={`visibility-card ${isPublic ? "active" : ""}`}
+                className={`expiry-chip ${isPublic ? "active" : ""}`}
                 onClick={handleSelectCommunity}
-                style={{ padding: "14px 16px", textAlign: "left" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", fontSize: 13 }}
               >
-                <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                  <Globe size={15} color={isPublic ? "var(--accent)" : "currentColor"} />
-                  <span>Public Poll</span>
-                </div>
-                <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
-                  Discoverable in Explore. Requires sign in.
-                </div>
+                <Globe size={14} color={isPublic ? "var(--accent)" : "currentColor"} />
+                <span>Public</span>
               </button>
 
-              {/* Private Poll */}
               <button
                 type="button"
-                className={`visibility-card ${!isPublic ? "active" : ""}`}
+                className={`expiry-chip ${!isPublic ? "active" : ""}`}
                 onClick={() => setIsPublic(false)}
-                style={{ padding: "14px 16px", textAlign: "left" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", fontSize: 13 }}
               >
-                <div style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
-                  <Lock size={15} color={!isPublic ? "var(--accent)" : "currentColor"} />
-                  <span>Private Poll</span>
-                </div>
-                <div className="vis-hint" style={{ fontSize: 12, lineHeight: 1.4 }}>
-                  Direct link only. No sign in required.
-                </div>
+                <Lock size={14} color={!isPublic ? "var(--accent)" : "currentColor"} />
+                <span>Private</span>
               </button>
             </div>
+
+            {/* Category Chips when Public */}
+            {isPublic && (
+              <div style={{ marginTop: 10 }}>
+                <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6 }}>
+                  {PRESET_CATEGORIES.map((c) => (
+                    <button
+                      type="button"
+                      key={c.value}
+                      className={`expiry-chip ${!isAddingCustom && category === c.value ? "active" : ""}`}
+                      onClick={() => { setCategory(c.value); setIsAddingCustom(false); }}
+                      style={{ fontSize: 12, padding: "4px 10px" }}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={`expiry-chip ${isAddingCustom ? "active" : ""}`}
+                    onClick={() => setIsAddingCustom(true)}
+                    style={{ fontSize: 12, padding: "4px 10px" }}
+                  >
+                    + Custom
+                  </button>
+                </div>
+
+                {isAddingCustom && (
+                  <div style={{ marginTop: 6 }}>
+                    <input
+                      type="text"
+                      maxLength={30}
+                      placeholder="Enter custom category (e.g. Design, BookClub)"
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      autoFocus
+                      style={{ fontSize: 12, padding: "5px 8px" }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 2. Poll Format */}
-          <div className="block" style={{ marginBottom: 24 }}>
-            <label className="field-label">Poll Format</label>
-            <div className="format-grid-3">
+          <div className="block" style={{ marginBottom: 18 }}>
+            <label className="field-label" style={{ marginBottom: 6 }}>Poll Format</label>
+            <div className="expiry-row" style={{ flexWrap: "wrap", gap: 8 }}>
               {POLL_TYPES.map((pt) => {
                 const IconComp = pt.icon;
+                const active = pollType === pt.value;
                 return (
                   <button
                     type="button"
                     key={pt.value}
-                    className={`visibility-card ${pollType === pt.value ? "active" : ""}`}
+                    className={`expiry-chip ${active ? "active" : ""}`}
                     onClick={() => setPollType(pt.value)}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", fontSize: 13 }}
                   >
-                    <div className="vis-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <IconComp size={15} color={pollType === pt.value ? "var(--accent)" : "currentColor"} />
-                      <span>{pt.label}</span>
-                    </div>
-                    <div className="vis-hint">{pt.hint}</div>
+                    <IconComp size={14} color={active ? "var(--accent)" : "currentColor"} />
+                    <span>{pt.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* 3. Adaptive Context: Category (if Public) & Voting Mode (if Standard) */}
-          {(isPublic || pollType === "standard") && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20, marginBottom: 24 }}>
-              {/* Category: Only for Public Community Polls */}
-              {isPublic && (
-                <div className="block" style={{ marginBottom: 0 }}>
-                  <label className="field-label">Community Category</label>
-                  <div className="expiry-row" style={{ marginBottom: 10 }}>
-                    {PRESET_CATEGORIES.map((c) => (
-                      <button
-                        type="button"
-                        key={c.value}
-                        className={`expiry-chip ${!isAddingCustom && category === c.value ? "active" : ""}`}
-                        onClick={() => { setCategory(c.value); setIsAddingCustom(false); }}
-                      >
-                        {c.label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      className={`expiry-chip ${isAddingCustom ? "active" : ""}`}
-                      onClick={() => setIsAddingCustom(true)}
-                    >
-                      + Custom
-                    </button>
-                  </div>
-
-                  {isAddingCustom && (
-                    <div>
-                      <input
-                        type="text"
-                        maxLength={30}
-                        placeholder="Enter custom category (e.g. Design, BookClub)"
-                        value={customCategory}
-                        onChange={(e) => setCustomCategory(e.target.value)}
-                        autoFocus
-                        style={{ fontSize: 13 }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Voting Mode: Single vs Multi (Only for Standard Polls) */}
-              {pollType === "standard" && (
-                <div className="block" style={{ marginBottom: 0 }}>
-                  <label className="field-label">Voting Mode</label>
-                  <div className="expiry-row">
-                    <button
-                      type="button"
-                      className={`expiry-chip ${!allowMultiple ? "active" : ""}`}
-                      onClick={() => setAllowMultiple(false)}
-                    >
-                      Single choice
-                    </button>
-                    <button
-                      type="button"
-                      className={`expiry-chip ${allowMultiple ? "active" : ""}`}
-                      onClick={() => setAllowMultiple(true)}
-                    >
-                      Multiple selections
-                    </button>
-                  </div>
-
-                  {allowMultiple && (
-                    <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 4 }}>
-                          Min Choices
-                        </label>
-                        <input
-                          type="number"
-                          min={1}
-                          max={opts.length}
-                          value={minChoices}
-                          onChange={(e) => handleMinChoicesChange(parseInt(e.target.value) || 1)}
-                          className="input-text"
-                          style={{ padding: "8px 10px", fontSize: 13 }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", display: "block", marginBottom: 4 }}>
-                          Max Choices (Uniform: {minChoices})
-                        </label>
-                        <input
-                          type="number"
-                          min={minChoices}
-                          max={opts.length}
-                          value={maxChoices}
-                          onChange={(e) => handleMaxChoicesChange(parseInt(e.target.value) || minChoices)}
-                          className="input-text"
-                          style={{ padding: "8px 10px", fontSize: 13 }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 4. Question & Description */}
-          <div className="block" style={{ marginBottom: 24 }}>
+          {/* 3. Question & Description */}
+          <div className="block" style={{ marginBottom: 18 }}>
             <label className="field-label" htmlFor="q">
               Question <span style={{ color: "var(--accent)" }}>*</span>
             </label>
@@ -791,7 +718,7 @@ export default function NewPollPage() {
 
           {/* Optional Description */}
           {showDesc && (
-            <div className="block" style={{ marginBottom: 24 }}>
+            <div className="block" style={{ marginBottom: 18 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <label className="field-label" htmlFor="desc" style={{ marginBottom: 0 }}>
                   Description / Context (Optional)
@@ -819,7 +746,7 @@ export default function NewPollPage() {
 
           {/* Guest Creator Attribution Name (Optional) */}
           {!sessionUser && (
-            <div className="block" style={{ marginBottom: 24 }}>
+            <div className="block" style={{ marginBottom: 18 }}>
               <label className="field-label" htmlFor="guestName">
                 Your Name / Organization <span style={{ fontSize: 11, fontWeight: 400, color: "var(--muted)" }}>(Optional)</span>
               </label>
@@ -838,12 +765,57 @@ export default function NewPollPage() {
             </div>
           )}
 
-          {/* 5. Options List & Bulk Paste */}
+          {/* 4. Options List & 3-Way Header */}
           <div className="block" style={{ marginBottom: 24 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+              {/* Left: Options Label */}
               <label className="field-label" style={{ marginBottom: 0 }}>
                 Options <span style={{ color: "var(--accent)" }}>*</span>
               </label>
+
+              {/* Middle: Single/Multiple Selection Toggle (Only for Standard Polls) */}
+              {pollType === "standard" && (
+                <div style={{ display: "inline-flex", background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 6, padding: 2, gap: 2 }}>
+                  <button
+                    type="button"
+                    onClick={() => setAllowMultiple(false)}
+                    style={{
+                      padding: "3px 8px",
+                      fontSize: 11,
+                      fontWeight: !allowMultiple ? 700 : 500,
+                      borderRadius: 4,
+                      border: "none",
+                      background: !allowMultiple ? "var(--surface)" : "transparent",
+                      color: !allowMultiple ? "var(--accent-ink)" : "var(--muted)",
+                      cursor: "pointer",
+                      boxShadow: !allowMultiple ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    Single
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAllowMultiple(true)}
+                    style={{
+                      padding: "3px 8px",
+                      fontSize: 11,
+                      fontWeight: allowMultiple ? 700 : 500,
+                      borderRadius: 4,
+                      border: "none",
+                      background: allowMultiple ? "var(--surface)" : "transparent",
+                      color: allowMultiple ? "var(--accent-ink)" : "var(--muted)",
+                      cursor: "pointer",
+                      boxShadow: allowMultiple ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    Multiple
+                  </button>
+                </div>
+              )}
+
+              {/* Right: Bulk Action */}
               {pollType === "image" ? (
                 <label
                   className="btn-ghost"
@@ -863,7 +835,7 @@ export default function NewPollPage() {
                   title="Select multiple images at once to auto-create options & labels"
                 >
                   <UploadCloud size={14} />
-                  <span>Bulk Upload Images</span>
+                  <span>Bulk Upload</span>
                   <input
                     type="file"
                     multiple
@@ -887,6 +859,36 @@ export default function NewPollPage() {
                 </button>
               )}
             </div>
+
+            {/* If Multiple Choices is active, show Min/Max Pickers */}
+            {pollType === "standard" && allowMultiple && (
+              <div style={{ display: "flex", gap: 12, alignItems: "center", background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 6, padding: "8px 12px", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)" }}>Min choices:</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={opts.length}
+                    value={minChoices}
+                    onChange={(e) => handleMinChoicesChange(parseInt(e.target.value) || 1)}
+                    className="input-text"
+                    style={{ width: 48, padding: "3px 6px", fontSize: 12 }}
+                  />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)" }}>Max choices:</label>
+                  <input
+                    type="number"
+                    min={minChoices}
+                    max={opts.length}
+                    value={maxChoices}
+                    onChange={(e) => handleMaxChoicesChange(parseInt(e.target.value) || minChoices)}
+                    className="input-text"
+                    style={{ width: 48, padding: "3px 6px", fontSize: 12 }}
+                  />
+                </div>
+              </div>
+            )}
 
             {pollType === "image" ? (
               /* 🖼️ 3-COLUMN IMAGE POLL CREATION GRID (DRAGGABLE & REORDERABLE) */
