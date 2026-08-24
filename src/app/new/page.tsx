@@ -1325,10 +1325,12 @@ export default function NewPollPage() {
             >
               {submitting ? "Creating poll..." : isPublic ? "Publish Public Poll →" : "Create Private Poll →"}
             </button>
+
           </div>
 
-          {/* ⚙️ Advanced Poll Settings Modal Popup */}
+          {/* ⚙️ Advanced Poll Settings Modal Popup (Zero-Scroll Compact Layout) */}
           {showAdvanced && (
+
             <div className="modal-backdrop" style={{ zIndex: 1000 }} onClick={() => setShowAdvanced(false)}>
               <div
                 className="modal-box"
@@ -1337,21 +1339,21 @@ export default function NewPollPage() {
                   background: "var(--surface)",
                   border: "1px solid var(--line)",
                   borderRadius: 12,
-                  padding: 24,
-                  maxWidth: 540,
+                  padding: 20,
+                  maxWidth: 560,
                   width: "100%",
                   boxShadow: "0 25px 50px -12px rgba(0,0,0,0.35)",
-                  maxHeight: "90vh",
                   display: "flex",
                   flexDirection: "column",
+                  gap: 14,
                 }}
               >
                 {/* Modal Header */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--line)", paddingBottom: 10 }}>
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <Settings size={17} color="var(--accent)" />
-                      <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--ink)" }}>Poll Settings</h2>
+                      <Settings size={16} color="var(--accent)" />
+                      <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "var(--ink)" }}>Poll Settings</h2>
                     </div>
                     <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
                       Configure security, voter requirements, deadline, and results visibility.
@@ -1368,180 +1370,180 @@ export default function NewPollPage() {
                   </button>
                 </div>
 
-                {/* Modal Body: Scrollable 5 Settings */}
-                <div style={{ overflowY: "auto", flex: 1, paddingRight: 4, display: "flex", flexDirection: "column", gap: 18 }}>
-                  {/* 1. Security & Anti-Abuse with Info Tooltip */}
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                      <label className="field-label" style={{ marginBottom: 0 }}>Security & Duplicate Protection</label>
-                    </div>
-                    <div className="expiry-row" style={{ gap: 6, marginBottom: 8 }}>
-                      {SECURITY_MODES.map((sc) => (
-                        <button
-                          type="button"
-                          key={sc.value}
-                          className={`expiry-chip ${securityMode === sc.value ? "active" : ""}`}
-                          onClick={() => {
-                            setSecurityMode(sc.value);
-                            if (sc.value === "unlimited") {
-                              setAllowVoteEdit(false);
-                            }
-                          }}
-                        >
-                          {sc.label}
-                        </button>
-                      ))}
-                    </div>
-                    {/* User-friendly info box */}
-                    <div style={{
-                      marginTop: 8,
-                      background: "var(--paper)",
-                      border: "1px solid var(--line)",
-                      borderRadius: 6,
-                      padding: "8px 12px",
-                      fontSize: 12,
-                      color: "var(--muted)",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 8,
-                      lineHeight: 1.4
-                    }}>
-                      <Info size={15} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
-                      <div>
-                        <strong style={{ color: "var(--ink)" }}>{selectedSecurityObj.label} Mode:</strong> {selectedSecurityObj.desc}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 2. Require Voter Name Toggle */}
-                  <div>
-                    <label className="field-label">Voter Identity</label>
-                    <div
-                      onClick={() => setRequireName(!requireName)}
-                      style={{
-                        background: "var(--surface)",
-                        border: "1px solid var(--line)",
-                        borderRadius: 8,
-                        padding: "12px 14px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
-                          Require voter name before submitting
-                        </div>
-                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                          {requireName
-                            ? "Voters must provide their name or handle before casting a vote."
-                            : "Voters can vote anonymously without providing their name."}
-                        </div>
-                      </div>
-                      <div style={{
-                        width: 36,
-                        height: 20,
-                        borderRadius: 12,
-                        background: requireName ? "var(--accent)" : "var(--line)",
-                        position: "relative",
-                        transition: "background 0.15s ease",
-                        flexShrink: 0
-                      }}>
-                        <div style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
-                          background: "#FFFFFF",
-                          position: "absolute",
-                          top: 2,
-                          left: requireName ? 18 : 2,
-                          transition: "left 0.15s ease"
-                        }} />
-                      </div>
-                    </div>
-                  </div>
-
-
-                  {/* 3. Voter Vote Editing Toggle */}
-                  <div>
-                    <label className="field-label">Voter Editing</label>
-                    <div
-                      onClick={() => {
-                        if (securityMode !== "unlimited") {
-                          setAllowVoteEdit(!allowVoteEdit);
-                        }
-                      }}
-                      style={{
-                        background: "var(--surface)",
-                        border: "1px solid var(--line)",
-                        borderRadius: 8,
-                        padding: "12px 14px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        cursor: securityMode === "unlimited" ? "not-allowed" : "pointer",
-                        opacity: securityMode === "unlimited" ? 0.6 : 1,
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
-                          Allow voters to change their vote
-                        </div>
-                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                          {securityMode === "unlimited"
-                            ? "Disabled in Unlimited mode — voters can cast new ballots at any time."
-                            : "Voters can update their selection while the poll is live."}
-                        </div>
-                      </div>
-                      <div style={{
-                        width: 36,
-                        height: 20,
-                        borderRadius: 12,
-                        background: (allowVoteEdit && securityMode !== "unlimited") ? "var(--accent)" : "var(--line)",
-                        position: "relative",
-                        transition: "background 0.15s ease",
-                        flexShrink: 0
-                      }}>
-                        <div style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: "50%",
-                          background: "#FFFFFF",
-                          position: "absolute",
-                          top: 2,
-                          left: (allowVoteEdit && securityMode !== "unlimited") ? 18 : 2,
-                          transition: "left 0.15s ease"
-                        }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 4. Poll Deadline & Custom Duration */}
-                  <div>
-                    <label className="field-label">Poll Deadline</label>
-                    <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                      {EXPIRY_PRESETS.map((choice) => (
-                        <button
-                          type="button"
-                          key={choice.label}
-                          className={`expiry-chip ${expiryPreset === choice.ms ? "active" : ""}`}
-                          onClick={() => setExpiryPreset(choice.ms)}
-                        >
-                          {choice.label}
-                        </button>
-                      ))}
+                {/* 1. Security & Anti-Abuse */}
+                <div>
+                  <label className="field-label" style={{ marginBottom: 6 }}>Security & Duplicate Protection</label>
+                  <div className="expiry-row" style={{ gap: 6, marginBottom: 6 }}>
+                    {SECURITY_MODES.map((sc) => (
                       <button
                         type="button"
-                        className={`expiry-chip ${expiryPreset === "custom" ? "active" : ""}`}
-                        onClick={() => setExpiryPreset("custom")}
+                        key={sc.value}
+                        className={`expiry-chip ${securityMode === sc.value ? "active" : ""}`}
+                        onClick={() => {
+                          setSecurityMode(sc.value);
+                          if (sc.value === "unlimited") {
+                            setAllowVoteEdit(false);
+                          }
+                        }}
                       >
-                        + Custom
+                        {sc.label}
                       </button>
+                    ))}
+                  </div>
+                  {/* User-friendly info box */}
+                  <div style={{
+                    background: "var(--paper)",
+                    border: "1px solid var(--line)",
+                    borderRadius: 6,
+                    padding: "6px 10px",
+                    fontSize: 11,
+                    color: "var(--muted)",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 6,
+                    lineHeight: 1.35
+                  }}>
+                    <Info size={14} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
+                    <div>
+                      <strong style={{ color: "var(--ink)" }}>{selectedSecurityObj.label} Mode:</strong> {selectedSecurityObj.desc}
                     </div>
+                  </div>
+                </div>
+
+                {/* 2. Voter Controls (2-Column Side-by-Side Toggles) */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {/* Require Voter Name Toggle */}
+                  <div
+                    onClick={() => setRequireName(!requireName)}
+                    style={{
+                      background: "var(--paper)",
+                      border: "1px solid var(--line)",
+                      borderRadius: 8,
+                      padding: "10px 12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: "pointer",
+                      gap: 8,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>
+                        Require Voter Name
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, lineHeight: 1.2 }}>
+                        {requireName ? "Voters must provide name" : "Voting is anonymous"}
+                      </div>
+                    </div>
+                    <div style={{
+                      width: 32,
+                      height: 18,
+                      borderRadius: 10,
+                      background: requireName ? "var(--accent)" : "var(--line)",
+                      position: "relative",
+                      transition: "background 0.15s ease",
+                      flexShrink: 0
+                    }}>
+                      <div style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: "50%",
+                        background: "#FFFFFF",
+                        position: "absolute",
+                        top: 2,
+                        left: requireName ? 16 : 2,
+                        transition: "left 0.15s ease"
+                      }} />
+                    </div>
+                  </div>
+
+                  {/* Allow Vote Editing Toggle */}
+                  <div
+                    onClick={() => {
+                      if (securityMode !== "unlimited") {
+                        setAllowVoteEdit(!allowVoteEdit);
+                      }
+                    }}
+                    style={{
+                      background: "var(--paper)",
+                      border: "1px solid var(--line)",
+                      borderRadius: 8,
+                      padding: "10px 12px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      cursor: securityMode === "unlimited" ? "not-allowed" : "pointer",
+                      opacity: securityMode === "unlimited" ? 0.6 : 1,
+                      gap: 8,
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>
+                        Allow Voter Editing
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, lineHeight: 1.2 }}>
+                        {allowVoteEdit && securityMode !== "unlimited" ? "Voters can change vote" : "Locked once submitted"}
+                      </div>
+                    </div>
+                    <div style={{
+                      width: 32,
+                      height: 18,
+                      borderRadius: 10,
+                      background: (allowVoteEdit && securityMode !== "unlimited") ? "var(--accent)" : "var(--line)",
+                      position: "relative",
+                      transition: "background 0.15s ease",
+                      flexShrink: 0
+                    }}>
+                      <div style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: "50%",
+                        background: "#FFFFFF",
+                        position: "absolute",
+                        top: 2,
+                        left: (allowVoteEdit && securityMode !== "unlimited") ? 16 : 2,
+                        transition: "left 0.15s ease"
+                      }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Deadline & Results Visibility Dropdowns (2-Column Grid) */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {/* Poll Deadline Dropdown */}
+                  <div>
+                    <label className="field-label" style={{ marginBottom: 6 }}>Poll Deadline</label>
+                    <select
+                      value={expiryPreset === "custom" ? "custom" : expiryPreset === null ? "none" : `${expiryPreset}`}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "none") setExpiryPreset(null);
+                        else if (val === "custom") setExpiryPreset("custom");
+                        else setExpiryPreset(parseInt(val, 10));
+                      }}
+                      style={{
+                        width: "100%",
+                        height: 38,
+                        padding: "0 10px",
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: "1px solid var(--line)",
+                        background: "var(--paper)",
+                        color: "var(--ink)",
+                        cursor: "pointer",
+                        outline: "none",
+                      }}
+                    >
+                      <option value="none">No limit (Never expires)</option>
+                      <option value="3600000">1 hour</option>
+                      <option value="86400000">24 hours</option>
+                      <option value="604800000">7 days</option>
+                      <option value="2592000000">30 days</option>
+                      <option value="custom">Custom duration...</option>
+                    </select>
 
                     {expiryPreset === "custom" && (
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", background: "var(--paper)", padding: "10px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                      <div style={{ display: "flex", gap: 6, alignItems: "center", background: "var(--paper)", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--line)", marginTop: 6 }}>
                         <input
                           type="number"
                           min={1}
@@ -1549,15 +1551,15 @@ export default function NewPollPage() {
                           value={customExpiryValue}
                           onChange={(e) => setCustomExpiryValue(Math.max(1, parseInt(e.target.value) || 1))}
                           className="input-text"
-                          style={{ width: 80, padding: "6px 10px", fontSize: 13 }}
+                          style={{ width: 60, padding: "4px 8px", fontSize: 12 }}
                         />
                         <select
                           value={customExpiryUnit}
                           onChange={(e) => setCustomExpiryUnit(e.target.value as any)}
                           style={{
-                            padding: "6px 10px",
-                            fontSize: 13,
-                            borderRadius: 6,
+                            padding: "4px 8px",
+                            fontSize: 12,
+                            borderRadius: 4,
                             border: "1px solid var(--line)",
                             background: "var(--surface)",
                             color: "var(--ink)",
@@ -1567,36 +1569,43 @@ export default function NewPollPage() {
                           <option value="hours">Hours</option>
                           <option value="days">Days</option>
                         </select>
-                        <span style={{ fontSize: 12, color: "var(--muted)" }}>from creation</span>
                       </div>
                     )}
                   </div>
 
-                  {/* 5. Results Visibility (Clean 3 Choices) */}
+                  {/* Results Visibility Dropdown */}
                   <div>
-                    <label className="field-label">Results Visibility</label>
-                    <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6 }}>
-                      {VISIBILITY_CHOICES.map((vc) => (
-                        <button
-                          type="button"
-                          key={vc.value}
-                          className={`expiry-chip ${resultsVisibility === vc.value ? "active" : ""}`}
-                          onClick={() => setResultsVisibility(vc.value)}
-                        >
-                          {vc.label}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="field-label" style={{ marginBottom: 6 }}>Results Visibility</label>
+                    <select
+                      value={resultsVisibility}
+                      onChange={(e) => setResultsVisibility(e.target.value)}
+                      style={{
+                        width: "100%",
+                        height: 38,
+                        padding: "0 10px",
+                        fontSize: 12,
+                        borderRadius: 6,
+                        border: "1px solid var(--line)",
+                        background: "var(--paper)",
+                        color: "var(--ink)",
+                        cursor: "pointer",
+                        outline: "none",
+                      }}
+                    >
+                      <option value="after_vote">After voting (Instant results)</option>
+                      <option value="after_deadline">After deadline (Hidden)</option>
+                      <option value="creator_only">Creator only (Admin only)</option>
+                    </select>
                   </div>
                 </div>
 
-                {/* Modal Footer: Save & Close Button */}
-                <div style={{ marginTop: 20, paddingTop: 12, borderTop: "1px solid var(--line)", display: "flex", justifyContent: "flex-end" }}>
+                {/* Modal Footer: Done Button */}
+                <div style={{ borderTop: "1px solid var(--line)", paddingTop: 10, display: "flex", justifyContent: "flex-end" }}>
                   <button
                     type="button"
                     className="btn-primary"
                     onClick={() => setShowAdvanced(false)}
-                    style={{ padding: "8px 20px", fontSize: 13, fontWeight: 700 }}
+                    style={{ padding: "7px 20px", fontSize: 13, fontWeight: 700 }}
                   >
                     Done
                   </button>
@@ -1604,6 +1613,7 @@ export default function NewPollPage() {
               </div>
             </div>
           )}
+
 
 
 
