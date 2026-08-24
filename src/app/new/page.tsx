@@ -621,6 +621,16 @@ export default function NewPollPage() {
               </button>
             </div>
 
+            {/* Dynamic Visibility Explanation */}
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+              <Info size={12} color="var(--accent)" style={{ flexShrink: 0 }} />
+              <span>
+                {isPublic
+                  ? "Public: Discoverable in Explore & community search. Requires sign-in to create."
+                  : "Private: Unlisted direct link. Accessible only to people with the URL."}
+              </span>
+            </div>
+
             {/* Category Chips when Public */}
             {isPublic && (
               <div style={{ marginTop: 10 }}>
@@ -684,7 +694,18 @@ export default function NewPollPage() {
                 );
               })}
             </div>
+
+            {/* Dynamic Format Explanation */}
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+              <Info size={12} color="var(--accent)" style={{ flexShrink: 0 }} />
+              <span>
+                {pollType === "standard" && "Standard: Single choice or multiple selections with standard vote counts."}
+                {pollType === "ranked" && "Ranked Choice: Voters rank choices in order of preference (1st gets max points)."}
+                {pollType === "image" && "Image Poll: Visual choices with image previews for each option."}
+              </span>
+            </div>
           </div>
+
 
           {/* 3. Question & Description */}
           <div className="block" style={{ marginBottom: 18 }}>
