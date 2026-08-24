@@ -599,36 +599,36 @@ export default function NewPollPage() {
           {/* 1. Poll Visibility & Category */}
           <div className="block" style={{ marginBottom: 18 }}>
             <label className="field-label" style={{ marginBottom: 6 }}>Poll Visibility</label>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <button
                 type="button"
-                className={`expiry-chip ${isPublic ? "active" : ""}`}
+                className={`visibility-card ${isPublic ? "active" : ""}`}
                 onClick={handleSelectCommunity}
-                style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", fontSize: 13 }}
+                style={{ padding: "8px 12px", textAlign: "left" }}
               >
-                <Globe size={14} color={isPublic ? "var(--accent)" : "currentColor"} />
-                <span>Public</span>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <Globe size={14} color={isPublic ? "var(--accent)" : "currentColor"} />
+                  <span>Public</span>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, lineHeight: 1.2 }}>
+                  Discoverable in Explore
+                </div>
               </button>
 
               <button
                 type="button"
-                className={`expiry-chip ${!isPublic ? "active" : ""}`}
+                className={`visibility-card ${!isPublic ? "active" : ""}`}
                 onClick={() => setIsPublic(false)}
-                style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 14px", fontSize: 13 }}
+                style={{ padding: "8px 12px", textAlign: "left" }}
               >
-                <Lock size={14} color={!isPublic ? "var(--accent)" : "currentColor"} />
-                <span>Private</span>
+                <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <Lock size={14} color={!isPublic ? "var(--accent)" : "currentColor"} />
+                  <span>Private</span>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, lineHeight: 1.2 }}>
+                  Direct link only
+                </div>
               </button>
-            </div>
-
-            {/* Dynamic Visibility Explanation */}
-            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
-              <Info size={12} color="var(--accent)" style={{ flexShrink: 0 }} />
-              <span>
-                {isPublic
-                  ? "Public: Discoverable in Explore & community search. Requires sign-in to create."
-                  : "Private: Unlisted direct link. Accessible only to people with the URL."}
-              </span>
             </div>
 
             {/* Category Chips when Public */}
@@ -676,35 +676,57 @@ export default function NewPollPage() {
           {/* 2. Poll Format */}
           <div className="block" style={{ marginBottom: 18 }}>
             <label className="field-label" style={{ marginBottom: 6 }}>Poll Format</label>
-            <div className="expiry-row" style={{ flexWrap: "wrap", gap: 8 }}>
-              {POLL_TYPES.map((pt) => {
-                const IconComp = pt.icon;
-                const active = pollType === pt.value;
-                return (
-                  <button
-                    type="button"
-                    key={pt.value}
-                    className={`expiry-chip ${active ? "active" : ""}`}
-                    onClick={() => setPollType(pt.value)}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", fontSize: 13 }}
-                  >
-                    <IconComp size={14} color={active ? "var(--accent)" : "currentColor"} />
-                    <span>{pt.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <div className="format-grid-3">
+              {/* Standard */}
+              <button
+                type="button"
+                className={`visibility-card ${pollType === "standard" ? "active" : ""}`}
+                onClick={() => setPollType("standard")}
+                style={{ padding: "8px 12px", textAlign: "left" }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <Zap size={14} color={pollType === "standard" ? "var(--accent)" : "currentColor"} />
+                  <span>Standard Poll</span>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, lineHeight: 1.2 }}>
+                  Single or multi choice
+                </div>
+              </button>
 
-            {/* Dynamic Format Explanation */}
-            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
-              <Info size={12} color="var(--accent)" style={{ flexShrink: 0 }} />
-              <span>
-                {pollType === "standard" && "Standard: Single choice or multiple selections with standard vote counts."}
-                {pollType === "ranked" && "Ranked Choice: Voters rank choices in order of preference (1st gets max points)."}
-                {pollType === "image" && "Image Poll: Visual choices with image previews for each option."}
-              </span>
+              {/* Ranked Choice */}
+              <button
+                type="button"
+                className={`visibility-card ${pollType === "ranked" ? "active" : ""}`}
+                onClick={() => setPollType("ranked")}
+                style={{ padding: "8px 12px", textAlign: "left" }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <Trophy size={14} color={pollType === "ranked" ? "var(--accent)" : "currentColor"} />
+                  <span>Ranked Choice</span>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, lineHeight: 1.2 }}>
+                  Order of preference
+                </div>
+              </button>
+
+              {/* Image Poll */}
+              <button
+                type="button"
+                className={`visibility-card ${pollType === "image" ? "active" : ""}`}
+                onClick={() => setPollType("image")}
+                style={{ padding: "8px 12px", textAlign: "left" }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <ImageIcon size={14} color={pollType === "image" ? "var(--accent)" : "currentColor"} />
+                  <span>Image Poll</span>
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, lineHeight: 1.2 }}>
+                  Photo choices
+                </div>
+              </button>
             </div>
           </div>
+
 
 
           {/* 3. Question & Description */}
