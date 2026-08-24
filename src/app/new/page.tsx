@@ -567,7 +567,34 @@ export default function NewPollPage() {
 
       <AdSidebarContainer>
         <main style={{ maxWidth: 680, margin: "0 auto", width: "100%", paddingBottom: 60 }}>
-          <div className="section-label">Create new poll</div>
+          {/* Header Row: Title on Left, Poll Settings Trigger on Right */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div className="section-label" style={{ marginBottom: 0 }}>Create new poll</div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(true)}
+              className="btn-ghost"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                padding: "6px 12px",
+                borderRadius: 6,
+                border: "1px solid var(--line)",
+                background: "var(--surface)",
+                color: "var(--ink)",
+                cursor: "pointer",
+                fontWeight: 600,
+                transition: "all 0.15s ease",
+              }}
+              title="Configure security, voter requirements, editing, deadline, and results visibility"
+            >
+              <Settings size={14} color="var(--accent)" />
+              <span>Poll Settings</span>
+            </button>
+          </div>
+
 
           {/* 1. Poll Visibility (First in Flow) */}
           <div className="block" style={{ marginBottom: 24 }}>
@@ -1261,210 +1288,11 @@ export default function NewPollPage() {
             )}
           </div>
 
-          {/* 6. Advanced Settings Drawer (5 Settings) */}
-          <div className="block" style={{ marginBottom: 24 }}>
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{ width: "100%", justifyContent: "space-between", display: "flex", alignItems: "center", fontSize: 13, padding: "10px 14px" }}
-              onClick={() => setShowAdvanced(!showAdvanced)}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Settings size={14} color="var(--accent)" />
-                <span>More Settings (Security, Voter Name, Editing, Deadline, Results)</span>
-              </span>
-              <span>{showAdvanced ? "▲" : "▼"}</span>
-            </button>
-
-            {showAdvanced && (
-              <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 18 }}>
-                {/* 1. Security & Anti-Abuse with Info Tooltip */}
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                    <label className="field-label" style={{ marginBottom: 0 }}>Security & Duplicate Protection</label>
-                  </div>
-                  <div className="expiry-row" style={{ gap: 6, marginBottom: 8 }}>
-                    {SECURITY_MODES.map((sc) => (
-                      <button
-                        type="button"
-                        key={sc.value}
-                        className={`expiry-chip ${securityMode === sc.value ? "active" : ""}`}
-                        onClick={() => {
-                          setSecurityMode(sc.value);
-                          if (sc.value === "unlimited") {
-                            setAllowVoteEdit(false);
-                          }
-                        }}
-                      >
-                        {sc.label}
-                      </button>
-                    ))}
-                  </div>
-                  {/* User-friendly info box */}
-                  <div style={{
-                    marginTop: 8,
-                    background: "var(--paper)",
-                    border: "1px solid var(--line)",
-                    borderRadius: 6,
-                    padding: "8px 12px",
-                    fontSize: 12,
-                    color: "var(--muted)",
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 8,
-                    lineHeight: 1.4
-                  }}>
-                    <Info size={15} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
-                    <div>
-                      <strong style={{ color: "var(--ink)" }}>{selectedSecurityObj.label} Mode:</strong> {selectedSecurityObj.desc}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Require Name */}
-                <label className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    checked={requireName}
-                    onChange={(e) => setRequireName(e.target.checked)}
-                  />
-                  <span>Require voter name before submitting</span>
-                </label>
-
-                {/* 3. Voter Vote Editing Toggle */}
-                <div>
-                  <label className="field-label">Voter Editing</label>
-                  <div
-                    onClick={() => {
-                      if (securityMode !== "unlimited") {
-                        setAllowVoteEdit(!allowVoteEdit);
-                      }
-                    }}
-                    style={{
-                      background: "var(--surface)",
-                      border: "1px solid var(--line)",
-                      borderRadius: 8,
-                      padding: "12px 14px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      cursor: securityMode === "unlimited" ? "not-allowed" : "pointer",
-                      opacity: securityMode === "unlimited" ? 0.6 : 1,
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
-                        Allow voters to change their vote
-                      </div>
-                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                        {securityMode === "unlimited"
-                          ? "Disabled in Unlimited mode — voters can cast new ballots at any time."
-                          : "Voters can update their selection while the poll is live."}
-                      </div>
-                    </div>
-                    <div style={{
-                      width: 36,
-                      height: 20,
-                      borderRadius: 12,
-                      background: (allowVoteEdit && securityMode !== "unlimited") ? "var(--accent)" : "var(--line)",
-                      position: "relative",
-                      transition: "background 0.15s ease",
-                      flexShrink: 0
-                    }}>
-                      <div style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: "50%",
-                        background: "#FFFFFF",
-                        position: "absolute",
-                        top: 2,
-                        left: (allowVoteEdit && securityMode !== "unlimited") ? 18 : 2,
-                        transition: "left 0.15s ease"
-                      }} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Poll Deadline & Custom Duration */}
-                <div>
-                  <label className="field-label">Poll Deadline</label>
-                  <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
-                    {EXPIRY_PRESETS.map((choice) => (
-                      <button
-                        type="button"
-                        key={choice.label}
-                        className={`expiry-chip ${expiryPreset === choice.ms ? "active" : ""}`}
-                        onClick={() => setExpiryPreset(choice.ms)}
-                      >
-                        {choice.label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      className={`expiry-chip ${expiryPreset === "custom" ? "active" : ""}`}
-                      onClick={() => setExpiryPreset("custom")}
-                    >
-                      + Custom
-                    </button>
-                  </div>
-
-                  {expiryPreset === "custom" && (
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", background: "var(--paper)", padding: "10px", borderRadius: 8, border: "1px solid var(--line)" }}>
-                      <input
-                        type="number"
-                        min={1}
-                        max={365}
-                        value={customExpiryValue}
-                        onChange={(e) => setCustomExpiryValue(Math.max(1, parseInt(e.target.value) || 1))}
-                        className="input-text"
-                        style={{ width: 80, padding: "6px 10px", fontSize: 13 }}
-                      />
-                      <select
-                        value={customExpiryUnit}
-                        onChange={(e) => setCustomExpiryUnit(e.target.value as any)}
-                        style={{
-                          padding: "6px 10px",
-                          fontSize: 13,
-                          borderRadius: 6,
-                          border: "1px solid var(--line)",
-                          background: "var(--surface)",
-                          color: "var(--ink)",
-                        }}
-                      >
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                        <option value="days">Days</option>
-                      </select>
-                      <span style={{ fontSize: 12, color: "var(--muted)" }}>from creation</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* 5. Results Visibility (Clean 3 Choices) */}
-                <div>
-                  <label className="field-label">Results Visibility</label>
-                  <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6 }}>
-                    {VISIBILITY_CHOICES.map((vc) => (
-                      <button
-                        type="button"
-                        key={vc.value}
-                        className={`expiry-chip ${resultsVisibility === vc.value ? "active" : ""}`}
-                        onClick={() => setResultsVisibility(vc.value)}
-                      >
-                        {vc.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Error Message */}
           {error && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
 
           {/* Action Buttons: Preview Ballot & Publish */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 12, marginTop: 24, marginBottom: 40 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 12, marginTop: 28, marginBottom: 40 }}>
             <button
               type="button"
               onClick={handleOpenPreview}
@@ -1498,6 +1326,245 @@ export default function NewPollPage() {
               {submitting ? "Creating poll..." : isPublic ? "Publish Public Poll →" : "Create Private Poll →"}
             </button>
           </div>
+
+          {/* ⚙️ Advanced Poll Settings Modal Popup */}
+          {showAdvanced && (
+            <div className="modal-backdrop" style={{ zIndex: 1000 }} onClick={() => setShowAdvanced(false)}>
+              <div
+                className="modal-box"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--line)",
+                  borderRadius: 12,
+                  padding: 24,
+                  maxWidth: 540,
+                  width: "100%",
+                  boxShadow: "0 25px 50px -12px rgba(0,0,0,0.35)",
+                  maxHeight: "90vh",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {/* Modal Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottom: "1px solid var(--line)", paddingBottom: 12 }}>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <Settings size={17} color="var(--accent)" />
+                      <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--ink)" }}>Poll Settings</h2>
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
+                      Configure security, voter requirements, deadline, and results visibility.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-link"
+                    onClick={() => setShowAdvanced(false)}
+                    style={{ fontSize: 18, color: "var(--muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    aria-label="Close settings modal"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Modal Body: Scrollable 5 Settings */}
+                <div style={{ overflowY: "auto", flex: 1, paddingRight: 4, display: "flex", flexDirection: "column", gap: 18 }}>
+                  {/* 1. Security & Anti-Abuse with Info Tooltip */}
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                      <label className="field-label" style={{ marginBottom: 0 }}>Security & Duplicate Protection</label>
+                    </div>
+                    <div className="expiry-row" style={{ gap: 6, marginBottom: 8 }}>
+                      {SECURITY_MODES.map((sc) => (
+                        <button
+                          type="button"
+                          key={sc.value}
+                          className={`expiry-chip ${securityMode === sc.value ? "active" : ""}`}
+                          onClick={() => {
+                            setSecurityMode(sc.value);
+                            if (sc.value === "unlimited") {
+                              setAllowVoteEdit(false);
+                            }
+                          }}
+                        >
+                          {sc.label}
+                        </button>
+                      ))}
+                    </div>
+                    {/* User-friendly info box */}
+                    <div style={{
+                      marginTop: 8,
+                      background: "var(--paper)",
+                      border: "1px solid var(--line)",
+                      borderRadius: 6,
+                      padding: "8px 12px",
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 8,
+                      lineHeight: 1.4
+                    }}>
+                      <Info size={15} color="var(--accent)" style={{ flexShrink: 0, marginTop: 1 }} />
+                      <div>
+                        <strong style={{ color: "var(--ink)" }}>{selectedSecurityObj.label} Mode:</strong> {selectedSecurityObj.desc}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Require Name */}
+                  <label className="checkbox-row">
+                    <input
+                      type="checkbox"
+                      checked={requireName}
+                      onChange={(e) => setRequireName(e.target.checked)}
+                    />
+                    <span>Require voter name before submitting</span>
+                  </label>
+
+                  {/* 3. Voter Vote Editing Toggle */}
+                  <div>
+                    <label className="field-label">Voter Editing</label>
+                    <div
+                      onClick={() => {
+                        if (securityMode !== "unlimited") {
+                          setAllowVoteEdit(!allowVoteEdit);
+                        }
+                      }}
+                      style={{
+                        background: "var(--surface)",
+                        border: "1px solid var(--line)",
+                        borderRadius: 8,
+                        padding: "12px 14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        cursor: securityMode === "unlimited" ? "not-allowed" : "pointer",
+                        opacity: securityMode === "unlimited" ? 0.6 : 1,
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+                          Allow voters to change their vote
+                        </div>
+                        <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                          {securityMode === "unlimited"
+                            ? "Disabled in Unlimited mode — voters can cast new ballots at any time."
+                            : "Voters can update their selection while the poll is live."}
+                        </div>
+                      </div>
+                      <div style={{
+                        width: 36,
+                        height: 20,
+                        borderRadius: 12,
+                        background: (allowVoteEdit && securityMode !== "unlimited") ? "var(--accent)" : "var(--line)",
+                        position: "relative",
+                        transition: "background 0.15s ease",
+                        flexShrink: 0
+                      }}>
+                        <div style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: "50%",
+                          background: "#FFFFFF",
+                          position: "absolute",
+                          top: 2,
+                          left: (allowVoteEdit && securityMode !== "unlimited") ? 18 : 2,
+                          transition: "left 0.15s ease"
+                        }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Poll Deadline & Custom Duration */}
+                  <div>
+                    <label className="field-label">Poll Deadline</label>
+                    <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                      {EXPIRY_PRESETS.map((choice) => (
+                        <button
+                          type="button"
+                          key={choice.label}
+                          className={`expiry-chip ${expiryPreset === choice.ms ? "active" : ""}`}
+                          onClick={() => setExpiryPreset(choice.ms)}
+                        >
+                          {choice.label}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        className={`expiry-chip ${expiryPreset === "custom" ? "active" : ""}`}
+                        onClick={() => setExpiryPreset("custom")}
+                      >
+                        + Custom
+                      </button>
+                    </div>
+
+                    {expiryPreset === "custom" && (
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", background: "var(--paper)", padding: "10px", borderRadius: 8, border: "1px solid var(--line)" }}>
+                        <input
+                          type="number"
+                          min={1}
+                          max={365}
+                          value={customExpiryValue}
+                          onChange={(e) => setCustomExpiryValue(Math.max(1, parseInt(e.target.value) || 1))}
+                          className="input-text"
+                          style={{ width: 80, padding: "6px 10px", fontSize: 13 }}
+                        />
+                        <select
+                          value={customExpiryUnit}
+                          onChange={(e) => setCustomExpiryUnit(e.target.value as any)}
+                          style={{
+                            padding: "6px 10px",
+                            fontSize: 13,
+                            borderRadius: 6,
+                            border: "1px solid var(--line)",
+                            background: "var(--surface)",
+                            color: "var(--ink)",
+                          }}
+                        >
+                          <option value="minutes">Minutes</option>
+                          <option value="hours">Hours</option>
+                          <option value="days">Days</option>
+                        </select>
+                        <span style={{ fontSize: 12, color: "var(--muted)" }}>from creation</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 5. Results Visibility (Clean 3 Choices) */}
+                  <div>
+                    <label className="field-label">Results Visibility</label>
+                    <div className="expiry-row" style={{ flexWrap: "wrap", gap: 6 }}>
+                      {VISIBILITY_CHOICES.map((vc) => (
+                        <button
+                          type="button"
+                          key={vc.value}
+                          className={`expiry-chip ${resultsVisibility === vc.value ? "active" : ""}`}
+                          onClick={() => setResultsVisibility(vc.value)}
+                        >
+                          {vc.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer: Save & Close Button */}
+                <div style={{ marginTop: 20, paddingTop: 12, borderTop: "1px solid var(--line)", display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setShowAdvanced(false)}
+                    style={{ padding: "8px 20px", fontSize: 13, fontWeight: 700 }}
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
 
 
         {/* 👁️ Interactive Live Ballot Preview Modal */}
