@@ -38,6 +38,7 @@ import {
   Check,
   CheckCircle2,
   X,
+  UserCheck,
   GripVertical,
   ChevronUp,
   ChevronDown,
@@ -145,6 +146,7 @@ function PollContent() {
   const [chartType, setChartType] = useState<"cards" | "ledger" | "donut">("ledger");
   const [showAdminKeyBanner, setShowAdminKeyBanner] = useState(true);
   const [adminLinkCopied, setAdminLinkCopied] = useState(false);
+  const [copiedInvite, setCopiedInvite] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showIRVSteps, setShowIRVSteps] = useState(false);
 
@@ -363,12 +365,20 @@ function PollContent() {
     return `🗳️ Cast your vote on Ballot:\n${q}\n\n👉 Tap to vote (100% free, no signup needed):\n${url}`;
   }
 
-  function copyPollingLink() {
+  function copyDirectLink() {
+    const url = getShareUrl();
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    showToast("✓ Direct poll link copied!");
+    setTimeout(() => setCopiedLink(false), 2000);
+  }
+
+  function copyInviteMessage() {
     const textToCopy = getFormattedShareMessage();
     navigator.clipboard.writeText(textToCopy);
-    setCopiedLink(true);
+    setCopiedInvite(true);
     showToast("✓ Invite message with link copied!");
-    setTimeout(() => setCopiedLink(false), 2000);
+    setTimeout(() => setCopiedInvite(false), 2000);
   }
 
   async function handleShare() {
@@ -384,7 +394,36 @@ function PollContent() {
         return;
       } catch {}
     }
-    copyPollingLink();
+    copyInviteMessage();
+  }
+
+  async function handleShareOrDownloadQR() {
+    const url = getShareUrl();
+    const qrPngUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(url)}&format=png`;
+    try {
+      const resp = await fetch(qrPngUrl);
+      const blob = await resp.blob();
+      const file = new File([blob], `ballot_qr_${slug}.png`, { type: "image/png" });
+
+      if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `🗳️ ${poll?.question || "Ballot Poll"} QR`,
+          text: `Scan to vote on "${poll?.question || "this poll"}" on Ballot:\n${url}`,
+        });
+        return;
+      }
+    } catch {}
+
+    // Fallback: direct download
+    const link = document.createElement("a");
+    link.href = qrPngUrl;
+    link.download = `ballot_qr_${slug}.png`;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("✓ QR Code saved!");
   }
 
 
@@ -1898,6 +1937,42 @@ function PollContent() {
                           </div>
                         </div>
                       )}
+
+                      {/* 4. Voter Ledger Attendance Breakdown (If Require Name was enabled and voters exist) */}
+                      {poll.requireName && poll.voters && poll.voters.length > 0 && (
+                        <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
+                              <UserCheck size={14} color="var(--accent)" />
+                              <span>Voter Attendance ({poll.voters.length})</span>
+                            </div>
+                            <span style={{ fontSize: 11, color: "var(--muted)" }}>Recorded voter choices</span>
+                          </div>
+
+                          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 220, overflowY: "auto", paddingRight: 4 }}>
+                            {poll.voters.map((voter, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  background: "var(--paper)",
+                                  border: "1px solid var(--line)",
+                                  borderRadius: 6,
+                                  padding: "7px 12px",
+                                  fontSize: 12,
+                                }}
+                              >
+                                <span style={{ fontWeight: 600, color: "var(--ink)" }}>{voter.name || "Anonymous"}</span>
+                                <span style={{ color: "var(--muted)", fontSize: 11, textAlign: "right", maxWidth: "60%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {(voter.choices || []).join(", ") || "—"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Voter Action: Change Vote Button or Creator Test Vote Button */}
                       {!poll.isInactive && (
@@ -1963,8 +2038,8 @@ function PollContent() {
 
         {/* Typeform-Style Minimalist Squircle Action Bar */}
         <div className="typeform-action-bar">
-          {/* 1. Polling Link */}
-          <button type="button" onClick={copyPollingLink} className="action-text-btn" title="Copy public polling link">
+          {/* 1. Polling Link (Clean Direct URL) */}
+          <button type="button" onClick={copyDirectLink} className="action-text-btn" title="Copy clean direct polling link">
             <span>Polling link</span>
             <span className={`action-tile ${copiedLink ? "copied" : ""}`}>
               <AnimatedCopyIcon copied={copiedLink} size={13} />
@@ -1980,6 +2055,7 @@ function PollContent() {
             </span>
           </button>
 
+          {/* Owner/Admin Controls Only */}
           {poll.isAdmin && (
             <>
               {/* Subtle Divider */}
@@ -1993,26 +2069,14 @@ function PollContent() {
                 </span>
               </button>
 
-              {/* 4. CSV & JSON Export */}
+              {/* 4. CSV Export (Without JSON) */}
               <button
                 type="button"
-                onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
+                onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0, poll.voters)}
                 className="action-text-btn"
-                title="Download raw CSV results"
+                title="Download CSV results"
               >
                 <span>CSV</span>
-                <span className="action-tile">
-                  <Download size={13} />
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => exportToJSON(poll)}
-                className="action-text-btn"
-                title="Download complete JSON data"
-              >
-                <span>JSON</span>
                 <span className="action-tile">
                   <Download size={13} />
                 </span>
@@ -2299,15 +2363,49 @@ function PollContent() {
                 </div>
               </div>
 
-              {/* Allow Vote Edit Toggle */}
-              <label className="checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={editAllowVoteEdit}
-                  onChange={(e) => setEditAllowVoteEdit(e.target.checked)}
-                />
-                <span>Allow voters to change their vote while live</span>
-              </label>
+              {/* Allow Vote Edit Toggle Card */}
+              <div
+                onClick={() => setEditAllowVoteEdit(!editAllowVoteEdit)}
+                style={{
+                  background: "var(--surface)",
+                  border: "1px solid var(--line)",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: "pointer",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>
+                    Allow voters to change their vote
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                    Voters can update their selection while the poll is live.
+                  </div>
+                </div>
+                <div style={{
+                  width: 36,
+                  height: 20,
+                  borderRadius: 12,
+                  background: editAllowVoteEdit ? "var(--accent)" : "var(--line)",
+                  position: "relative",
+                  transition: "background 0.15s ease",
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: "50%",
+                    background: "#FFFFFF",
+                    position: "absolute",
+                    top: 2,
+                    left: editAllowVoteEdit ? 18 : 2,
+                    transition: "left 0.15s ease"
+                  }} />
+                </div>
+              </div>
 
               {/* Actions & Lifecycle Box */}
               <div style={{ background: "var(--paper)", padding: 14, borderRadius: 8, border: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 10 }}>
@@ -2339,24 +2437,13 @@ function PollContent() {
 
                   <button
                     type="button"
-                    onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0)}
+                    onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0, poll.voters)}
                     className="btn-ghost"
                     style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
                     <Download size={12} />
                     <span>Download CSV</span>
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={() => exportToJSON(poll)}
-                    className="btn-ghost"
-                    style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
-                  >
-                    <Download size={12} />
-                    <span>Download JSON</span>
-                  </button>
-
                 </div>
               </div>
 
@@ -2438,27 +2525,36 @@ function PollContent() {
               <span>100% Safe · No App Install · No Signup</span>
             </div>
 
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
               <button
                 type="button"
                 onClick={handleShare}
                 className="btn-primary"
-                style={{ flex: 1, fontSize: 13, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                style={{ fontSize: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 10px" }}
               >
                 <Share2 size={13} />
                 <span>Share to Apps</span>
               </button>
               <button
                 type="button"
-                onClick={copyPollingLink}
+                onClick={copyInviteMessage}
                 className="btn-ghost"
-                style={{ flex: 1, fontSize: 13, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+                style={{ fontSize: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "8px 10px" }}
               >
-                <AnimatedCopyIcon copied={copiedLink} size={15} />
-                <span>{copiedLink ? "Copied!" : "Copy Invite"}</span>
+                <AnimatedCopyIcon copied={copiedInvite} size={14} />
+                <span>{copiedInvite ? "Copied!" : "Copy Invite"}</span>
               </button>
-
             </div>
+
+            <button
+              type="button"
+              onClick={handleShareOrDownloadQR}
+              className="btn-ghost"
+              style={{ width: "100%", fontSize: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8, padding: "8px 10px" }}
+            >
+              <Download size={13} />
+              <span>Share / Save QR Image</span>
+            </button>
 
             <button type="button" onClick={() => setShowQR(false)} className="btn-ghost" style={{ width: "100%", fontSize: 12 }}>
               Close

@@ -75,8 +75,13 @@ export function calculateSlices(
 /**
  * Generates and downloads a CSV export of poll results.
  */
-export function exportToCSV(question: string, options: { label: string; votes: number }[], totalVotes: number) {
-  const rows = [
+export function exportToCSV(
+  question: string,
+  options: { label: string; votes: number }[],
+  totalVotes: number,
+  voters?: { name: string; choices: string[] }[]
+) {
+  const rows: string[][] = [
     ["Poll Question", `"${question.replace(/"/g, '""')}"`],
     ["Total Votes", totalVotes.toString()],
     ["Export Date", new Date().toISOString()],
@@ -87,6 +92,18 @@ export function exportToCSV(question: string, options: { label: string; votes: n
       return [`"${o.label.replace(/"/g, '""')}"`, o.votes.toString(), `${pct}%`];
     }),
   ];
+
+  if (voters && voters.length > 0) {
+    rows.push([]);
+    rows.push(["--- Voter Attendance & Selections ---"]);
+    rows.push(["Voter Name", "Selected Choice(s)"]);
+    for (const v of voters) {
+      rows.push([
+        `"${(v.name || "Anonymous").replace(/"/g, '""')}"`,
+        `"${(v.choices || []).join(", ").replace(/"/g, '""')}"`,
+      ]);
+    }
+  }
 
   const csvContent = "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
   const encodedUri = encodeURI(csvContent);
