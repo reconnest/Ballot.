@@ -97,7 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     const { token: voterToken, isNew } = resolveVoterToken(req);
 
     const isUnlimited = poll.securityMode === "unlimited" || poll.securityMode === "none";
-    const effectiveVoterToken = isUnlimited ? nanoid() : voterToken;
+    const effectiveVoterToken = voterToken;
 
     let existingVote = null;
     if (!isUnlimited) {
@@ -250,7 +250,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
     } catch {}
 
     const res = NextResponse.json({ ok: true, ballotId, isEdit: isVoteEdit });
-    if (isNew) attachVoterCookie(res, voterToken);
+    attachVoterCookie(res, voterToken);
     return res;
 
 

@@ -180,8 +180,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
 
       totalVotes: canViewResults ? totalBallots : null,
       totalSelections: canViewResults ? pollVotes.length : null,
-      myVote: poll.securityMode === "unlimited" ? null : myVote,
-      myVotes: poll.securityMode === "unlimited" ? [] : myVotesList,
+      myVote: myVote,
+      myVotes: myVotesList,
       hasVoted,
       canViewResults,
       isAdmin,
