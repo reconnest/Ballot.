@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
-import Link from "next/link";
 import { BallotLogo } from "@/components/BallotLogo";
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -58,56 +58,26 @@ export default function NotFound() {
           color: "var(--muted)",
           maxWidth: 360,
           lineHeight: 1.6,
-          marginBottom: 36,
+          marginBottom: 0,
         }}
       >
         It may have been removed, the link might be incorrect, or this poll
         never existed.
       </p>
 
-      {/* CTAs */}
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-        <Link
-          href="/new"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "11px 22px",
-            background: "var(--accent)",
-            color: "#fff",
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Create a Poll ?
-        </Link>
-        <Link
-          href="/explore"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "11px 22px",
-            background: "var(--surface)",
-            color: "var(--ink)",
-            border: "1px solid var(--line)",
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Explore Polls
-        </Link>
-      </div>
-
-      {/* Footer note */}
-      <p style={{ marginTop: 48, fontSize: 12, color: "var(--faint)" }}>
+      {/* Clickable URL at bottom */}
+      <a
+        href="https://ballot-poll.vercel.app"
+        style={{
+          marginTop: 48,
+          fontSize: 12,
+          color: "var(--accent)",
+          textDecoration: "underline",
+          textUnderlineOffset: 3,
+        }}
+      >
         ballot-poll.vercel.app
-      </p>
+      </a>
     </div>
   );
 }

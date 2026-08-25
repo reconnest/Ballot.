@@ -107,17 +107,21 @@ type PollData = {
   voters: VoterEntry[];
 };
 
-/** Expandable voter attendance list — shows first N voters, rest hidden behind a button */
-function VoterLedger({ voters, initialShow }: { voters: VoterEntry[]; initialShow: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const visible = expanded ? voters : voters.slice(0, initialShow);
-  const hasMore = voters.length > initialShow;
+/** Paginated voter attendance list — 50 votes per page */
+function VoterLedger({ voters, pageSize = 50 }: { voters: VoterEntry[]; pageSize?: number }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(voters.length / pageSize) || 1;
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, voters.length);
+  const visible = voters.slice(startIndex, endIndex);
+
   return (
     <div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 380, overflowY: "auto", paddingRight: 4 }}>
         {visible.map((voter, idx) => (
           <div
-            key={idx}
+            key={startIndex + idx}
             style={{
               display: "flex",
               justifyContent: "space-between",
@@ -136,26 +140,60 @@ function VoterLedger({ voters, initialShow }: { voters: VoterEntry[]; initialSho
           </div>
         ))}
       </div>
-      {hasMore && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
+      {totalPages > 1 && (
+        <div
           style={{
-            marginTop: 8,
-            fontSize: 11,
-            fontWeight: 600,
-            color: "var(--accent)",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
+            marginTop: 12,
             display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
-            gap: 4,
+            fontSize: 12,
+            color: "var(--muted)",
           }}
         >
-          {expanded ? `↑ Show less` : `↓ Show all ${voters.length} voters`}
-        </button>
+          <span>
+            Showing {startIndex + 1}–{endIndex} of {voters.length}
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              type="button"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              style={{
+                padding: "4px 10px",
+                fontSize: 11,
+                fontWeight: 600,
+                borderRadius: 4,
+                border: "1px solid var(--line)",
+                background: safePage <= 1 ? "transparent" : "var(--surface)",
+                color: safePage <= 1 ? "var(--faint)" : "var(--ink)",
+                cursor: safePage <= 1 ? "not-allowed" : "pointer",
+              }}
+            >
+              ← Prev
+            </button>
+            <span style={{ fontSize: 11, fontWeight: 500 }}>
+              {safePage} / {totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              style={{
+                padding: "4px 10px",
+                fontSize: 11,
+                fontWeight: 600,
+                borderRadius: 4,
+                border: "1px solid var(--line)",
+                background: safePage >= totalPages ? "transparent" : "var(--surface)",
+                color: safePage >= totalPages ? "var(--faint)" : "var(--ink)",
+                cursor: safePage >= totalPages ? "not-allowed" : "pointer",
+              }}
+            >
+              Next →
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1974,7 +2012,7 @@ function PollContent() {
                             </div>
                             <span style={{ fontSize: 11, color: "var(--muted)" }}>Recorded voter choices</span>
                           </div>
-                          <VoterLedger voters={poll.voters} initialShow={8} />
+                          <VoterLedger voters={poll.voters} pageSize={50} />
                         </div>
                       )}
 
