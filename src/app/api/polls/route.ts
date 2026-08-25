@@ -6,6 +6,7 @@ import { randomBytes, createHash } from "crypto";
 import { getClientIp, generateIpSalt, checkPollCreationRateLimit } from "@/lib/security";
 import { getSessionUser } from "@/lib/auth";
 import { captureException } from "@/lib/error-monitor";
+import { sendPollConfirmationEmail } from "@/lib/email";
 
 
 const scopedCode = customAlphabet("23456789ABCDEFGHJKLMNPQRSTUVWXYZ", 6);
@@ -144,7 +145,15 @@ export async function POST(req: NextRequest) {
       }))
     );
 
-    return NextResponse.json({ slug, adminKey, isPublic: isPublic === 1 });
+    const response = NextResponse.json({ slug, adminKey, isPublic: isPublic === 1 });
+
+    // Send confirmation email to signed-in creator (fire-and-forget, non-blocking)
+    if (sessionUser?.email) {
+      const pollUrl = `${process.env.NEXT_PUBLIC_BASE_URL || "https://ballot-poll.vercel.app"}/p/${slug}`;
+      sendPollConfirmationEmail(sessionUser.email, question, pollUrl).catch(() => {});
+    }
+
+    return response;
   } catch (e) {
     captureException(e, { route: "POST /api/polls" });
     return NextResponse.json({ error: "Could not create poll." }, { status: 500 });

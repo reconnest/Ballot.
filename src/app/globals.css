@@ -76,12 +76,12 @@ body {
   margin-bottom: 16px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .ranked-split-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
-
 
 
 

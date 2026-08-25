@@ -286,6 +286,11 @@ export default function HomePage() {
                 Create<span style={{ color: "var(--accent)" }}>.</span> Share<span style={{ color: "var(--accent)" }}>.</span> Decide<span style={{ color: "var(--accent)" }}>.</span>
               </h1>
 
+              {/* Product description for new visitors */}
+              <p style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 0 8px" }}>
+                The modern polling platform
+              </p>
+
               <p className="hero-desc">
                 Create real-time polls with ranked voting, share one instant link with your audience, and decide together with live analytics.
               </p>
@@ -303,6 +308,8 @@ export default function HomePage() {
                 <span>No signup for voters</span>
                 <span>•</span>
                 <span>Real-time results</span>
+                <span>•</span>
+                <span>100% free</span>
               </div>
             </div>
 

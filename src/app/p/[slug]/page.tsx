@@ -107,6 +107,60 @@ type PollData = {
   voters: VoterEntry[];
 };
 
+/** Expandable voter attendance list — shows first N voters, rest hidden behind a button */
+function VoterLedger({ voters, initialShow }: { voters: VoterEntry[]; initialShow: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? voters : voters.slice(0, initialShow);
+  const hasMore = voters.length > initialShow;
+  return (
+    <div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {visible.map((voter, idx) => (
+          <div
+            key={idx}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "var(--paper)",
+              border: "1px solid var(--line)",
+              borderRadius: 6,
+              padding: "7px 12px",
+              fontSize: 12,
+            }}
+          >
+            <span style={{ fontWeight: 600, color: "var(--ink)" }}>{voter.name || "Anonymous"}</span>
+            <span style={{ color: "var(--muted)", fontSize: 11, textAlign: "right", maxWidth: "60%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {(voter.choices || []).join(", ") || "—"}
+            </span>
+          </div>
+        ))}
+      </div>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          style={{
+            marginTop: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            color: "var(--accent)",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          {expanded ? `↑ Show less` : `↓ Show all ${voters.length} voters`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function PollContent() {
   const router = useRouter();
   const params = useParams();
@@ -1920,32 +1974,10 @@ function PollContent() {
                             </div>
                             <span style={{ fontSize: 11, color: "var(--muted)" }}>Recorded voter choices</span>
                           </div>
-
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 220, overflowY: "auto", paddingRight: 4 }}>
-                            {poll.voters.map((voter, idx) => (
-                              <div
-                                key={idx}
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  background: "var(--paper)",
-                                  border: "1px solid var(--line)",
-                                  borderRadius: 6,
-                                  padding: "7px 12px",
-                                  fontSize: 12,
-                                }}
-                              >
-                                <span style={{ fontWeight: 600, color: "var(--ink)" }}>{voter.name || "Anonymous"}</span>
-                                <span style={{ color: "var(--muted)", fontSize: 11, textAlign: "right", maxWidth: "60%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {(voter.choices || []).join(", ") || "—"}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
+                          <VoterLedger voters={poll.voters} initialShow={8} />
                         </div>
                       )}
-                      
+
                       {/* Voter Action: Change Vote Button or Creator Test Vote Button */}
                       {!poll.isInactive && (
                         <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>

@@ -44,6 +44,18 @@ export default function EmbedPollPage() {
     return () => clearInterval(timer);
   }, [slug]);
 
+  // Auto-resize the parent iframe whenever the content height changes
+  useEffect(() => {
+    function sendHeight() {
+      const height = document.body.scrollHeight;
+      window.parent.postMessage({ type: "ballot-resize", height }, "*");
+    }
+    sendHeight();
+    const observer = new ResizeObserver(sendHeight);
+    observer.observe(document.body);
+    return () => observer.disconnect();
+  }, [poll]);
+
   function toggleOption(id: string) {
     if (!poll) return;
     if (poll.allowMultiple) {
