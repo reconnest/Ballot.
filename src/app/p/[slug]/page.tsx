@@ -48,6 +48,7 @@ import {
   LayoutGrid,
   PieChart,
   Infinity as InfinityIcon,
+  Clock,
   Vote,
   Edit3,
   PlayCircle,
@@ -195,6 +196,86 @@ function VoterLedger({ voters, pageSize = 50 }: { voters: VoterEntry[]; pageSize
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Live countdown timer component for polls with a deadline */
+function PollClosingTimer({ expiresAt, isExpired }: { expiresAt: number; isExpired?: boolean }) {
+  const [now, setNow] = useState<number>(() => Date.now());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const remainingMs = Math.max(0, expiresAt - now);
+  const closed = isExpired || remainingMs <= 0;
+
+  if (closed) {
+    return (
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          fontSize: 11,
+          fontWeight: 700,
+          color: "#DC2626",
+          background: "#FEE2E2",
+          border: "1px solid #FCA5A5",
+          padding: "2px 8px",
+          borderRadius: 12,
+          letterSpacing: "0.02em",
+        }}
+        title="This poll has reached its closing deadline"
+      >
+        <Clock size={12} />
+        <span>Poll Closed</span>
+      </div>
+    );
+  }
+
+  const totalSeconds = Math.floor(remainingMs / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  let timeText = "";
+  if (days > 0) {
+    timeText = `${days}d ${hours}h left`;
+  } else if (hours > 0) {
+    timeText = `${hours}h ${minutes}m ${seconds}s left`;
+  } else if (minutes > 0) {
+    timeText = `${minutes}m ${seconds}s left`;
+  } else {
+    timeText = `${seconds}s left`;
+  }
+
+  const isUrgent = remainingMs < 60 * 60 * 1000; // Under 1 hour
+
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        fontSize: 11,
+        fontWeight: 600,
+        color: isUrgent ? "#B91C1C" : "var(--accent-ink)",
+        background: isUrgent ? "#FEF2F2" : "var(--accent-soft)",
+        border: isUrgent ? "1px solid #F87171" : "1px solid var(--accent)",
+        padding: "2px 8px",
+        borderRadius: 12,
+        fontVariantNumeric: "tabular-nums",
+      }}
+      title={`Closes at ${new Date(expiresAt).toLocaleString()}`}
+    >
+      <Clock size={12} color={isUrgent ? "#DC2626" : "var(--accent)"} />
+      <span>{timeText}</span>
     </div>
   );
 }
@@ -1054,16 +1135,22 @@ function PollContent() {
               {poll.securityMode === "unlimited" && (
                 <span className="badge-type" style={{ background: "var(--accent-soft)", color: "var(--accent-ink)", border: "1px solid var(--accent)", display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <InfinityIcon size={12} />
-                  <span>Unlimited</span>
+                  <span>Unlimited Voting</span>
                 </span>
               )}
             </div>
 
+            {/* Top-Right: Poll Closing Timer (if deadline exists) & Live Count */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {poll.expiresAt && (
+                <PollClosingTimer expiresAt={poll.expiresAt} isExpired={poll.isExpired} />
+              )}
 
-            {/* Live Spectator Indicator */}
-            <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: isLiveConnected ? "#10B981" : "#F59E0B", display: "inline-block" }} />
-              <span>{activeViewers} live</span>
+              {/* Live Spectator Indicator */}
+              <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: isLiveConnected ? "#10B981" : "#F59E0B", display: "inline-block" }} />
+                <span>{activeViewers} live</span>
+              </div>
             </div>
           </div>
 
@@ -1105,6 +1192,29 @@ function PollContent() {
         {/* 1. VOTING FORM */}
         {showVotingUI ? (
           <form onSubmit={handleVoteSubmit} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 20 }}>
+            {/* Unlimited Voting Explanatory Banner */}
+            {poll.securityMode === "unlimited" && !isCastingAnotherVote && (
+              <div
+                style={{
+                  background: "var(--accent-soft)",
+                  border: "1px solid var(--accent)",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontSize: 12,
+                  color: "var(--accent-ink)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 16,
+                  lineHeight: 1.4,
+                }}
+              >
+                <InfinityIcon size={16} style={{ flexShrink: 0, color: "var(--accent)" }} />
+                <span>
+                  <strong>Unlimited Poll:</strong> Anyone can cast their vote any number of times. Repeat votes are allowed.
+                </span>
+              </div>
+            )}
             {isCastingAnotherVote && (
               <div style={{
                 background: "var(--accent-soft)",
@@ -2020,19 +2130,25 @@ function PollContent() {
                       {!poll.isInactive && (
                         <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--line)", textAlign: "center" }}>
                           {poll.securityMode === "unlimited" ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedIds([]);
-                                setIsEditingVote(false);
-                                setIsCastingAnotherVote(true);
-                              }}
-                              className="btn-ghost"
-                              style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
-                            >
-                              <AnimatedRefreshIcon size={14} />
-                              <span>Cast Another Vote</span>
-                            </button>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                              <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                                <InfinityIcon size={14} color="var(--accent)" />
+                                <span>Unlimited voting is enabled. You can cast your vote any number of times.</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedIds([]);
+                                  setIsEditingVote(false);
+                                  setIsCastingAnotherVote(true);
+                                }}
+                                className="btn-ghost"
+                                style={{ fontSize: 13, gap: 6, display: "inline-flex", alignItems: "center" }}
+                              >
+                                <AnimatedRefreshIcon size={14} />
+                                <span>Cast Another Vote</span>
+                              </button>
+                            </div>
                           ) : poll.hasVoted && poll.allowVoteEdit ? (
                             <button
                               type="button"
