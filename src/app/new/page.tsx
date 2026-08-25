@@ -151,10 +151,22 @@ export default function NewPollPage() {
   const [securityMode, setSecurityMode] = useState("relaxed");
   const [allowVoteEdit, setAllowVoteEdit] = useState(true);
 
+  // Format local date-time string helper for datetime-local (e.g. YYYY-MM-DDTHH:mm)
+  function getTomorrowLocalIso(): string {
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  }
+
+  function getMinLocalIso(): string {
+    const d = new Date(Date.now() + 5 * 60 * 1000);
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  }
+
   // Deadline & Custom Time Limit
   const [expiryPreset, setExpiryPreset] = useState<number | null | "custom">(null);
-  const [customExpiryValue, setCustomExpiryValue] = useState<number>(3);
-  const [customExpiryUnit, setCustomExpiryUnit] = useState<"hours" | "days" | "minutes">("days");
+  const [customDateTime, setCustomDateTime] = useState<string>("");
 
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkText, setBulkText] = useState("");
@@ -418,12 +430,10 @@ export default function NewPollPage() {
     if (expiryPreset === null) return null;
     if (typeof expiryPreset === "number") return expiryPreset;
     if (expiryPreset === "custom") {
-      const multipliers = {
-        minutes: 60 * 1000,
-        hours: 60 * 60 * 1000,
-        days: 24 * 60 * 60 * 1000,
-      };
-      return Math.max(1, customExpiryValue) * multipliers[customExpiryUnit];
+      if (!customDateTime) return 24 * 60 * 60 * 1000;
+      const targetTime = new Date(customDateTime).getTime();
+      const diff = targetTime - Date.now();
+      return Math.max(60 * 1000, diff); // at least 1 minute
     }
     return null;
   }
@@ -1562,9 +1572,14 @@ export default function NewPollPage() {
                       value={expiryPreset === "custom" ? "custom" : expiryPreset === null ? "none" : `${expiryPreset}`}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val === "none") setExpiryPreset(null);
-                        else if (val === "custom") setExpiryPreset("custom");
-                        else setExpiryPreset(parseInt(val, 10));
+                        if (val === "none") {
+                          setExpiryPreset(null);
+                        } else if (val === "custom") {
+                          setExpiryPreset("custom");
+                          if (!customDateTime) setCustomDateTime(getTomorrowLocalIso());
+                        } else {
+                          setExpiryPreset(parseInt(val, 10));
+                        }
                       }}
                       style={{
                         width: "100%",
@@ -1581,39 +1596,32 @@ export default function NewPollPage() {
                     >
                       <option value="none">No limit (Never expires)</option>
                       <option value="3600000">1 hour</option>
-                      <option value="86400000">24 hours</option>
-                      <option value="604800000">7 days</option>
-                      <option value="2592000000">30 days</option>
-                      <option value="custom">Custom duration...</option>
+                      <option value="86400000">24 hours (1 day)</option>
+                      <option value="259200000">3 days</option>
+                      <option value="604800000">7 days (1 week)</option>
+                      <option value="2592000000">30 days (1 month)</option>
+                      <option value="custom">Specific date & time...</option>
                     </select>
 
                     {expiryPreset === "custom" && (
-                      <div style={{ display: "flex", gap: 6, alignItems: "center", background: "var(--paper)", padding: "6px 8px", borderRadius: 6, border: "1px solid var(--line)", marginTop: 6 }}>
+                      <div style={{ marginTop: 6 }}>
                         <input
-                          type="number"
-                          min={1}
-                          max={365}
-                          value={customExpiryValue}
-                          onChange={(e) => setCustomExpiryValue(Math.max(1, parseInt(e.target.value) || 1))}
+                          type="datetime-local"
+                          value={customDateTime || getTomorrowLocalIso()}
+                          min={getMinLocalIso()}
+                          onChange={(e) => setCustomDateTime(e.target.value)}
                           className="input-text"
-                          style={{ width: 60, padding: "4px 8px", fontSize: 12 }}
-                        />
-                        <select
-                          value={customExpiryUnit}
-                          onChange={(e) => setCustomExpiryUnit(e.target.value as any)}
                           style={{
-                            padding: "4px 8px",
+                            width: "100%",
+                            height: 36,
+                            padding: "0 10px",
                             fontSize: 12,
-                            borderRadius: 4,
+                            borderRadius: 6,
                             border: "1px solid var(--line)",
-                            background: "var(--surface)",
+                            background: "var(--paper)",
                             color: "var(--ink)",
                           }}
-                        >
-                          <option value="minutes">Minutes</option>
-                          <option value="hours">Hours</option>
-                          <option value="days">Days</option>
-                        </select>
+                        />
                       </div>
                     )}
                   </div>
