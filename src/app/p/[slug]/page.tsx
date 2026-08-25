@@ -1327,57 +1327,6 @@ function PollContent() {
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {poll.pollType === "ranked_choice" ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {/* 1. Official Points Consensus Winner Banner */}
-                <div>
-                  {(() => {
-                    const lb = poll.rankedPointsResult?.leaderboard;
-                    if (!lb || lb.length === 0 || poll.totalVotes === 0) {
-                      return (
-                        <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 8, padding: "14px 16px", textAlign: "center", color: "var(--muted)", fontSize: 13 }}>
-                          Leaderboard will be calculated once votes are received.
-                        </div>
-                      );
-                    }
-
-                    const winner = lb[0];
-                    const isTied = lb.length > 1 && lb[1].totalPoints === winner.totalPoints && winner.totalPoints > 0;
-
-                    return (
-                      <div style={{
-                        background: isTied ? "var(--paper)" : "var(--accent-soft)",
-                        border: isTied ? "1px solid var(--line)" : "1px solid var(--accent)",
-                        borderRadius: 8,
-                        padding: "14px 16px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 10,
-                        flexWrap: "wrap",
-                        boxShadow: isTied ? "none" : "0 4px 12px rgba(15, 118, 110, 0.12)",
-                      }}>
-                        <div>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent-ink)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2, display: "flex", alignItems: "center", gap: 5 }}>
-                            {isTied ? <BarChart3 size={13} /> : <Trophy size={13} />}
-                            <span>{isTied ? "Tied Consensus (Equal Points)" : "Official Points Consensus Winner"}</span>
-                          </div>
-                          <div style={{ fontSize: 17, fontWeight: 700, color: "var(--ink)" }}>
-                            {winner.label}
-                          </div>
-                          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>
-                            {winner.firstChoiceVotes} first-choice picks ({winner.scorePct}% score share)
-                          </div>
-                        </div>
-
-                        <div style={{ textAlign: "right" }}>
-                          <span style={{ fontSize: 20, fontWeight: 800, color: "var(--accent-ink)", fontFamily: "monospace" }}>
-                            {winner.totalPoints} pts
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-
                 {/* ↔ Split Comparison: Left 35% = Your Preference, Right 65% = Points Leaderboard */}
                 <div className="ranked-split-grid">
                   {/* Left Column (35%): Your Personal Preference & Points */}
@@ -1514,13 +1463,18 @@ function PollContent() {
                                 >
                                   {/* Tied Group Header */}
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px dashed var(--line)", paddingBottom: 6 }}>
-                                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                                       <span style={{ display: "inline-flex", alignItems: "center" }}>
                                         {rankIcon}
                                       </span>
                                       <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: isTop ? "var(--accent-ink)" : "var(--muted)" }}>
                                         #{thisGroupRank} (Tied) · {grp.items.length} Options
                                       </span>
+                                      {isTop && (
+                                        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                                          <AnimatedTrophyIcon size={13} /> Leader
+                                        </span>
+                                      )}
                                     </div>
                                     <span style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--ink)" }}>
                                       {grp.points} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({grp.scorePct}%)</span>
@@ -1581,6 +1535,11 @@ function PollContent() {
                                     <span style={{ fontWeight: isTop ? 700 : 600, color: isTop ? "var(--accent-ink)" : "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                       {item.label}
                                     </span>
+                                    {isTop && (
+                                      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", background: "var(--accent-soft)", padding: "1px 6px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+                                        <AnimatedTrophyIcon size={13} /> Leader
+                                      </span>
+                                    )}
                                   </div>
                                   <span style={{ fontFamily: "monospace", fontSize: 12, fontWeight: 700, color: isTop ? "var(--accent-ink)" : "var(--ink)" }}>
                                     {item.totalPoints} pts <span style={{ color: "var(--muted)", fontWeight: 500 }}>({item.scorePct}%)</span>
