@@ -16,7 +16,9 @@ export const fetchCache = "force-no-store";
 const scopedCode = customAlphabet("23456789ABCDEFGHJKLMNPQRSTUVWXYZ", 6);
 
 function verifyAdmin(key: string | null, hash: string | null, sessionUserId?: string, pollCreatorId?: string | null): boolean {
-  if (sessionUserId && pollCreatorId && sessionUserId === pollCreatorId) return true;
+  if (pollCreatorId) {
+    return !!(sessionUserId && sessionUserId === pollCreatorId);
+  }
   if (!key || !hash) return false;
   const computed = createHash("sha256").update(key.trim()).digest("hex");
   return computed === hash;

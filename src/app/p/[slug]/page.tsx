@@ -274,6 +274,18 @@ function PollContent() {
       }
       const data: PollData = await res.json();
       setPoll(data);
+      if (!data.isAdmin) {
+        setAdminKey(null);
+        if (data.creator) {
+          try {
+            const adminKeys = JSON.parse(localStorage.getItem("ballot:adminKeys") ?? "{}");
+            if (adminKeys[slug]) {
+              delete adminKeys[slug];
+              localStorage.setItem("ballot:adminKeys", JSON.stringify(adminKeys));
+            }
+          } catch {}
+        }
+      }
       if (data.pollType === "image" && !chartTypeInitializedRef.current) {
         setChartType("cards");
         chartTypeInitializedRef.current = true;

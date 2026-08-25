@@ -29,12 +29,18 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const headerKey = req.headers.get("x-admin-key");
     const providedKey = urlKey || headerKey;
     let isAdmin = false;
-    if (providedKey && poll.adminKeyHash) {
-      const hashed = createHash("sha256").update(providedKey.trim()).digest("hex");
-      isAdmin = hashed === poll.adminKeyHash;
-    }
-    if (sessionUser && poll.creatorUserId && sessionUser.id === poll.creatorUserId) {
-      isAdmin = true;
+
+    if (poll.creatorUserId) {
+      // If poll belongs to an authenticated user, ONLY that creator user has admin rights
+      if (sessionUser && sessionUser.id === poll.creatorUserId) {
+        isAdmin = true;
+      }
+    } else {
+      // If poll was created as a guest, verify via secret adminKey
+      if (providedKey && poll.adminKeyHash) {
+        const hashed = createHash("sha256").update(providedKey.trim()).digest("hex");
+        isAdmin = hashed === poll.adminKeyHash;
+      }
     }
 
     // Fetch creator profile if attached
