@@ -1,3 +1,5 @@
+import type { RankedPointsResult } from "@/lib/ranking";
+
 export const CHART_COLORS = [
   "#0F766E", // Teal (brand)
   "#2563EB", // Blue
@@ -79,28 +81,47 @@ export function exportToCSV(
   question: string,
   options: { label: string; votes: number }[],
   totalVotes: number,
-  voters?: { name: string; choices: string[] }[]
+  voters?: { name: string; choices: string[] }[],
+  pollType: string = "standard",
+  rankedPointsResult?: RankedPointsResult | null
 ) {
+  const isRanked = pollType === "ranked_choice" || pollType === "ranked";
   const rows: string[][] = [
     ["Poll Question", `"${question.replace(/"/g, '""')}"`],
-    ["Total Votes", totalVotes.toString()],
+    ["Poll Format", isRanked ? "Ranked Choice (Consensus Points)" : "Standard Poll"],
+    ["Total Ballots Cast", totalVotes.toString()],
     ["Export Date", new Date().toISOString()],
     [],
-    ["Option", "Votes", "Percentage"],
-    ...options.map((o) => {
-      const pct = totalVotes > 0 ? Math.round((o.votes / totalVotes) * 100) : 0;
-      return [`"${o.label.replace(/"/g, '""')}"`, o.votes.toString(), `${pct}%`];
-    }),
   ];
+
+  if (isRanked && rankedPointsResult && rankedPointsResult.leaderboard && rankedPointsResult.leaderboard.length > 0) {
+    rows.push(["Rank", "Option", "Consensus Points", "1st Choice Votes", "Score Share"]);
+    for (const item of rankedPointsResult.leaderboard) {
+      rows.push([
+        item.rank.toString(),
+        `"${item.label.replace(/"/g, '""')}"`,
+        item.totalPoints.toString(),
+        item.firstChoiceVotes.toString(),
+        `${item.scorePct}%`,
+      ]);
+    }
+  } else {
+    rows.push(["Option", "Votes", "Percentage"]);
+    for (const o of options) {
+      const pct = totalVotes > 0 ? Math.round((o.votes / totalVotes) * 100) : 0;
+      rows.push([`"${o.label.replace(/"/g, '""')}"`, o.votes.toString(), `${pct}%`]);
+    }
+  }
 
   if (voters && voters.length > 0) {
     rows.push([]);
-    rows.push(["--- Voter Attendance & Selections ---"]);
-    rows.push(["Voter Name", "Selected Choice(s)"]);
+    rows.push([isRanked ? "--- Individual Voter Rankings ---" : "--- Voter Attendance & Selections ---"]);
+    rows.push(["Voter Name", isRanked ? "Ranked Order (1st > 2nd > 3rd...)" : "Selected Choice(s)"]);
     for (const v of voters) {
+      const choicesStr = (v.choices || []).join(isRanked ? " > " : ", ");
       rows.push([
         `"${(v.name || "Anonymous").replace(/"/g, '""')}"`,
-        `"${(v.choices || []).join(", ").replace(/"/g, '""')}"`,
+        `"${choicesStr.replace(/"/g, '""')}"`,
       ]);
     }
   }

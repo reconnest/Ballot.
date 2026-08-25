@@ -51,6 +51,7 @@ import {
   Vote,
   Edit3,
   PlayCircle,
+  PauseCircle,
   RotateCcw,
   CopyPlus,
 } from "lucide-react";
@@ -2072,7 +2073,7 @@ function PollContent() {
               {/* 4. CSV Export (Without JSON) */}
               <button
                 type="button"
-                onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0, poll.voters)}
+                onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0, poll.voters, poll.pollType, poll.rankedPointsResult)}
                 className="action-text-btn"
                 title="Download CSV results"
               >
@@ -2420,8 +2421,17 @@ function PollContent() {
                     className="btn-ghost"
                     style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
-                    <RefreshCw size={12} />
-                    <span>{poll.status === "live" ? "Pause Poll" : "Reactivate Poll"}</span>
+                    {poll.status === "live" ? (
+                      <>
+                        <PauseCircle size={13} />
+                        <span>Pause Poll</span>
+                      </>
+                    ) : (
+                      <>
+                        <PlayCircle size={13} />
+                        <span>Reactivate Poll</span>
+                      </>
+                    )}
                   </button>
 
                   <button
@@ -2437,7 +2447,7 @@ function PollContent() {
 
                   <button
                     type="button"
-                    onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0, poll.voters)}
+                    onClick={() => exportToCSV(poll.question, poll.options.map(o => ({ label: o.label, votes: o.votes || 0 })), poll.totalVotes || 0, poll.voters, poll.pollType, poll.rankedPointsResult)}
                     className="btn-ghost"
                     style={{ fontSize: 12, display: "inline-flex", alignItems: "center", gap: 6 }}
                   >
