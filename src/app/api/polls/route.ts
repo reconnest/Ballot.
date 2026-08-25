@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
 
     const question = (body.question ?? "").toString().trim().slice(0, 140);
     const description = body.description ? body.description.toString().trim().slice(0, 1000) : null;
-    const pollType = ["standard", "ranked_choice", "image", "availability"].includes(body.pollType) ? body.pollType : "standard";
+    const rawPollType = body.pollType === "ranked" ? "ranked_choice" : body.pollType;
+    const pollType = ["standard", "ranked_choice", "image", "availability"].includes(rawPollType) ? rawPollType : "standard";
     const category = (body.category ?? "general").toString().trim().slice(0, 30);
 
     // Generate Scoped ID Prefix: BPC-xxxx (Community) vs BPP-xxxx (Private)

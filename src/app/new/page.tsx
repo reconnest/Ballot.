@@ -706,12 +706,12 @@ export default function NewPollPage() {
               {/* Ranked Choice */}
               <button
                 type="button"
-                className={`visibility-card ${pollType === "ranked" ? "active" : ""}`}
-                onClick={() => setPollType("ranked")}
+                className={`visibility-card ${pollType === "ranked_choice" ? "active" : ""}`}
+                onClick={() => setPollType("ranked_choice")}
                 style={{ padding: "8px 12px", textAlign: "left" }}
               >
                 <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", display: "flex", alignItems: "center", gap: 6 }}>
-                  <Trophy size={14} color={pollType === "ranked" ? "var(--accent)" : "currentColor"} />
+                  <Trophy size={14} color={pollType === "ranked_choice" ? "var(--accent)" : "currentColor"} />
                   <span>Ranked Choice</span>
                 </div>
                 <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2, lineHeight: 1.2 }}>
